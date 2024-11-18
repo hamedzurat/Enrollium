@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="aafb07c5-0157-4c0f-ab76-3e401cf26e7e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/org/example/app/App.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/org/example/app/MessageUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/test/java/org/example/app/MessageUtilsTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build-logic/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build-logic/settings.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-application-conventions.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-common-conventions.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-library-conventions.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/list/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/list/src/main/java/org/example/list/LinkedList.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/list/src/test/java/org/example/list/LinkedListTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utilities/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/JoinUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/SplitUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/StringUtils.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2p1oROn39qNL81ZveZehbxziy7c" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Enrollium:app [:app:org.example.app.App.main()].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="aafb07c5-0157-4c0f-ab76-3e401cf26e7e" name="Changes" comment="" />
+      <created>1731942934932</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1731942934932</updated>
+    </task>
+    <servers />
+  </component>
+</project>
