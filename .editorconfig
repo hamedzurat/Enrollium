@@ -1,0 +1,160 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Root indicates this is the top-most EditorConfig file in the directory tree
+root = true
+
+# Default settings for all files
+[*]
+charset                     = utf-8
+end_of_line                 = lf
+indent_size                 = 4
+indent_style                = space
+insert_final_newline        = true
+max_line_length             = 120
+tab_width                   = 4
+trim_trailing_whitespace    = true
+# ij
+ij_continuation_indent_size = 8
+ij_formatter_off_tag        = @formatter:off
+ij_formatter_on_tag         = @formatter:on
+ij_formatter_tags_enabled   = true
+ij_smart_tabs               = false
+ij_visual_guides            = 120
+ij_wrap_on_typing           = false
+
+
+[.editorconfig]
+ij_editorconfig_align_group_field_declarations     = true
+ij_editorconfig_space_after_colon                  = false
+ij_editorconfig_space_after_comma                  = true
+ij_editorconfig_space_before_colon                 = false
+ij_editorconfig_space_before_comma                 = false
+ij_editorconfig_spaces_around_assignment_operators = true
+
+
+[Makefile]
+indent_style = tab
+
+[*.{diff,md,txt}]
+indent_style             = unset
+trim_trailing_whitespace = false
+indent_size              = unset
+max_line_length          = off
+
+[*.md]
+trim_trailing_whitespace = true
+
+[*.java]
+#
+#
+ij_java_keep_line_breaks                                        = true
+ij_java_keep_control_statement_in_one_line                      = true
+ij_java_keep_multiple_expressions_in_one_line                   = false
+ij_java_keep_simple_blocks_in_one_line                          = true
+ij_java_keep_simple_classes_in_one_line                         = true
+ij_java_keep_simple_lambdas_in_one_line                         = true
+ij_java_keep_simple_methods_in_one_line                         = true
+#
+ij_java_block_brace_style                                       = end_of_line
+ij_java_class_brace_style                                       = end_of_line
+ij_java_lambda_brace_style                                      = end_of_line
+ij_java_method_brace_style                                      = end_of_line
+#
+ij_java_extends_keyword_wrap                                    = normal
+ij_java_throws_keyword_wrap                                     = normal
+#
+ij_java_method_call_chain_wrap                                  = on_every_item
+ij_java_align_multiline_chained_methods                         = true
+#
+ij_java_if_brace_force                                          = never
+ij_java_else_on_new_line                                        = false
+ij_java_special_else_if_treatment                               = true
+ij_java_for_brace_force                                         = never
+ij_java_for_statement_wrap                                      = off
+ij_java_while_brace_force                                       = never
+ij_java_while_on_new_line                                       = false
+ij_java_do_while_brace_force                                    = never
+ij_java_switch_expressions_wrap                                 = off
+ij_java_indent_case_from_switch                                 = true
+ij_java_case_statement_on_separate_line                         = true
+ij_java_resource_list_wrap                                      = off
+ij_java_catch_on_new_line                                       = false
+ij_java_finally_on_new_line                                     = false
+#
+ij_java_binary_operation_wrap                                   = off
+ij_java_align_multiline_binary_operation                        = true
+ij_java_align_multiline_parenthesized_expression                = true
+#
+ij_java_align_consecutive_assignments                           = true
+ij_java_align_consecutive_variable_declarations                 = true
+ij_java_align_group_field_declarations                          = true
+ij_java_align_subsequent_simple_methods                         = true
+#
+ij_java_ternary_operation_wrap                                  = on_every_item
+ij_java_align_multiline_ternary_operation                       = true
+ij_java_ternary_operation_signs_on_next_line                    = true
+#
+ij_java_modifier_list_wrap                                      = false
+#
+ij_java_assert_statement_colon_on_next_line                     = true
+ij_java_assert_statement_wrap                                   = normal
+#
+ij_java_enum_constants_wrap                                     = on_every_item
+#
+ij_java_class_annotation_wrap                                   = split_into_lines
+ij_java_method_annotation_wrap                                  = split_into_lines
+ij_java_field_annotation_wrap                                   = split_into_lines
+ij_java_do_not_wrap_after_single_annotation                     = false
+ij_java_parameter_annotation_wrap                               = split_into_lines
+ij_java_do_not_wrap_after_single_annotation_in_parameter        = false
+ij_java_variable_annotation_wrap                                = on_every_item
+ij_java_enum_field_annotation_wrap                              = on_every_item
+#
+#
+ij_java_keep_blank_lines_in_declarations                        = 0
+ij_java_keep_blank_lines_in_code                                = 1
+ij_java_keep_blank_lines_before_right_brace                     = 0
+ij_java_keep_blank_lines_between_package_declaration_and_header = 0
+#
+ij_java_blank_lines_before_package                              = 0
+ij_java_blank_lines_after_package                               = 1
+ij_java_blank_lines_before_imports                              = 0
+ij_java_blank_lines_after_imports                               = 2
+ij_java_blank_lines_around_class                                = 2
+ij_java_blank_lines_after_class_header                          = 0
+ij_java_blank_lines_before_class_end                            = 0
+ij_java_blank_lines_after_anonymous_class_header                = 0
+ij_java_blank_lines_around_field_in_interface                   = 0
+ij_java_blank_lines_around_field                                = 0
+ij_java_blank_lines_around_method_in_interface                  = 0
+ij_java_blank_lines_around_method                               = 1
+ij_java_blank_lines_before_method_body                          = 0
+ij_java_blank_lines_around_initializer                          = 1
+#
+#
+ij_java_doc_enable_formatting                                   = true
+#
+ij_java_doc_align_param_comments                                = true
+ij_java_doc_align_exception_comments                            = true
+#
+ij_java_doc_add_blank_line_after_description                    = true
+ij_java_doc_add_blank_line_after_param_comments                 = true
+ij_java_doc_add_blank_line_after_return                         = true
+#
+ij_java_doc_keep_invalid_tags                                   = true
+ij_java_doc_keep_empty_parameter_tag                            = true
+ij_java_doc_keep_empty_return_tag                               = true
+ij_java_doc_keep_empty_throws_tag                               = true
+#
+ij_java_doc_do_not_wrap_if_one_line                             = false
+ij_java_doc_enable_leading_asterisks                            = true
+ij_java_doc_use_throws_not_exception_tag                        = true
+ij_java_doc_add_p_tag_on_empty_lines                            = false
+ij_java_doc_keep_empty_lines                                    = true
+ij_java_doc_preserve_line_breaks                                = false
+ij_java_doc_param_description_on_new_line                       = false
+ij_java_doc_indent_on_continuation                              = false
+#
+#
+ij_java_insert_override_annotation                              = true
+ij_java_repeat_synchronized                                     = true
