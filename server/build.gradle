@@ -1,0 +1,14 @@
+plugins {
+    id 'buildlogic.java-application-conventions'
+}
+
+application {
+    mainClass = 'enrollium.server.Main'
+}
+
+dependencies {
+    implementation(libs.logback.classic)
+//    implementation(project(":lib"))
+//    implementation(project(":rpc"))
+//    implementation(project(":design-system"))
+}

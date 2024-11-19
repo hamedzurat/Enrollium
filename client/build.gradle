@@ -1,0 +1,22 @@
+plugins {
+    id 'buildlogic.java-application-conventions'
+    alias(libs.plugins.javafxplugin)
+}
+
+application {
+    mainClass = 'enrollium.client.Main'
+}
+
+javafx {
+    version = libs.versions.javafx.get()
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+    implementation(libs.rxjava)
+    implementation(libs.javafx.controls)
+    implementation(libs.javafx.fxml)
+//    implementation(project(":lib"))
+//    implementation(project(":rpc"))
+//    implementation(project(":design-system"))
+}

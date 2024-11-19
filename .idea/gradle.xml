@@ -19,10 +19,12 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/build-logic" />
-            <option value="$PROJECT_DIR$/list" />
-            <option value="$PROJECT_DIR$/utilities" />
+            <option value="$PROJECT_DIR$/client" />
+            <option value="$PROJECT_DIR$/design-system" />
+            <option value="$PROJECT_DIR$/lib" />
+            <option value="$PROJECT_DIR$/rpc" />
+            <option value="$PROJECT_DIR$/server" />
           </set>
         </option>
       </GradleProjectSettings>

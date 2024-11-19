@@ -13,8 +13,17 @@ pluginManagement {
 
 plugins {
     // Apply the foojay-resolver plugin to allow automatic download of JDKs
+    // - https://github.com/gradle/foojay-toolchains
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
 rootProject.name = 'Enrollium'
-include('app', 'list', 'utilities')
+
+// Core libraries
+include('lib')
+include('rpc')
+include('design-system')
+
+// Main applications
+include('client')
+include('server')
