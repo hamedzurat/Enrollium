@@ -7,8 +7,27 @@ application {
 }
 
 dependencies {
+    annotationProcessor(libs.lombok)
+    annotationProcessor(libs.hibernate.validator)
+    //
+    implementation(libs.rxjava)
+    implementation(libs.lombok)
     implementation(libs.logback.classic)
+    implementation(libs.hibernate)
+    implementation(libs.postgresql)
+    implementation(libs.hikari)
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.jakarta.el)
+    implementation(libs.jakarta.el.api)
+    implementation(libs.hibernate.validator)
 //    implementation(project(":lib"))
 //    implementation(project(":rpc"))
 //    implementation(project(":design-system"))
+    //
+    testImplementation(libs.junit)
+    testImplementation(libs.rxjava)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
