@@ -5,23 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="aafb07c5-0157-4c0f-ab76-3e401cf26e7e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/example/app/App.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/example/app/MessageUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/test/java/org/example/app/MessageUtilsTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-common-conventions.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-common-conventions.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/list/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/list/src/main/java/org/example/list/LinkedList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/list/src/test/java/org/example/list/LinkedListTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utilities/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/JoinUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/SplitUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/StringUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/main/java/enrollium/client/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/java/enrollium/client/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/main/java/enrollium/client/MainController.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/java/enrollium/client/MainController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,9 +92,12 @@
     "Gradle.build-logic [dependencies].executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "zarif.dev",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/hz/files/git/Enrollium/server"
+    "last_opened_file_path": "C:/Users/Admin/Desktop/Project",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0"
   }
 }]]></component>
   <component name="RecentsManager">
