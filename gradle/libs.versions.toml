@@ -20,12 +20,14 @@ jakarta-validation = "3.1.0"
 jakarta-el = "4.0.2"
 jakarta-el-api = "6.0.1"
 hibernate-validator = "8.0.1.Final"
+bcrypt = "0.10.2"
 
 
 [libraries]
 rxjava = { module = "io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 commonsText = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
+bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 
 # UI
 javafx-controls = { module = "org.openjfx:javafx-controls", version.ref = "javafx" }

@@ -13,6 +13,7 @@ dependencies {
     implementation(libs.rxjava)
     implementation(libs.lombok)
     implementation(libs.logback.classic)
+    implementation(libs.bcrypt)
     implementation(libs.hibernate)
     implementation(libs.postgresql)
     implementation(libs.hikari)

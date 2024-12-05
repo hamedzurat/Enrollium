@@ -1,5 +1,6 @@
 package enrollium.server.db.entity;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import enrollium.server.db.entity.types.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -16,6 +17,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class User extends BaseEntity {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @NotNull(message = "UserType cannot be null")
+    private UserType type;
+    //
     @Column(unique = true, nullable = false)
     @Email(message = "Invalid email format")
     @NotNull(message = "Email cannot be null")
@@ -29,8 +35,23 @@ public abstract class User extends BaseEntity {
     @Size(max = 100, message = "Name must not exceed 100 characters")
     private String   name;
     //
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @NotNull(message = "UserType cannot be null")
-    private UserType type;
+    @Column(nullable = false, length = 60)  // BCrypt hash size is 60
+    @NotNull(message = "Password cannot be null")
+    @NotBlank(message = "Password cannot be blank")
+    private String   password;
+
+    public void setPassword(String plainPassword) {
+        if (plainPassword == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
+        if (plainPassword.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters long");
+        }
+        this.password = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
+    }
+
+    public boolean verifyPassword(String plainPassword) {
+        return plainPassword != null &&
+               BCrypt.verifyer().verify(plainPassword.toCharArray(), this.password).verified;
+    }
 }
