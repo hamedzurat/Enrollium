@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      xmlns="http://javafx.com/javafx"
+      fx:controller="enrollium.client.MainController"
+      alignment="CENTER"
+      spacing="15">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS">
+        <tabs>
+            <!-- Registration System Tab -->
+            <Tab text="Registration System" closable="false">
+                <VBox alignment="TOP_CENTER" spacing="15">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+                    <Text text="Course Registration" style="-fx-font-size: 24px;"/>
+
+                    <GridPane fx:id="planner"
+                              style="-fx-background-color: #f9f9f9;
+                                         -fx-border-color: #ccc;
+                                         -fx-border-width: 1px;"
+                              hgap="10"
+                              vgap="10">
+                        <!-- Dynamic content will be added in Controller -->
+                    </GridPane>
+
+                    <HBox alignment="CENTER" spacing="10">
+                        <Label text="Select Course:"/>
+                        <ComboBox fx:id="courseDropdown"
+                                  promptText="Select Course"
+                                  style="-fx-font-size: 14px;"/>
+                        <Button fx:id="takeCourseButton"
+                                text="Take Course"
+                                style="-fx-background-color: lightgreen;
+                                           -fx-font-weight: bold;"/>
+                    </HBox>
+
+                    <Text fx:id="courseFeedback"
+                          style="-fx-fill: green;
+                                     -fx-font-size: 16px;"/>
+                </VBox>
+            </Tab>
+
+            <!-- Trading System Tab -->
+            <Tab text="Trading System" closable="false">
+                <VBox alignment="TOP_CENTER" spacing="15">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+                    <Text text="Course Trading" style="-fx-font-size: 24px;"/>
+
+                    <ListView fx:id="sections" prefHeight="150"/>
+
+                    <Button fx:id="tradeButton"
+                            text="Trade"
+                            style="-fx-background-color: lightblue;
+                                       -fx-font-weight: bold;"/>
+
+                    <Text fx:id="tradeFeedback"
+                          style="-fx-fill: green;"/>
+                </VBox>
+            </Tab>
+
+            <!-- Notification System Tab -->
+            <Tab text="Notification System" closable="false">
+                <VBox alignment="TOP_CENTER" spacing="15">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+                    <Text text="Notifications" style="-fx-font-size: 24px;"/>
+
+                    <Text fx:id="badgeCounter"
+                          style="-fx-font-weight: bold;"/>
+
+                    <ListView fx:id="notifications" prefHeight="200"/>
+                </VBox>
+            </Tab>
+
+            <!-- Group Coordination Tab -->
+            <Tab text="Group Coordination" closable="false">
+                <VBox alignment="TOP_CENTER" spacing="15">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+                    <Text text="Group Management" style="-fx-font-size: 24px;"/>
+
+                    <ListView fx:id="groupMembers" prefHeight="150"/>
+
+                    <Button fx:id="compareSchedulesButton"
+                            text="Compare Schedules"
+                            style="-fx-background-color: lightblue;
+                                       -fx-font-weight: bold;"/>
+
+                    <Text fx:id="scheduleFeedback"
+                          style="-fx-fill: green;"/>
+                </VBox>
+            </Tab>
+        </tabs>
+    </TabPane>
+</VBox>
