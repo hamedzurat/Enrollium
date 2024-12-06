@@ -64,4 +64,47 @@ public class Section extends BaseEntity {
     //
     @OneToMany(mappedBy = "section")
     private Set<Course>    registrations   = new HashSet<>();
+
+    @PrePersist
+    @PreUpdate
+    private void validateSection() {
+        validateCapacity();
+        validateSpaceTimeSlots();
+    }
+
+    private void validateCapacity() {
+        if (maxCapacity == null) {
+            throw new IllegalArgumentException("Max capacity cannot be null");
+        }
+        if (currentCapacity == null) {
+            throw new IllegalArgumentException("Current capacity cannot be null");
+        }
+        if (currentCapacity > maxCapacity) {
+            throw new IllegalArgumentException("Current capacity cannot exceed max capacity");
+        }
+        if (maxCapacity < 1) {
+            throw new IllegalArgumentException("Max capacity must be at least 1");
+        }
+        if (currentCapacity < 0) {
+            throw new IllegalArgumentException("Current capacity cannot be negative");
+        }
+    }
+
+    private void validateSpaceTimeSlots() {
+        // First check if slots exist
+        if (spaceTimeSlots == null || spaceTimeSlots.isEmpty()) {
+            throw new IllegalArgumentException("Section must have at least one space-time slot");
+        }
+
+        // Only check for duplicates if we have a trimester (let JPA handle @NotNull validation)
+        if (trimester != null) {
+            Set<String> timeSlotKeys = new HashSet<>();
+            for (SpaceTime slot : spaceTimeSlots) {
+                String key = trimester.getId() + "-" + slot.getId();
+                if (!timeSlotKeys.add(key)) {
+                    throw new IllegalArgumentException("Duplicate space-time slot in trimester");
+                }
+            }
+        }
+    }
 }

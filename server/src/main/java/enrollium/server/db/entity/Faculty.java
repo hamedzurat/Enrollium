@@ -1,5 +1,6 @@
 package enrollium.server.db.entity;
 
+import enrollium.server.db.entity.types.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,7 +25,14 @@ public class Faculty extends User {
     @ManyToMany
     @JoinTable(name = "faculty_subjects", //
             joinColumns = @JoinColumn(name = "faculty_id"), //
-            inverseJoinColumns = @JoinColumn(name = "subject_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "subject_id"))
     private Set<Subject> teachableSubjects = new HashSet<>();
+
+    @PrePersist
+    @PreUpdate
+    private void validateFacultyType() {
+        if (getType() != UserType.TEACHER && getType() != UserType.ADMIN) {
+            throw new IllegalArgumentException("Faculty type must be either TEACHER or ADMIN");
+        }
+    }
 }
