@@ -1,54 +1,62 @@
 package enrollium.client;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.geometry.HPos;
+import javafx.geometry.VPos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.text.Text;
 
 import java.util.HashMap;
 
-
 public class MainController {
     public final HashMap<String, String> courseSchedule = new HashMap<>();
+
+    private String selectedCourseCode = null;
+
     @FXML
-    public       TabPane                 tabPane;
+    public GridPane planner;
     @FXML
-    public       GridPane                planner;
+    public Button takeCourseButton;
     @FXML
-    public       ComboBox<String>        courseDropdown;
-    @FXML
-    public       Button                  takeCourseButton;
-    @FXML
-    public       Text                    courseFeedback;
-    @FXML
-    public       ListView<String>        sections;
-    @FXML
-    public       Button                  tradeButton;
-    @FXML
-    public       Text                    tradeFeedback;
-    @FXML
-    public       ListView<String>        notifications;
-    @FXML
-    public       Text                    badgeCounter;
-    @FXML
-    public       ListView<String>        groupMembers;
-    @FXML
-    public       Button                  compareSchedulesButton;
-    @FXML
-    public       Text                    scheduleFeedback;
+    public Text courseFeedback;
 
     @FXML
     public void initialize() {
         populateCourseSchedule();
 
-        String[] days      = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
+        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
         String[] timeSlots = {"8-9 AM", "9-10 AM", "10-11 AM", "11-12 PM", "12-1 PM", "1-2 PM"};
 
-        for (int i = 0; i < days.length; i++) {
-            planner.add(new Text(days[i]), i + 1, 0);
+        for (int i = 0; i <= days.length; i++) {
+            ColumnConstraints columnConstraints = new ColumnConstraints();
+            columnConstraints.setPercentWidth(100.0 / (days.length + 1));
+            planner.getColumnConstraints().add(columnConstraints);
         }
+
+        for (int i = 0; i <= timeSlots.length; i++) {
+            RowConstraints rowConstraints = new RowConstraints();
+            rowConstraints.setPercentHeight(100.0 / (timeSlots.length + 1));
+            planner.getRowConstraints().add(rowConstraints);
+        }
+
+        for (int i = 0; i < days.length; i++) {
+            Text dayLabel = new Text(days[i]);
+            dayLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+            GridPane.setHalignment(dayLabel, HPos.CENTER);
+            GridPane.setValignment(dayLabel, VPos.CENTER);
+            planner.add(dayLabel, i + 1, 0);
+        }
+
         for (int i = 0; i < timeSlots.length; i++) {
-            planner.add(new Text(timeSlots[i]), 0, i + 1);
+            Text timeLabel = new Text(timeSlots[i]);
+            timeLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+            GridPane.setHalignment(timeLabel, HPos.CENTER);
+            GridPane.setValignment(timeLabel, VPos.CENTER);
+            planner.add(timeLabel, 0, i + 1);
         }
 
         int[][] coursePositions = {
@@ -60,7 +68,7 @@ public class MainController {
                 {1, 6}, {2, 6}, {3, 6}, {4, 6}, {5, 6}
         };
 
-        int      courseIndex = 0;
+        int courseIndex = 0;
         String[] courseCodes = courseSchedule.keySet().toArray(new String[0]);
         for (int[] position : coursePositions) {
             if (courseIndex >= courseCodes.length) break;
@@ -69,14 +77,31 @@ public class MainController {
             String courseName = courseSchedule.get(courseCode);
 
             Button courseButton = new Button(courseCode + "\n" + courseName);
-            courseButton.setStyle("-fx-background-color: lightblue; -fx-font-weight: bold;");
+            courseButton.setStyle(
+                    "-fx-background-color: lightblue; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-alignment: center; " +
+                    "-fx-text-alignment: center;"
+            );
             courseButton.setTooltip(new Tooltip("Course Code: " + courseCode + "\nCourse Name: " + courseName));
+
+            courseButton.setOnAction(event -> selectedCourseCode = courseCode);
+
+            GridPane.setHalignment(courseButton, HPos.CENTER); // Center horizontally
+            GridPane.setValignment(courseButton, VPos.CENTER); // Center vertically
             planner.add(courseButton, position[0], position[1]);
 
             courseIndex++;
         }
 
-        courseDropdown.getItems().addAll(courseSchedule.keySet());
+        takeCourseButton.setOnAction(event -> {
+            if (selectedCourseCode != null) {
+                String selectedCourseName = courseSchedule.get(selectedCourseCode);
+                courseFeedback.setText("You have selected " + selectedCourseName + " to take.");
+            } else {
+                courseFeedback.setText("No course selected.");
+            }
+        });
     }
 
     public void populateCourseSchedule() {
