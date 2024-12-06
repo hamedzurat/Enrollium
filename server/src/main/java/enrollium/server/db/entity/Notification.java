@@ -54,7 +54,7 @@ public class Notification extends BaseEntity {
 
     @PrePersist
     @PreUpdate
-    private void validateCourseRegistration() {
+    private void validateNotificationScope() {
         switch (scope) {
             case GLOBAL -> {
                 if (trimester != null) throw new IllegalArgumentException("Trimester must be null for GLOBAL scope.");

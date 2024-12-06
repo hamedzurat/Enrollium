@@ -1,5 +1,6 @@
 package enrollium.server.db.entity;
 
+import enrollium.server.db.entity.types.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -23,4 +24,16 @@ public class Student extends User {
     //
     @OneToMany(mappedBy = "student")
     private Set<Course> courses = new HashSet<>();
+
+    public Student() {
+        super.setType(UserType.STUDENT);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void validateStudentType() {
+        if (getType() != UserType.STUDENT) {
+            throw new IllegalArgumentException("Student type must be STUDENT");
+        }
+    }
 }

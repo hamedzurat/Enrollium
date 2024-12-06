@@ -3,7 +3,6 @@ package enrollium.server.db.entity;
 import enrollium.server.db.entity.types.Season;
 import enrollium.server.db.entity.types.TrimesterStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,7 +18,7 @@ import java.time.LocalDateTime;
 public class Trimester extends BaseEntity {
     @Column(unique = true, nullable = false)
     @NotNull(message = "Code cannot be null")
-    @Min(value = 30, message = "Code must be at least 030 (format: YYY[1|2|3])")
+    @Min(value = 30, message = "Code must be at least 030 (format: YY[1|2|3])")
     private Integer         code;
     //
     @Column(nullable = false)
@@ -38,29 +37,120 @@ public class Trimester extends BaseEntity {
     private TrimesterStatus status;
     //
     @Column(name = "course_selection_start")
-    @FutureOrPresent(message = "Course selection start date must be in the present or future")
     private LocalDateTime   courseSelectionStart;
     //
     @Column(name = "course_selection_end")
-    @FutureOrPresent(message = "Course selection end date must be in the present or future")
     private LocalDateTime   courseSelectionEnd;
     //
     @Column(name = "section_registration_start")
-    @FutureOrPresent(message = "Section registration start date must be in the present or future")
     private LocalDateTime   sectionRegistrationStart;
     //
     @Column(name = "section_registration_end")
-    @FutureOrPresent(message = "Section registration end date must be in the present or future")
     private LocalDateTime   sectionRegistrationEnd;
 
     @PrePersist
     @PreUpdate
+    private void validateTrimester() {
+        validateDateRanges();
+        validateCode();
+        validateStatusDates();
+    }
+
     private void validateDateRanges() {
-        if (courseSelectionStart != null && courseSelectionEnd != null && courseSelectionStart.isAfter(courseSelectionEnd)) {
-            throw new IllegalArgumentException("Course selection start date must be before or equal to end date");
+        // Validate course selection dates
+        if (courseSelectionStart != null && courseSelectionEnd != null) {
+            if (courseSelectionStart.isAfter(courseSelectionEnd)) {
+                throw new IllegalArgumentException("Course selection start date must be before or equal to end date");
+            }
         }
-        if (sectionRegistrationStart != null && sectionRegistrationEnd != null && sectionRegistrationStart.isAfter(sectionRegistrationEnd)) {
-            throw new IllegalArgumentException("Section registration start date must be before or equal to end date");
+
+        // Validate section registration dates
+        if (sectionRegistrationStart != null && sectionRegistrationEnd != null) {
+            if (sectionRegistrationStart.isAfter(sectionRegistrationEnd)) {
+                throw new IllegalArgumentException("Section registration start date must be before or equal to end date");
+            }
+        }
+
+        // Validate sequence of date ranges
+        if (courseSelectionEnd != null && sectionRegistrationStart != null) {
+            if (courseSelectionEnd.isAfter(sectionRegistrationStart)) {
+                throw new IllegalArgumentException("Course selection must end before section registration begins");
+            }
+        }
+    }
+
+    private void validateCode() {
+        if (code == null) return;
+
+        // Extract last digit (must be 1, 2, or 3)
+        int lastDigit = code % 10;
+        if (lastDigit < 1 || lastDigit > 3) {
+            throw new IllegalArgumentException("Trimester code must end with 1, 2, or 3 (format: YY[1|2|3])");
+        }
+
+        // Extract year from code (first two digits)
+        int codeYear = code / 10;
+        if (codeYear != year % 100) {
+            throw new IllegalArgumentException("Trimester code must match the last two digits of the year");
+        }
+
+        // Validate season matches trimester number
+        Season expectedSeason = switch (lastDigit) {
+            case 1 -> Season.SPRING;
+            case 2 -> Season.SUMMER;
+            case 3 -> Season.FALL;
+            default -> throw new IllegalStateException("Unexpected trimester number: " + lastDigit);
+        };
+
+        if (season != expectedSeason) {
+            throw new IllegalArgumentException("Season must match trimester number (1=SPRING, 2=SUMMER, 3=FALL)");
+        }
+    }
+
+    private void validateStatusDates() {
+        LocalDateTime now = LocalDateTime.now();
+
+        switch (status) {
+            case UPCOMING -> {
+                if (courseSelectionStart == null) {
+                    throw new IllegalArgumentException("UPCOMING status requires course selection start date");
+                }
+                if (now.isAfter(courseSelectionStart)) {
+                    throw new IllegalArgumentException("UPCOMING status requires course selection start date to be in the future");
+                }
+            }
+            case COURSE_SELECTION -> {
+                if (courseSelectionStart == null || courseSelectionEnd == null) {
+                    throw new IllegalArgumentException("COURSE_SELECTION status requires course selection dates");
+                }
+                if (now.isBefore(courseSelectionStart) || now.isAfter(courseSelectionEnd)) {
+                    throw new IllegalArgumentException("COURSE_SELECTION status requires current time to be within course selection period");
+                }
+            }
+            case SECTION_CREATION -> {
+                if (courseSelectionEnd == null || sectionRegistrationStart == null) {
+                    throw new IllegalArgumentException("SECTION_CREATION status requires course selection end and section registration start dates");
+                }
+                if (now.isBefore(courseSelectionEnd) || now.isAfter(sectionRegistrationStart)) {
+                    throw new IllegalArgumentException("SECTION_CREATION status requires current time to be between course selection end and section registration start");
+                }
+            }
+            case SECTION_SELECTION -> {
+                if (sectionRegistrationStart == null || sectionRegistrationEnd == null) {
+                    throw new IllegalArgumentException("SECTION_SELECTION status requires section registration dates");
+                }
+                if (now.isBefore(sectionRegistrationStart) || now.isAfter(sectionRegistrationEnd)) {
+                    throw new IllegalArgumentException("SECTION_SELECTION status requires current time to be within section registration period");
+                }
+            }
+            case ONGOING, COMPLETED -> {
+                if (sectionRegistrationEnd == null) {
+                    throw new IllegalArgumentException("ONGOING/COMPLETED status requires section registration end date");
+                }
+                if (!now.isAfter(sectionRegistrationEnd)) {
+                    throw new IllegalArgumentException("ONGOING/COMPLETED status requires section registration to be completed");
+                }
+            }
         }
     }
 }

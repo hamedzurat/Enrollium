@@ -10,7 +10,7 @@ import java.time.DayOfWeek;
 
 
 @Entity
-@Table(name = "space_time", uniqueConstraints = @UniqueConstraint(columnNames = {"room_name", "day_of_week", "start_time"}))
+@Table(name = "space_time", uniqueConstraints = @UniqueConstraint(columnNames = {"room_number", "day_of_week", "timeslot"}))
 @Getter
 @Setter
 public class SpaceTime extends BaseEntity {
@@ -29,11 +29,11 @@ public class SpaceTime extends BaseEntity {
     @NotNull(message = "Room type cannot be null")
     private SubjectType roomType;
     //
-    @Column(nullable = false)
+    @Column(name = "day_of_week", nullable = false)
     @NotNull(message = "Day of the week cannot be null")
     private DayOfWeek   dayOfWeek;
     //
-    @Column(name = "timeslot")
+    @Column(name = "timeslot", nullable = false)
     @Min(value = 1, message = "Time slot must be at least 1")
     @Max(value = 6, message = "Time slot must not exceed 6")
     private Integer     timeSlot;
@@ -41,6 +41,9 @@ public class SpaceTime extends BaseEntity {
     @PrePersist
     @PreUpdate
     private void validateTimeSlot() {
+        if (timeSlot == null) {
+            throw new IllegalArgumentException("Time slot cannot be null");
+        }
         if (roomType == SubjectType.LAB && (timeSlot < 1 || timeSlot > 3)) {
             throw new IllegalArgumentException("Lab room time slot must be between 1 and 3");
         }
