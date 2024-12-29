@@ -3,8 +3,7 @@ package enrollium.client;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -14,8 +13,8 @@ import java.util.HashMap;
 
 public class MainController {
     public final HashMap<String, String> courseSchedule = new HashMap<>();
-
-    private String selectedCourseCode = null;
+    String selectedCourseCode = null;
+    String selectedSection = null;
 
     @FXML
     public GridPane planner;
@@ -30,6 +29,20 @@ public class MainController {
 
         String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
         String[] timeSlots = {"8-9 AM", "9-10 AM", "10-11 AM", "11-12 PM", "12-1 PM", "1-2 PM"};
+        String[] sections = {
+                "Section A",
+                "Section B",
+                "Section C",
+                "Section D",
+                "Section E",
+                "Section F",
+                "Section G",
+                "Section H",
+                "Section I",
+                "Section J",
+                "Section K",
+                "Section L"
+        };
 
         for (int i = 0; i <= days.length; i++) {
             ColumnConstraints columnConstraints = new ColumnConstraints();
@@ -85,21 +98,36 @@ public class MainController {
             );
             courseButton.setTooltip(new Tooltip("Course Code: " + courseCode + "\nCourse Name: " + courseName));
 
-            courseButton.setOnAction(event -> selectedCourseCode = courseCode);
+            ContextMenu sectionMenu = new ContextMenu();
+            for (String section : sections) {
+                MenuItem sectionItem = new MenuItem(section);
+                sectionItem.setOnAction(e -> {
+                    selectedCourseCode = courseCode;
+                    selectedSection = section;
+                    courseFeedback.setText(courseCode + " - " + section + " selected");
+                });
+                sectionMenu.getItems().add(sectionItem);
+            }
 
-            GridPane.setHalignment(courseButton, HPos.CENTER); // Center horizontally
-            GridPane.setValignment(courseButton, VPos.CENTER); // Center vertically
+            courseButton.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2) {
+                    sectionMenu.show(courseButton, event.getScreenX(), event.getScreenY());
+                }
+            });
+
+            GridPane.setHalignment(courseButton, HPos.CENTER);
+            GridPane.setValignment(courseButton, VPos.CENTER);
             planner.add(courseButton, position[0], position[1]);
 
             courseIndex++;
         }
 
         takeCourseButton.setOnAction(event -> {
-            if (selectedCourseCode != null) {
+            if (selectedCourseCode != null && selectedSection != null) {
                 String selectedCourseName = courseSchedule.get(selectedCourseCode);
-                courseFeedback.setText("You have selected " + selectedCourseName + " to take.");
+                courseFeedback.setText("Section " + selectedSection + " and Course " + selectedCourseCode + " (" + selectedCourseName + ") taken successfully!");
             } else {
-                courseFeedback.setText("No course selected.");
+                courseFeedback.setText("Please select a course and section before taking it.");
             }
         });
     }
