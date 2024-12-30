@@ -1,90 +1,74 @@
 package client;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import core.JsonUtils;
-import core.Message;
-import core.Request;
-import core.Response;
+import core.*;
 import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.subjects.SingleSubject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 
-public class ClientRPC implements AutoCloseable {
-    private static final    Logger                                            log                      = LoggerFactory.getLogger(ClientRPC.class);
-    private static final    int                                               SERVER_PORT              = 12321;
-    private static final    String                                            SERVER_HOST              = "localhost";
-    private static final    int                                               INITIAL_RETRY_DELAY_MS   = 10000; // 10 seconds
-    private static final    int                                               HEALTH_CHECK_INTERVAL_MS = 30;
-    private static final    Object                                            mutex                    = new Object();
-    // Singleton instance
-    private static volatile ClientRPC                                         instance;
-    private final           ObjectMapper                                      objectMapper             = new ObjectMapper();
-    private final           Map<String, Function<JsonNode, Single<JsonNode>>> methodHandlers           = new ConcurrentHashMap<>();
-    private final           Map<Long, SingleSubject<Response>>                pendingRequests          = new ConcurrentHashMap<>();
-    private final           AtomicLong                                        messageIdCounter         = new AtomicLong(1);
-    private final           ScheduledExecutorService                          scheduler                = Executors.newSingleThreadScheduledExecutor();
-    private final           ExecutorService                                   executor                 = Executors.newSingleThreadExecutor();
-    private final           Object                                            writeLock                = new Object();
-    private volatile        boolean                                           running                  = true;
-    private volatile        String                                            sessionToken             = null;
-    private                 Socket                                            socket;
-    private                 DataInputStream                                   in;
-    private                 DataOutputStream                                  out;
+/**
+ * Client-side RPC implementation that manages server connection and message handling.
+ */
+@Slf4j
+public class ClientRPC implements AutoCloseable, MessageHandler {
+    private static final int                                               DEFAULT_PORT             = 12321;
+    private static final String                                            DEFAULT_HOST             = "localhost";
+    private static final int                                               INITIAL_RETRY_DELAY_MS   = 1000;
+    private static final int                                               MAX_RETRY_DELAY_MS       = 30000;
+    private static final int                                               HEALTH_CHECK_INTERVAL_MS = 30000;
+    private final        String                                            host;
+    private final        int                                               port;
+    private final        Map<String, Function<JsonNode, Single<JsonNode>>> methodHandlers           = new ConcurrentHashMap<>();
+    private final        AtomicLong                                        messageIdCounter         = new AtomicLong(1);
+    private final        AtomicBoolean                                     running                  = new AtomicBoolean(true);
+    private final        ScheduledExecutorService                          scheduler                = Executors.newSingleThreadScheduledExecutor();
+    private volatile     String                                            sessionToken;
+    private volatile     RPCConnection                                     connection;
+    // Store last login credentials for session restoration
+    private volatile     String                                            lastUsername;
+    private volatile     String                                            lastPassword;
 
-    private ClientRPC() {}
-
-    public static ClientRPC getInstance() {
-        if (instance == null) {
-            synchronized (mutex) {
-                if (instance == null) {
-                    instance = new ClientRPC();
-                }
-            }
-        }
-        return instance;
+    public ClientRPC(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
+    public ClientRPC() {
+        this(DEFAULT_HOST, DEFAULT_PORT);
+    }
+
+    /**
+     * Starts the RPC client and connects to server.
+     */
     public void start() {
-        running = true;
+        running.set(true);
         connect();
         startHealthCheck();
     }
 
-    private void startHealthCheck() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                healthCheck().subscribe(response -> log.debug("Health check successful"), error -> log.error("Health check failed", error));
-            } catch (Exception e) {
-                log.error("Error during health check", e);
-            }
-        }, HEALTH_CHECK_INTERVAL_MS, HEALTH_CHECK_INTERVAL_MS, TimeUnit.SECONDS);
-    }
-
+    /**
+     * Establishes connection to server with retry mechanism.
+     */
     private void connect() {
         int retryDelay = INITIAL_RETRY_DELAY_MS;
 
-        while (running) {
+        while (running.get()) {
             try {
-                socket = new Socket(SERVER_HOST, SERVER_PORT);
-                in     = new DataInputStream(socket.getInputStream());
-                out    = new DataOutputStream(socket.getOutputStream());
-
-                executor.submit(this::messageReadingLoop);
-                log.info("Connected to server successfully");
-
+                Socket socket = new Socket(host, port);
+                connection = new RPCConnection("client", socket, this);
+                log.info("Connected to server at {}:{}", host, port);
                 return;
             } catch (IOException e) {
                 log.error("Failed to connect to server. Retrying in {} ms", retryDelay, e);
@@ -94,129 +78,119 @@ public class ClientRPC implements AutoCloseable {
                     Thread.currentThread().interrupt();
                     return;
                 }
-
-                retryDelay = Math.min(retryDelay * 2, 120000);
+                retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
             }
         }
     }
 
-    private void messageReadingLoop() {
-        while (running && !socket.isClosed()) {
-            try {
-                String  json    = in.readUTF();
-                Message message = objectMapper.readValue(json, Message.class);
-
-                if ("req".equals(message.getType())) handleRequest(objectMapper.convertValue(message, Request.class));
-                else if ("res".equals(message.getType())) handleResponse(objectMapper.convertValue(message, Response.class));
-            } catch (IOException e) {
-                if (running) {
-                    log.error("Error reading message", e);
-                    reconnect();
-                }
-                break;
+    /**
+     * Starts periodic health checks.
+     */
+    private void startHealthCheck() {
+        scheduler.scheduleAtFixedRate(() -> {
+            if (connection != null && connection.isActive()) {
+                healthCheck().subscribe(//
+                        response -> log.debug("Health check successful"), //
+                        error -> {
+                            log.error("Health check failed", error);
+                            reconnect();
+                        });
             }
-        }
+        }, HEALTH_CHECK_INTERVAL_MS, HEALTH_CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 
-    private void handleRequest(Request request) {
-        Function<JsonNode, Single<JsonNode>> handler = methodHandlers.get(request.getMethod());
-        if (handler == null) {
-            sendResponse(Response.error(request.getId(), "Unknown method"));
-            return;
-        }
-
-        handler.apply(request.getParams())
-               .subscribe(result -> sendResponse(Response.success(request.getId(), result)), error -> sendResponse(Response.error(request.getId(), error.getMessage())));
+    /**
+     * Performs connection health check.
+     */
+    private Single<Response> healthCheck() {
+        Request request = Request.create(messageIdCounter.getAndIncrement(), "health", null, sessionToken);
+        return connection.sendRequest(request);
     }
 
-    private void handleResponse(Response response) {
-        SingleSubject<Response> pending = pendingRequests.remove(response.getId());
+    /**
+     * Handles connection reconnection.
+     */
+    private void reconnect() {
+        if (connection != null) connection.close();
 
-        if (pending != null) pending.onSuccess(response);
-        else log.warn("Received response for unknown request: {}", response.getId());
+        connect();
+        // Attempt to restore session
+        if (sessionToken != null) login(lastUsername, lastPassword).subscribe(//
+                newToken -> log.info("Session restored after reconnection"),//
+                error -> log.error("Failed to restore session after reconnection", error)//
+        );
     }
 
-    private void sendResponse(Response response) {
-        try {
-            synchronized (writeLock) {
-                out.writeUTF(objectMapper.writeValueAsString(response));
-            }
-        } catch (IOException e) {
-            log.error("Error sending response", e);
-            reconnect();
-        }
-    }
-
-    public Single<Response> healthCheck() {
-        Request request = Request.create(messageIdCounter.getAndIncrement(), "health", null, null);
-        return sendRequest(request);
-    }
-
+    /**
+     * Performs login and session establishment.
+     */
     public Single<String> login(String username, String password) {
-        ObjectNode params = JsonUtils.createObject().put("username", username).put("password", password);
+        this.lastUsername = username;
+        this.lastPassword = password;
 
-        Request request = Request.create(messageIdCounter.getAndIncrement(), "login", params, null);
+        ObjectNode params  = JsonUtils.createObject().put("username", username).put("password", password);
+        Request    request = Request.create(messageIdCounter.getAndIncrement(), "login", params, null);
 
-        return sendRequest(request).map(response -> {
-            if ("success".equals(response.getMethod())) {
-                sessionToken = JsonUtils.getString(response.getParams(), "session_token");
-                return sessionToken;
-            }
-            throw new RuntimeException("Login failed: " + response.getParams());
+        return connection.sendRequest(request).map(response -> {
+            if (response.isError()) throw new RuntimeException("Login failed: " + response.getErrorMessage());
+            sessionToken = JsonUtils.getString(response.getParams(), "sessionToken");
+            return sessionToken;
         });
     }
 
+    /**
+     * Calls a remote method.
+     */
     public Single<Response> call(String method, JsonNode params) {
-        if (sessionToken == null) {
-            return Single.error(new IllegalStateException("Not logged in"));
-        }
+        if (sessionToken == null) return Single.error(new IllegalStateException("Not logged in"));
+        if (!connection.isActive()) return Single.error(new IllegalStateException("Not connected to server"));
 
         Request request = Request.create(messageIdCounter.getAndIncrement(), method, params, sessionToken);
-        return sendRequest(request);
+        return connection.sendRequest(request);
     }
 
-    private Single<Response> sendRequest(Request request) {
-        SingleSubject<Response> responseSubject = SingleSubject.create();
-        pendingRequests.put(request.getId(), responseSubject);
+    @Override
+    public Single<Response> handleRequest(Request request) {
+        Function<JsonNode, Single<JsonNode>> handler = methodHandlers.get(request.getMethod());
+        if (handler == null)
+            return Single.just(Response.error(request.getId(), "Unknown method: " + request.getMethod()));
 
-        responseSubject.timeout(30, TimeUnit.SECONDS)
-                       .doFinally(() -> pendingRequests.remove(request.getId()))
-                       .subscribe(response -> {}, error -> log.error("Request {} failed", request.getId(), error));
+        return handler.apply(request.getParams())
+                      .map(result -> Response.success(request.getId(), result))
+                      .onErrorReturn(error -> Response.error(request.getId(), error.getMessage()));
+    }
 
-        try {
-            synchronized (writeLock) {
-                out.writeUTF(objectMapper.writeValueAsString(request));
+    @Override
+    public void handleResponse(Response response) {
+        // Responses are primarily handled by the subscribers to the call() method
+        // This method handles any server-initiated responses that aren't part of a client call
+
+        if (response.isError()) log.warn("Received unexpected error response: {}", response.getErrorMessage());
+        else log.debug("Received unexpected success response for request: {}", response.getId());
+    }
+
+    @Override
+    public void handleDisconnect(Throwable error) {
+        if (error != null) {
+            log.error("Connection error", error);
+            if (running.get()) {
+                reconnect();
             }
-        } catch (IOException e) {
-            pendingRequests.remove(request.getId());
-            return Single.error(e);
         }
-
-        return responseSubject;
     }
 
+    /**
+     * Registers a method handler for server-initiated requests.
+     */
     public void registerMethod(String method, Function<JsonNode, Single<JsonNode>> handler) {
         methodHandlers.put(method, handler);
     }
 
-    private void reconnect() {
-        closeConnection();
-        connect();
-    }
-
-    private void closeConnection() {
-        try {
-            if (socket != null) socket.close();
-        } catch (IOException e) {
-            log.error("Error closing socket", e);
-        }
-    }
-
     @Override
     public void close() {
-        running = false;
-        closeConnection();
+        running.set(false);
         scheduler.shutdown();
-        executor.shutdown();
+        if (connection != null) connection.close();
+        log.info("RPC Client shutdown complete");
     }
 }

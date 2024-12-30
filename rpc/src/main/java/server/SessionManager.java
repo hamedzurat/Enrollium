@@ -1,13 +1,14 @@
 package server;
 
-import lombok.Data;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import core.*;
+import io.reactivex.rxjava3.core.Single;
+import lombok.extern.slf4j.Slf4j;
 
+import java.net.Socket;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -16,106 +17,170 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
-public class SessionManager {
-    private static final Logger                                 log                   = LoggerFactory.getLogger(SessionManager.class);
-    private static final long                                   SESSION_TIMEOUT_MS    = TimeUnit.DAYS.toMillis(1);
-    private static final long                                   HEARTBEAT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(30);
-    private final        SecureRandom                           secureRandom          = new SecureRandom();
-    private final        ConcurrentHashMap<String, SessionInfo> sessions              = new ConcurrentHashMap<>();
-    private final        ScheduledExecutorService               cleanupLoop           = Executors.newSingleThreadScheduledExecutor();
+/**
+ * Manages active RPC sessions, handling creation, validation, and cleanup.
+ */
+@Slf4j
+public class SessionManager implements AutoCloseable {
+    private static final long                                   HEARTBEAT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(30);
+    private static final long                                   CLEANUP_INTERVAL_MS  = TimeUnit.MINUTES.toMillis(1);
+    private final        SecureRandom                           secureRandom         = new SecureRandom();
+    private final        ConcurrentHashMap<String, SessionInfo> sessions             = new ConcurrentHashMap<>();
+    private final        ScheduledExecutorService               cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
+    private final        MessageHandler                         defaultMessageHandler;
 
-    public SessionManager() {
-        cleanupLoop.scheduleAtFixedRate(this::cleanupSessions, 1, 1, TimeUnit.MINUTES);
+    public SessionManager(MessageHandler defaultMessageHandler) {
+        this.defaultMessageHandler = defaultMessageHandler;
+        startCleanupTask();
     }
 
-    public String createSession(String userId, ServerConnection connection) {
-        String      token   = generateSessionToken();
-        SessionInfo session = new SessionInfo(token, userId, connection);
-        sessions.put(token, session);
-        log.info("Created session for user: {}", userId);
+    /**
+     * Creates a new session for a user.
+     */
+    public SessionInfo createSession(String userId, Socket socket, MessageHandler customHandler) {
+        try {
+            String         token   = generateSessionToken();
+            MessageHandler handler = customHandler != null ? customHandler : defaultMessageHandler;
+
+            RPCConnection connection = new RPCConnection(token, socket, handler);
+            SessionInfo   session    = new SessionInfo(token, userId, connection);
+            sessions.put(token, session);
+
+            log.info("Created session for user: {} with token: {}", userId, token);
+            return session;
+        } catch (Exception e) {
+            log.error("Failed to create session for user: {}", userId, e);
+            throw new RuntimeException("Session creation failed", e);
+        }
+    }
+
+    /**
+     * Generates a unique session token.
+     */
+    private String generateSessionToken() {
+        String token;
+        do {
+            token = secureRandom.ints(64, 0, 10).mapToObj(String::valueOf).collect(Collectors.joining());
+        } while (sessions.containsKey(token));
         return token;
     }
 
-    private String generateSessionToken() {
-        StringBuilder token = new StringBuilder();
-        do {
-            token.setLength(0); // https://stackoverflow.com/questions/5192512/how-can-i-clear-or-empty-a-stringbuilder
-            for (int i = 0; i < 64; i++) token.append(secureRandom.nextInt(10));
-        } while (sessions.containsKey(token.toString()));
-
-        return token.toString();
-    }
-
+    /**
+     * Validates session existence and expiration.
+     */
     public boolean validateSession(String token) {
         SessionInfo session = sessions.get(token);
-        if (session == null) return false;
-
-        return System.currentTimeMillis() < session.getExpirationTime();
+        return session != null && session.isActive() && !session.isExpired();
     }
 
+    /**
+     * Updates session heartbeat.
+     */
     public void updateHeartbeat(String token) {
         SessionInfo session = sessions.get(token);
-        if (session != null) session.setLastHeartbeat(System.currentTimeMillis());
+        if (session != null) session.updateHeartbeat();
     }
 
-    public ServerConnection getConnection(String token) {
+    /**
+     * Adds tags to a session for grouping/filtering.
+     */
+    public void addSessionTags(String token, String... tags) {
         SessionInfo session = sessions.get(token);
-        return session != null ? session.getConnection() : null;
+        if (session != null) session.getTags().addAll(Arrays.asList(tags));
     }
 
-    public void addTags(String token, String... tags) {
-        SessionInfo session = sessions.get(token);
-        if (session != null)
-            session.getTags().addAll(Arrays.asList(tags));
-    }
-
-    public Set<String> getSessionsByTags(Collection<String> tags) {
-        return sessions.entrySet()
+    /**
+     * Gets sessions matching all specified tags.
+     */
+    public Set<SessionInfo> getSessionsByTags(Collection<String> tags) {
+        return sessions.values()
                        .stream()
-                       .filter(entry -> entry.getValue().getTags().containsAll(tags))
-                       .map(Map.Entry::getKey)
+                       .filter(session -> session.isActive() && session.getTags().containsAll(tags))
                        .collect(Collectors.toSet());
     }
 
+    /**
+     * Sends a request through a specific session.
+     */
+    public Single<Response> sendRequest(String token, Request request) {
+        SessionInfo session = sessions.get(token);
+        if (session == null || !session.isActive())
+            return Single.error(new IllegalStateException("Invalid or inactive session"));
+
+        return session.sendRequest(request);
+    }
+
+    /**
+     * Broadcasts a request to all sessions with matching tags.
+     */
+    public void broadcast(Request request, Collection<String> tags) {
+        Set<SessionInfo> targetSessions = getSessionsByTags(tags);
+        for (SessionInfo session : targetSessions) {
+            try {
+                session.sendRequest(request)
+                       .subscribe(response -> log.debug("Broadcast response received from session: {}", session.getSessionToken()), error -> log.error("Broadcast failed for session: {}", session.getSessionToken(), error));
+            } catch (Exception e) {
+                log.error("Error broadcasting to session: {}", session.getSessionToken(), e);
+            }
+        }
+    }
+
+    /**
+     * Gets session info if available.
+     */
+    public Optional<SessionInfo> getSession(String token) {
+        return Optional.ofNullable(sessions.get(token));
+    }
+
+    /**
+     * Gets all active sessions.
+     */
+    public Collection<SessionInfo> getActiveSessions() {
+        return sessions.values().stream().filter(SessionInfo::isActive).collect(Collectors.toList());
+    }
+
+    /**
+     * Starts the periodic cleanup task.
+     */
+    private void startCleanupTask() {
+        cleanupExecutor.scheduleAtFixedRate(this::cleanupSessions, CLEANUP_INTERVAL_MS, CLEANUP_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Cleans up expired and inactive sessions.
+     */
     private void cleanupSessions() {
-        long currentTime = System.currentTimeMillis();
         sessions.entrySet().removeIf(entry -> {
             SessionInfo session         = entry.getValue();
-            boolean     expired         = currentTime > session.getExpirationTime();
-            boolean     heartbeatMissed = (currentTime - session.getLastHeartbeat()) > HEARTBEAT_INTERVAL_MS * 2;
+            boolean     expired         = session.isExpired();
+            boolean     heartbeatMissed = session.hasHeartbeatTimeout(HEARTBEAT_TIMEOUT_MS);
+            boolean     inactive        = !session.isActive();
 
-            if (expired || heartbeatMissed) {
-                log.info("Removing session for user: {} (expired: {}, heartbeat missed: {})", session.getUserId(), expired, heartbeatMissed);
+            if (expired || heartbeatMissed || inactive) {
+                log.info("Removing session: {} (expired: {}, heartbeat missed: {}, inactive: {})", session.getSessionToken(), expired, heartbeatMissed, inactive);
+                session.close();
                 return true;
             }
             return false;
         });
     }
 
+    /**
+     * Removes a specific session.
+     */
     public void removeSession(String token) {
-        sessions.remove(token);
-    }
-
-    public void shutdown() {
-        cleanupLoop.shutdown();
-    }
-
-    @Data
-    public static class SessionInfo {
-        private final String           sessionToken;
-        private final String           userId;
-        private final Set<String>      tags;
-        private final ServerConnection connection;
-        private       long             lastHeartbeat;
-        private       long             expirationTime;
-
-        public SessionInfo(String sessionToken, String userId, ServerConnection connection) {
-            this.sessionToken   = sessionToken;
-            this.userId         = userId;
-            this.connection     = connection;
-            this.tags           = ConcurrentHashMap.newKeySet();
-            this.lastHeartbeat  = System.currentTimeMillis();
-            this.expirationTime = this.lastHeartbeat + SESSION_TIMEOUT_MS;
+        SessionInfo session = sessions.remove(token);
+        if (session != null) {
+            session.close();
+            log.info("Removed session: {}", token);
         }
+    }
+
+    @Override
+    public void close() {
+        cleanupExecutor.shutdown();
+        sessions.values().forEach(SessionInfo::close);
+        sessions.clear();
+        log.info("SessionManager shutdown complete");
     }
 }

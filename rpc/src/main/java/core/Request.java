@@ -7,13 +7,27 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 
+/**
+ * Represents an RPC request message.
+ * Extends base Message class, adding session token for authentication.
+ */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class Request extends Message {
-    private String sessionToken;
+    private String sessionToken;  // Authentication token for the session
 
+    /**
+     * Factory method to create a new request with standard fields.
+     *
+     * @param id           Unique request identifier
+     * @param method       RPC method name
+     * @param params       Method parameters
+     * @param sessionToken Authentication token
+     *
+     * @return New Request instance
+     */
     public static Request create(long id, String method, JsonNode params, String sessionToken) {
         return Request.builder()
                       .id(id)

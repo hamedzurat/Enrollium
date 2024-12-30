@@ -1,7 +1,6 @@
 package server;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -9,24 +8,29 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
-public class RateLimiter {
-    private static final Logger                             log           = LoggerFactory.getLogger(RateLimiter.class);
-    private static final int                                MAX_REQUESTS  = 100;
-    private final        ConcurrentHashMap<String, Integer> requestCounts = new ConcurrentHashMap<>();
-    private final        ScheduledExecutorService           resettingLoop = Executors.newSingleThreadScheduledExecutor();
+/**
+ * Simple rate limiter that tracks requests per IP address.
+ */
+@Slf4j
+public class RateLimiter implements AutoCloseable {
+    private static final int                                MAX_REQUESTS_PER_MINUTE = 100;
+    private final        ConcurrentHashMap<String, Integer> requestCounts           = new ConcurrentHashMap<>();
+    private final        ScheduledExecutorService           scheduler               = Executors.newSingleThreadScheduledExecutor();
 
     public RateLimiter() {
-        resettingLoop.scheduleAtFixedRate(() -> {
-            log.debug("Resetting rate limiter counts");
-            requestCounts.clear();
-        }, 1, 1, TimeUnit.MINUTES);
+        // Reset counts every minute
+        scheduler.scheduleAtFixedRate(requestCounts::clear, 1, 1, TimeUnit.MINUTES);
     }
 
+    /**
+     * Checks if a request from the given IP should be allowed.
+     */
     public boolean allowRequest(String ipAddress) {
-        return requestCounts.merge(ipAddress, 1, Integer::sum) <= MAX_REQUESTS;
+        return requestCounts.merge(ipAddress, 1, Integer::sum) <= MAX_REQUESTS_PER_MINUTE;
     }
 
-    public void shutdown() {
-        resettingLoop.shutdown();
+    @Override
+    public void close() {
+        scheduler.shutdown();
     }
 }
