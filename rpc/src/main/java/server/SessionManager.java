@@ -70,7 +70,7 @@ public class SessionManager implements AutoCloseable {
      */
     public boolean validateSession(String token) {
         SessionInfo session = sessions.get(token);
-        return session != null && session.isActive() && !session.isExpired();
+        return session == null || !session.isActive() || session.isExpired();
     }
 
     /**

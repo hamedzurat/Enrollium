@@ -87,7 +87,7 @@ public class RPCConnection implements AutoCloseable {
      * Handles incoming request messages.
      */
     private void handleIncomingRequest(Request request) {
-        messageHandler.handleRequest(request).subscribe(response -> sendResponse(response), error -> {
+        messageHandler.handleRequest(request).subscribe(this::sendResponse, error -> {
             log.error("Error handling request on connection {}", id, error);
             sendResponse(Response.error(request.getId(), error.getMessage()));
         });

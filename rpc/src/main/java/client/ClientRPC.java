@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -33,7 +34,8 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     private final        Map<String, Function<JsonNode, Single<JsonNode>>> methodHandlers           = new ConcurrentHashMap<>();
     private final        AtomicLong                                        messageIdCounter         = new AtomicLong(1);
     private final        AtomicBoolean                                     running                  = new AtomicBoolean(true);
-    private final        ScheduledExecutorService                          scheduler                = Executors.newSingleThreadScheduledExecutor();
+    private final        ScheduledExecutorService                          healthCheckLoop          = Executors.newSingleThreadScheduledExecutor();
+    private final        ScheduledExecutorService                          reConnectLoop            = Executors.newSingleThreadScheduledExecutor();
     private volatile     String                                            sessionToken;
     private volatile     RPCConnection                                     connection;
     // Store last login credentials for session restoration
@@ -62,32 +64,35 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
      * Establishes connection to server with retry mechanism.
      */
     private void connect() {
-        int retryDelay = INITIAL_RETRY_DELAY_MS;
+        AtomicInteger retryDelay = new AtomicInteger(INITIAL_RETRY_DELAY_MS);
 
-        while (running.get()) {
+        reConnectLoop.scheduleAtFixedRate(() -> {
+            // Check if we should keep trying to connect
+            if (!running.get()) {
+                // If not running, forcefully shutdown and interrupt the scheduler
+                reConnectLoop.shutdownNow();
+                return;
+            }
+
             try {
                 Socket socket = new Socket(host, port);
                 connection = new RPCConnection("client", socket, this);
                 log.info("Connected to server at {}:{}", host, port);
-                return;
+                // On successful connection, shutdown the scheduler
+                reConnectLoop.shutdownNow();
             } catch (IOException e) {
-                log.error("Failed to connect to server. Retrying in {} ms", retryDelay, e);
-                try {
-                    Thread.sleep(retryDelay);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-                retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
+                log.error("Failed to connect to server. Retrying in {} ms", retryDelay.get(), e);
+                // Double the delay time up to max allowed delay
+                retryDelay.set(Math.min(retryDelay.get() * 2, MAX_RETRY_DELAY_MS));
             }
-        }
+        }, 0, retryDelay.get(), TimeUnit.MILLISECONDS);
     }
 
     /**
      * Starts periodic health checks.
      */
     private void startHealthCheck() {
-        scheduler.scheduleAtFixedRate(() -> {
+        healthCheckLoop.scheduleAtFixedRate(() -> {
             if (connection != null && connection.isActive()) {
                 healthCheck().subscribe(//
                         response -> log.debug("Health check successful"), //
@@ -189,7 +194,7 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     @Override
     public void close() {
         running.set(false);
-        scheduler.shutdown();
+        healthCheckLoop.shutdown();
         if (connection != null) connection.close();
         log.info("RPC Client shutdown complete");
     }

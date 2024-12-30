@@ -106,7 +106,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
         if ("login".equals(request.getMethod())) return handleLogin(request);
 
         // Validate session for all other requests
-        if (!sessionManager.validateSession(request.getSessionToken()))
+        if (sessionManager.validateSession(request.getSessionToken()))
             return Single.just(Response.error(request.getId(), "Invalid session"));
 
         // Update session heartbeat
@@ -179,7 +179,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
      * Sends a request to a specific session.
      */
     public Single<Response> call(String method, JsonNode params, String sessionToken) {
-        if (!sessionManager.validateSession(sessionToken)) {
+        if (sessionManager.validateSession(sessionToken)) {
             return Single.error(new IllegalStateException("Invalid session"));
         }
 
