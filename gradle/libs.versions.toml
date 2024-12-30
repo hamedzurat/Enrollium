@@ -21,6 +21,7 @@ jakarta-el = "4.0.2"
 jakarta-el-api = "6.0.1"
 hibernate-validator = "8.0.1.Final"
 bcrypt = "0.10.2"
+json = "2.18.2"
 
 
 [libraries]
@@ -47,6 +48,9 @@ jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validat
 jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "jakarta-el" }
 jakarta-el-api = { group = "jakarta.el", name = "jakarta.el-api", version.ref = "jakarta-el-api" }
 hibernate-validator = { group = "org.hibernate.validator", name = "hibernate-validator", version.ref = "hibernate-validator" }
+
+# RPC
+json = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "json" }
 
 
 [plugins]
