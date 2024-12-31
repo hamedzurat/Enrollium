@@ -6,7 +6,6 @@ import core.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,19 +35,23 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     private final        AtomicBoolean                                     running                  = new AtomicBoolean(true);
     private final        ScheduledExecutorService                          healthCheckLoop          = Executors.newSingleThreadScheduledExecutor();
     private final        ScheduledExecutorService                          reConnectLoop            = Executors.newSingleThreadScheduledExecutor();
+    private final        String                                            username;
+    private final        String                                            password;
     private volatile     String                                            sessionToken;
     private volatile     RPCConnection                                     connection;
     // Store last login credentials for session restoration
     private volatile     String                                            lastUsername;
     private volatile     String                                            lastPassword;
 
-    public ClientRPC(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public ClientRPC(String host, int port, String username, String password) {
+        this.host     = host;
+        this.port     = port;
+        this.username = username;
+        this.password = password;
     }
 
-    public ClientRPC() {
-        this(DEFAULT_HOST, DEFAULT_PORT);
+    public ClientRPC(String username, String password) {
+        this(DEFAULT_HOST, DEFAULT_PORT, username, password);
     }
 
     /**
@@ -56,33 +59,41 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
      */
     public void start() {
         running.set(true);
-        connect();
+        connectAndAuthenticate(); // Replace connect() with new method
         startHealthCheck();
     }
 
     /**
      * Establishes connection to server with retry mechanism.
      */
-    private void connect() {
+    private void connectAndAuthenticate() {
         AtomicInteger retryDelay = new AtomicInteger(INITIAL_RETRY_DELAY_MS);
 
         reConnectLoop.scheduleAtFixedRate(() -> {
-            // Check if we should keep trying to connect
             if (!running.get()) {
-                // If not running, forcefully shutdown and interrupt the scheduler
                 reConnectLoop.shutdownNow();
                 return;
             }
 
             try {
                 Socket socket = new Socket(host, port);
+                // Send credentials immediately
+                ObjectNode authParams = JsonUtils.createObject()
+                                                 .put("username", username)
+                                                 .put("password", password);
+                Request authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
+
                 connection = new RPCConnection("client", socket, this);
-                log.info("Connected to server at {}:{}", host, port);
-                // On successful connection, shutdown the scheduler
+                Response authResponse = connection.sendRequest(authRequest).blockingGet();
+
+                if (authResponse.isError())
+                    throw new RuntimeException("Authentication failed: " + authResponse.getErrorMessage());
+
+                sessionToken = authResponse.getParams().get("sessionToken").asText();
+                log.info("Connected and authenticated to server at {}:{}", host, port);
                 reConnectLoop.shutdownNow();
-            } catch (IOException e) {
-                log.error("Failed to connect to server. Retrying in {} ms", retryDelay.get(), e);
-                // Double the delay time up to max allowed delay
+            } catch (Exception e) {
+                log.error("Failed to connect/authenticate to server. Retrying in {} ms", retryDelay.get(), e);
                 retryDelay.set(Math.min(retryDelay.get() * 2, MAX_RETRY_DELAY_MS));
             }
         }, 0, retryDelay.get(), TimeUnit.MILLISECONDS);
@@ -117,30 +128,7 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
      */
     private void reconnect() {
         if (connection != null) connection.close();
-
-        connect();
-        // Attempt to restore session
-        if (sessionToken != null) login(lastUsername, lastPassword).subscribe(//
-                newToken -> log.info("Session restored after reconnection"),//
-                error -> log.error("Failed to restore session after reconnection", error)//
-        );
-    }
-
-    /**
-     * Performs login and session establishment.
-     */
-    public Single<String> login(String username, String password) {
-        this.lastUsername = username;
-        this.lastPassword = password;
-
-        ObjectNode params  = JsonUtils.createObject().put("username", username).put("password", password);
-        Request    request = Request.create(messageIdCounter.getAndIncrement(), "login", params, null);
-
-        return connection.sendRequest(request).map(response -> {
-            if (response.isError()) throw new RuntimeException("Login failed: " + response.getErrorMessage());
-            sessionToken = JsonUtils.getString(response.getParams(), "sessionToken");
-            return sessionToken;
-        });
+        connectAndAuthenticate();
     }
 
     /**
@@ -148,7 +136,11 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
      */
     public Single<Response> call(String method, JsonNode params) {
         if (sessionToken == null) return Single.error(new IllegalStateException("Not logged in"));
-        if (!connection.isActive()) return Single.error(new IllegalStateException("Not connected to server"));
+        if (connection == null || !connection.isActive()) {
+            reconnect();
+            if (connection == null || !connection.isActive())
+                return Single.error(new IllegalStateException("Not connected to server"));
+        }
 
         Request request = Request.create(messageIdCounter.getAndIncrement(), method, params, sessionToken);
         return connection.sendRequest(request);

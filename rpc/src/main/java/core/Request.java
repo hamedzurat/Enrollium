@@ -1,9 +1,7 @@
 package core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 
@@ -16,7 +14,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class Request extends Message {
-    private String sessionToken;  // Authentication token for the session
+    private String        sessionToken;  // Authentication token for the session
+    @Setter
+    @Getter
+    private RPCConnection connection;
 
     /**
      * Factory method to create a new request with standard fields.

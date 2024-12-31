@@ -84,26 +84,50 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
             return;
         }
 
-        // Create temporary session for login
         try {
-            SessionInfo tempSession = sessionManager.createSession("TMP-" + ip + '-' + System.nanoTime(), socket, this);
-            log.info("New connection established from: {} with temp session: {}", ip, tempSession.getSessionToken());
+            // Create connection without session yet
+            RPCConnection tempConnection = new RPCConnection("tmp", socket, this);
+
+            // Wait for auth request
+            Request authRequest = tempConnection.waitForRequest("auth").blockingGet();
+            String  username    = JsonUtils.getString(authRequest.getParams(), "username");
+            String  password    = JsonUtils.getString(authRequest.getParams(), "password");
+
+            // Validate credentials (replace with your auth logic)
+            if (username == null || password == null) {
+                tempConnection.sendResponse(Response.error(authRequest.getId(), "Invalid credentials"));
+                tempConnection.close();
+                return;
+            }
+
+            // Create authenticated session
+            String      userId  = "user-" + System.nanoTime();  // Replace with real user ID
+            SessionInfo session = sessionManager.createSession(userId, socket, this);
+
+            // Send success response with session token
+            ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());
+            tempConnection.sendResponse(Response.success(authRequest.getId(), response));
+
+            log.info("New authenticated connection from: {} with session: {}", ip, session.getSessionToken());
         } catch (Exception e) {
-            log.error("Error creating temporary session for {}", ip, e);
+            log.error("Error handling new connection from {}", ip, e);
             try {
                 socket.close();
             } catch (IOException ex) {
-                log.error("Error closing socket after session creation failure", ex);
+                log.error("Error closing socket after connection handling failure", ex);
             }
         }
     }
 
     @Override
     public Single<Response> handleRequest(Request request) {
+        // Handle auth requests without session validation
+        if ("auth".equals(request.getMethod())) {
+            return handleAuth(request);
+        }
+
         // Handle special cases first
         if ("health".equals(request.getMethod())) return handleHealthCheck(request);
-
-        if ("login".equals(request.getMethod())) return handleLogin(request);
 
         // Validate session for all other requests
         if (sessionManager.validateSession(request.getSessionToken()))
@@ -123,6 +147,36 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
                       .onErrorReturn(error -> Response.error(request.getId(), error.getMessage()));
     }
 
+    private Single<Response> handleAuth(Request request) {
+        try {
+            // Validate request parameters
+            if (request.getParams() == null) {
+                return Single.just(Response.error(request.getId(), "Missing auth parameters"));
+            }
+
+            String username = JsonUtils.getString(request.getParams(), "username");
+            String password = JsonUtils.getString(request.getParams(), "password");
+
+            if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+                return Single.just(Response.error(request.getId(), "Invalid credentials"));
+            }
+
+            // For demo, accept any credentials
+            String userId = "user-" + System.nanoTime();
+
+            // Create new session
+            Socket      socket  = request.getConnection()
+                                         .getSocket();  // You'll need to add getConnection() to Request class
+            SessionInfo session = sessionManager.createSession(userId, socket, this);
+
+            ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());
+            return Single.just(Response.success(request.getId(), response));
+        } catch (Exception e) {
+            log.error("Auth error", e);
+            return Single.just(Response.error(request.getId(), "Authentication failed: " + e.getMessage()));
+        }
+    }
+
     /**
      * Handles health check requests.
      */
@@ -131,30 +185,6 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
                                      .put("serverTime", System.currentTimeMillis())
                                      .put("serverVersion", "1.0.0");
         return Single.just(Response.success(request.getId(), params));
-    }
-
-    /**
-     * Handles login requests.
-     */
-    private Single<Response> handleLogin(Request request) {
-        try {
-            String username = JsonUtils.getString(request.getParams(), "username");
-            String password = JsonUtils.getString(request.getParams(), "password");
-
-            // TODO: Implement actual authentication
-            String userId = "user-" + System.nanoTime();
-
-            // Create proper session
-            SessionInfo session = sessionManager.getSession(request.getSessionToken())
-                                                .orElseThrow(() -> new IllegalStateException("Temporary session not found"));
-
-            SessionInfo newSession = sessionManager.createSession(userId, session.getConnection().getSocket(), this);
-
-            ObjectNode response = JsonUtils.createObject().put("sessionToken", newSession.getSessionToken());
-            return Single.just(Response.success(request.getId(), response));
-        } catch (Exception e) {
-            return Single.just(Response.error(request.getId(), e.getMessage()));
-        }
     }
 
     @Override

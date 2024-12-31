@@ -21,8 +21,9 @@ dependencies {
     implementation(libs.jakarta.el)
     implementation(libs.jakarta.el.api)
     implementation(libs.hibernate.validator)
+    implementation(libs.json)
 //    implementation(project(":lib"))
-//    implementation(project(":rpc"))
+    implementation(project(":rpc"))
 //    implementation(project(":design-system"))
     //
     testImplementation(libs.junit)

@@ -1,5 +1,6 @@
 package core;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.SingleSubject;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
@@ -24,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class RPCConnection implements AutoCloseable {
     private static final int                                REQUEST_TIMEOUT_SECONDS = 30;
-    private static final ObjectMapper                       MAPPER                  = new ObjectMapper();
+    private static final ObjectMapper                       MAPPER                  = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     @Getter
     private final        String                             id;
     @Getter
@@ -59,24 +61,36 @@ public class RPCConnection implements AutoCloseable {
      */
     private void startReadLoop() {
         readExecutor.submit(() -> {
-            while (active.get() && !socket.isClosed()) {
+            while (active.get()) {
                 try {
-                    String  json    = in.readUTF();
+                    if (socket.isClosed()) {
+                        log.warn("Socket closed, exiting read loop");
+                        break;
+                    }
+
+                    String json = in.readUTF();
+                    if (json == null || json.isEmpty()) continue;
+
+                    log.debug("Received message: {}", json);
                     Message message = MAPPER.readValue(json, Message.class);
 
-                    // Handle different message types
-                    if ("req".equals(message.getType())) {
-                        handleIncomingRequest(MAPPER.convertValue(message, Request.class));
-                    } else if ("res".equals(message.getType())) {
-                        handleIncomingResponse(MAPPER.convertValue(message, Response.class));
-                    } else {
-                        log.warn("Unknown message type received: {}", message.getType());
+                    if (message instanceof Request) handleIncomingRequest((Request) message);
+                    else if (message instanceof Response) handleIncomingResponse((Response) message);
+                } catch (EOFException e) {
+                    if (active.get()) {
+                        log.info("Connection closed by peer");
+                        handleDisconnect(null);
                     }
+                    break;
                 } catch (IOException e) {
                     if (active.get()) {
-                        log.error("Error reading message on connection {}", id, e);
+                        log.error("Error reading message", e);
                         handleDisconnect(e);
                     }
+                    break;
+                } catch (Exception e) {
+                    log.error("Unexpected error in read loop", e);
+                    handleDisconnect(e);
                     break;
                 }
             }
@@ -87,6 +101,7 @@ public class RPCConnection implements AutoCloseable {
      * Handles incoming request messages.
      */
     private void handleIncomingRequest(Request request) {
+        request.setConnection(this);
         messageHandler.handleRequest(request).subscribe(this::sendResponse, error -> {
             log.error("Error handling request on connection {}", id, error);
             sendResponse(Response.error(request.getId(), error.getMessage()));
@@ -124,8 +139,10 @@ public class RPCConnection implements AutoCloseable {
 
         // Send the request
         try {
+            String json = MAPPER.writeValueAsString(request);
+            log.debug("Sending request: {}", json);
             synchronized (writeLock) {
-                out.writeUTF(MAPPER.writeValueAsString(request));
+                out.writeUTF(json);
             }
         } catch (IOException e) {
             pendingRequests.remove(request.getId());
@@ -142,8 +159,10 @@ public class RPCConnection implements AutoCloseable {
      */
     public void sendResponse(Response response) {
         try {
+            String json = MAPPER.writeValueAsString(response);
+            log.debug("Sending response: {}", json);
             synchronized (writeLock) {
-                out.writeUTF(MAPPER.writeValueAsString(response));
+                out.writeUTF(json);
             }
         } catch (IOException e) {
             log.error("Error sending response on connection {}", id, e);
@@ -178,6 +197,30 @@ public class RPCConnection implements AutoCloseable {
      */
     public boolean isActive() {
         return active.get() && !socket.isClosed();
+    }
+
+    /**
+     *
+     */
+    public Single<Request> waitForRequest(String expectedMethod) {
+        return Single.create(emitter -> {
+            // Implementation to wait for specific request
+            // This is a simplified version - you might want to add timeout and better error handling
+            readExecutor.submit(() -> {
+                try {
+                    while (active.get()) {
+                        String  json    = in.readUTF();
+                        Message message = MAPPER.readValue(json, Message.class);
+                        if (message instanceof Request && expectedMethod.equals(message.getMethod())) {
+                            emitter.onSuccess((Request) message);
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    emitter.onError(e);
+                }
+            });
+        });
     }
 
     @Override

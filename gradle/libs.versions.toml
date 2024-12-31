@@ -6,7 +6,7 @@
 
 
 [versions]
-javafx = "20"
+javafx = "23"
 javafxplugin = "0.1.0"
 rxjava = "3.1.9"
 logback = "1.4.11"
