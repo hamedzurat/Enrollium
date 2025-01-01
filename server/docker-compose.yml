@@ -15,14 +15,29 @@ services:
             - postgres-network
         container_name: postgres_db
 
-    # https://www.youtube.com/watch?v=Dd2ej-QKrWY
-    pgadmin:
-        image: dpage/pgadmin4
-        environment:
-            PGADMIN_DEFAULT_EMAIL: admin@admin.com
-            PGADMIN_DEFAULT_PASSWORD: admin
+    #    # https://www.youtube.com/watch?v=Dd2ej-QKrWY
+    #    pgadmin:
+    #        image: dpage/pgadmin4
+    #        environment:
+    #            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+    #            PGADMIN_DEFAULT_PASSWORD: admin
+    #        ports:
+    #            - "5050:80"
+    #        networks:
+    #            - postgres-network
+    #        depends_on:
+    #            - db
+
+    pgweb:
+        container_name: pgweb
+        restart: always
+        image: sosedoff/pgweb
         ports:
-            - "5050:80"
+            - "8081:8081"
+        links:
+            - db:postgres
+        environment:
+            - DATABASE_URL=postgres://enrollium:enrollium@postgres:5432/enrollium?sslmode=disable
         networks:
             - postgres-network
         depends_on:

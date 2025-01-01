@@ -2,23 +2,28 @@ package enrollium.client;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.io.IOException;
 
 
 public class Main extends Application {
-    @Override
-    public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/enrollium/client/counter.fxml"));
-        Scene      scene      = new Scene(fxmlLoader.load());
+    public static void main(String[] args) {
+        launch(args);
+    }
 
-        stage.setTitle("Enrollium");
-        stage.setScene(scene);
+    @Override
+    public void start(Stage stage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/enrollium/client/login.fxml"));
+        Parent     root   = loader.load();
+
+        stage.setTitle("Enrollium Login");
+        stage.setScene(new Scene(root));
         stage.show();
     }
 
-    public static void main(String[] args) {
-        launch();
+    @Override
+    public void stop() {
+        RPCManager.getInstance().shutdown();
     }
 }
