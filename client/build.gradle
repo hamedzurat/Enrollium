@@ -13,10 +13,16 @@ javafx {
 }
 
 dependencies {
+    annotationProcessor(libs.lombok)
+//
     implementation(libs.rxjava)
+    implementation(libs.lombok)
+    implementation(libs.logback.classic)
     implementation(libs.javafx.controls)
     implementation(libs.javafx.fxml)
+    implementation(libs.json)
+    implementation 'io.github.palexdev:materialfx:11.16.1'
 //    implementation(project(":lib"))
-//    implementation(project(":rpc"))
+    implementation(project(":rpc"))
 //    implementation(project(":design-system"))
 }

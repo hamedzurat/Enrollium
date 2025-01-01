@@ -15,11 +15,16 @@ import java.util.concurrent.TimeUnit;
 public class RateLimiter implements AutoCloseable {
     private static final int                                MAX_REQUESTS_PER_MINUTE = 100;
     private final        ConcurrentHashMap<String, Integer> requestCounts           = new ConcurrentHashMap<>();
-    private final        ScheduledExecutorService           scheduler               = Executors.newSingleThreadScheduledExecutor();
+    private final        ScheduledExecutorService           resetLoop               = Executors.newSingleThreadScheduledExecutor();
 
     public RateLimiter() {
         // Reset counts every minute
-        scheduler.scheduleAtFixedRate(requestCounts::clear, 1, 1, TimeUnit.MINUTES);
+        resetLoop.scheduleAtFixedRate(() -> {
+            requestCounts.clear();
+            log.info("Resting rate-limiter");
+        }, 1, 1, TimeUnit.MINUTES);
+
+        log.info("Starting rate-limiter");
     }
 
     /**
@@ -31,6 +36,7 @@ public class RateLimiter implements AutoCloseable {
 
     @Override
     public void close() {
-        scheduler.shutdown();
+        resetLoop.shutdown();
+        log.info("Shutdown rate-limiter");
     }
 }

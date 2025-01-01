@@ -85,28 +85,28 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
         }
 
         try {
-            // Create connection without session yet
-            RPCConnection tempConnection = new RPCConnection("tmp", socket, this);
+            // Create connection
+            RPCConnection connection = new RPCConnection("tmp", socket, this);
 
-            // Wait for auth request
-            Request authRequest = tempConnection.waitForRequest("auth").blockingGet();
-            String  username    = JsonUtils.getString(authRequest.getParams(), "username");
-            String  password    = JsonUtils.getString(authRequest.getParams(), "password");
+            // Handle first auth message
+            Request firstRequest = connection.waitForRequest("auth").blockingGet();
 
-            // Validate credentials (replace with your auth logic)
+            String username = JsonUtils.getString(firstRequest.getParams(), "username");
+            String password = JsonUtils.getString(firstRequest.getParams(), "password");
+
             if (username == null || password == null) {
-                tempConnection.sendResponse(Response.error(authRequest.getId(), "Invalid credentials"));
-                tempConnection.close();
+                connection.sendResponse(Response.error(firstRequest.getId(), "Invalid credentials"));
+                connection.close();
                 return;
             }
 
             // Create authenticated session
-            String      userId  = "user-" + System.nanoTime();  // Replace with real user ID
+            String      userId  = "user-" + System.nanoTime();
             SessionInfo session = sessionManager.createSession(userId, socket, this);
 
             // Send success response with session token
             ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());
-            tempConnection.sendResponse(Response.success(authRequest.getId(), response));
+            connection.sendResponse(Response.success(firstRequest.getId(), response));
 
             log.info("New authenticated connection from: {} with session: {}", ip, session.getSessionToken());
         } catch (Exception e) {
@@ -114,7 +114,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
             try {
                 socket.close();
             } catch (IOException ex) {
-                log.error("Error closing socket after connection handling failure", ex);
+                log.error("Error closing socket after connection failure", ex);
             }
         }
     }
@@ -165,8 +165,8 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
             String userId = "user-" + System.nanoTime();
 
             // Create new session
-            Socket      socket  = request.getConnection()
-                                         .getSocket();  // You'll need to add getConnection() to Request class
+            Socket socket = request.getConnection()
+                                   .getSocket();  // You'll need to add getConnection() to Request class
             SessionInfo session = sessionManager.createSession(userId, socket, this);
 
             ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());

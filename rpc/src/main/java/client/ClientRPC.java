@@ -39,9 +39,6 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     private final        String                                            password;
     private volatile     String                                            sessionToken;
     private volatile     RPCConnection                                     connection;
-    // Store last login credentials for session restoration
-    private volatile     String                                            lastUsername;
-    private volatile     String                                            lastPassword;
 
     public ClientRPC(String host, int port, String username, String password) {
         this.host     = host;

@@ -79,6 +79,7 @@ public class SessionManager implements AutoCloseable {
     public void updateHeartbeat(String token) {
         SessionInfo session = sessions.get(token);
         if (session != null) session.updateHeartbeat();
+        log.info("Heartbeat from {}", session.getSessionToken());
     }
 
     /**
@@ -144,12 +145,15 @@ public class SessionManager implements AutoCloseable {
      */
     private void startCleanupTask() {
         cleanupExecutor.scheduleAtFixedRate(this::cleanupSessions, CLEANUP_INTERVAL_MS, CLEANUP_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        log.info("Starting session manager");
     }
 
     /**
      * Cleans up expired and inactive sessions.
      */
     private void cleanupSessions() {
+        log.info("Cleaning up SessionManager");
+
         sessions.entrySet().removeIf(entry -> {
             SessionInfo session         = entry.getValue();
             boolean     expired         = session.isExpired();
