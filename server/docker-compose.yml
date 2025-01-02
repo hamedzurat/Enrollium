@@ -37,7 +37,7 @@ services:
         links:
             - db:postgres
         environment:
-            - DATABASE_URL=postgres://enrollium:enrollium@postgres:5432/enrollium?sslmode=disable
+            - PGWEB_DATABASE_URL=postgres://enrollium:enrollium@postgres:5432/enrollium?sslmode=disable
         networks:
             - postgres-network
         depends_on:
