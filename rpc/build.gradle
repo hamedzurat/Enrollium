@@ -9,4 +9,5 @@ dependencies {
     implementation(libs.lombok)
     implementation(libs.logback.classic)
     implementation(libs.json)
+    implementation(project(":lib"))
 }

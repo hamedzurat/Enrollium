@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import core.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
+import version.Version;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -188,7 +189,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
     private Single<Response> handleHealthCheck(Request request) {
         ObjectNode params = JsonUtils.createObject()
                                      .put("serverTime", System.currentTimeMillis())
-                                     .put("serverVersion", "1.0.0");
+                                     .put("serverVersion", Version.getVersion());
         return Single.just(Response.success(request.getId(), params));
     }
 
