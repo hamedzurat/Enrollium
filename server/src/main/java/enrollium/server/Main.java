@@ -9,6 +9,7 @@ import enrollium.server.db.entity.types.UserType;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 import server.ServerRPC;
+import version.Version;
 
 import java.util.Random;
 import java.util.UUID;
@@ -21,6 +22,8 @@ public class Main {
     private static final Random random = new Random();
 
     public static void main(String[] args) {
+        log.info("[VERSION]: {}", Version.getVersion());
+
         CountDownLatch shutdownLatch = new CountDownLatch(1);
 
         // Add shutdown hook for graceful termination

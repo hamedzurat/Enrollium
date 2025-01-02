@@ -7,13 +7,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import static version.Version.getVersion;
+import version.Version;
 
 
 @Slf4j
 public class Main extends Application {
     public static void main(String[] args) {
-        log.info("v: {}", getVersion());
+        log.info("[VERSION]: {}", Version.getVersion());
         launch(args);
     }
 
