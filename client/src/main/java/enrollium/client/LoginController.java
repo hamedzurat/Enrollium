@@ -1,5 +1,6 @@
 package enrollium.client;
 
+import client.ClientRPC;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -32,7 +33,7 @@ public class LoginController {
         }
 
         try {
-            RPCManager.getInstance().initializeConnection(email, password);
+            ClientRPC.initialize(email, password);
             openStudentWindow();
             closeLoginWindow();
         } catch (Exception e) {

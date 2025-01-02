@@ -3,6 +3,7 @@ package core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -19,6 +20,17 @@ import java.util.Optional;
 @Slf4j
 public class JsonUtils {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static String toPrettyJson(Object object) {
+        try {
+            return new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                                     .enable(SerializationFeature.INDENT_OUTPUT)
+                                     .writeValueAsString(object);
+        } catch (Exception e) {
+            log.warn("toPrettyJson failed because: {}", e.getMessage());
+            return "{}";
+        }
+    }
 
     /**
      * Creates an empty ObjectNode.

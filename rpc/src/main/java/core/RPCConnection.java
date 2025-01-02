@@ -34,8 +34,6 @@ public class RPCConnection implements AutoCloseable {
     private final        ExecutorService                    readExecutor            = Executors.newSingleThreadExecutor();
     private final        Object                             writeLock               = new Object();
     private final        AtomicBoolean                      active                  = new AtomicBoolean(true);
-    private              BufferedOutputStream               bufferedOut;
-    private              BufferedInputStream                bufferedIn;
 
     /**
      * Creates a new RPC connection.
@@ -123,68 +121,6 @@ public class RPCConnection implements AutoCloseable {
             }
         });
     }
-    //    private void startReadLoop() {
-    //        readExecutor.submit(() -> {
-    //            byte[] lengthBytes = new byte[4];
-    //            while (active.get()) {
-    //                try {
-    //                    if (socket.isClosed()) {
-    //                        log.warn("Socket closed, exiting read loop");
-    //                        break;
-    //                    }
-    //
-    //                    // First read message length
-    //                    int bytesRead = in.read(lengthBytes);
-    //                    if (bytesRead != 4) {
-    //                        if (bytesRead == -1) {
-    //                            log.info("End of stream reached");
-    //                            break;
-    //                        }
-    //                        throw new IOException("Incomplete message length read");
-    //                    }
-    //
-    //                    int messageLength = ByteBuffer.wrap(lengthBytes).getInt();
-    //                    if (messageLength <= 0 || messageLength > 1048576) { // Max 1MB
-    //                        throw new IOException("Invalid message length: " + messageLength);
-    //                    }
-    //
-    //                    // Then read the actual message
-    //                    byte[] messageBytes = new byte[messageLength];
-    //                    bytesRead = in.read(messageBytes);
-    //                    if (bytesRead != messageLength) {
-    //                        throw new IOException("Incomplete message read");
-    //                    }
-    //
-    //                    String json = new String(messageBytes, StandardCharsets.UTF_8);
-    //                    log.info("Received message: {}", json);
-    //
-    //                    Message message = MAPPER.readValue(json, Message.class);
-    //
-    //                    if (message instanceof Request) {
-    //                        handleIncomingRequest((Request) message);
-    //                    } else if (message instanceof Response) {
-    //                        handleIncomingResponse((Response) message);
-    //                    }
-    //                } catch (EOFException e) {
-    //                    if (active.get()) {
-    //                        log.info("Connection closed by peer");
-    //                        handleDisconnect(null);
-    //                    }
-    //                    break;
-    //                } catch (IOException e) {
-    //                    if (active.get()) {
-    //                        log.error("Error reading message", e);
-    //                        handleDisconnect(e);
-    //                    }
-    //                    break;
-    //                } catch (Exception e) {
-    //                    log.error("Unexpected error in read loop", e);
-    //                    handleDisconnect(e);
-    //                    break;
-    //                }
-    //            }
-    //        });
-    //    }
 
     /**
      *
@@ -322,18 +258,6 @@ public class RPCConnection implements AutoCloseable {
             close();
         }
     }
-    //    private void handleDisconnect(Throwable error) {
-    //        if (active.compareAndSet(true, false)) {
-    //            if (error != null && !(error instanceof EOFException)) {
-    //                log.error("Connection error on {}", id, error);
-    //            } else {
-    //                log.info("Connection {} closed", id);
-    //            }
-    //
-    //            messageHandler.handleDisconnect(error);
-    //            close();
-    //        }
-    //    }
 
     /**
      * Gets the remote IP address.

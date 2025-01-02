@@ -122,19 +122,24 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
     @Override
     public Single<Response> handleRequest(Request request) {
         // Handle auth requests without session validation
-        if ("auth".equals(request.getMethod())) {
-            return handleAuth(request);
-        }
+        if ("auth".equals(request.getMethod())) return handleAuth(request);
+
+        String token = request.getSessionToken();
+
+        // Validate session for all other requests
+        if (token == null || sessionManager.validateSession(token))
+            return Single.just(Response.error(request.getId(), "Invalid session"));
+
+        // Update session heartbeat
+        sessionManager.updateHeartbeat(token);
 
         // Handle special cases first
         if ("health".equals(request.getMethod())) return handleHealthCheck(request);
 
-        // Validate session for all other requests
-        if (sessionManager.validateSession(request.getSessionToken()))
-            return Single.just(Response.error(request.getId(), "Invalid session"));
-
-        // Update session heartbeat
-        sessionManager.updateHeartbeat(request.getSessionToken());
+        if (!rateLimiter.allowRequest(token)) {
+            log.warn("Request rejected due to rate limiting: {}", token);
+            return Single.just(Response.error(request.getId(), "Rate limited session"));
+        }
 
         // Get method handler
         BiFunction<JsonNode, String, Single<JsonNode>> handler = methodHandlers.get(request.getMethod());

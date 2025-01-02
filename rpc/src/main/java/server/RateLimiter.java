@@ -1,5 +1,6 @@
 package server;
 
+import core.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,13 +14,15 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class RateLimiter implements AutoCloseable {
-    private static final int                                MAX_REQUESTS_PER_MINUTE = 100;
+    private static final int                                MAX_REQUESTS_PER_MINUTE = 10;
     private final        ConcurrentHashMap<String, Integer> requestCounts           = new ConcurrentHashMap<>();
     private final        ScheduledExecutorService           resetLoop               = Executors.newSingleThreadScheduledExecutor();
 
     public RateLimiter() {
         // Reset counts every minute
         resetLoop.scheduleAtFixedRate(() -> {
+            log.info("requestCounts: \n{}", JsonUtils.toPrettyJson(requestCounts));
+
             requestCounts.clear();
             log.info("Resting rate-limiter");
         }, 1, 1, TimeUnit.MINUTES);

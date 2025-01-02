@@ -79,7 +79,7 @@ public class SessionManager implements AutoCloseable {
     public void updateHeartbeat(String token) {
         SessionInfo session = sessions.get(token);
         if (session != null) session.updateHeartbeat();
-        log.info("Heartbeat from {}", session.getSessionToken());
+        log.info("Heartbeat from {}", session != null ? session.getSessionToken() : "\"null\"");
     }
 
     /**
@@ -152,6 +152,8 @@ public class SessionManager implements AutoCloseable {
      * Cleans up expired and inactive sessions.
      */
     private void cleanupSessions() {
+        log.info("sessions: \n{}", JsonUtils.toPrettyJson(sessions));
+
         log.info("Cleaning up SessionManager");
 
         sessions.entrySet().removeIf(entry -> {

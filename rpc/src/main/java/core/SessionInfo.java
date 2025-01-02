@@ -1,5 +1,6 @@
 package core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.reactivex.rxjava3.core.Single;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class SessionInfo {
     private final        String        sessionToken;          // Unique session identifier
     private final        String        userId;                // Associated user identifier
     private final        Set<String>   tags;                  // Session tags for grouping/filtering
+    @JsonIgnore
     private final        RPCConnection connection;            // Network connection
     private final        long          createdAt;             // Session creation timestamp
     private volatile     long          lastHeartbeat;         // Last activity timestamp

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import core.*;
 import io.reactivex.rxjava3.core.Single;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.Socket;
@@ -28,6 +29,7 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     private static final int                                               INITIAL_RETRY_DELAY_MS   = 1000;
     private static final int                                               MAX_RETRY_DELAY_MS       = 30000;
     private static final int                                               HEALTH_CHECK_INTERVAL_MS = 30000;
+    private static       ClientRPC                                         instance;
     private final        String                                            host;
     private final        int                                               port;
     private final        Map<String, Function<JsonNode, Single<JsonNode>>> methodHandlers           = new ConcurrentHashMap<>();
@@ -39,16 +41,31 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     private final        String                                            password;
     private volatile     String                                            sessionToken;
     private volatile     RPCConnection                                     connection;
+    @Getter
+    private              boolean                                           initialized              = false;
 
-    public ClientRPC(String host, int port, String username, String password) {
+    private ClientRPC(String host, int port, String username, String password) {
         this.host     = host;
         this.port     = port;
         this.username = username;
         this.password = password;
     }
 
-    public ClientRPC(String username, String password) {
+    private ClientRPC(String username, String password) {
         this(DEFAULT_HOST, DEFAULT_PORT, username, password);
+    }
+
+    // Add singleton getInstance method
+    public static synchronized ClientRPC getInstance() {
+        if (instance == null) throw new IllegalStateException("ClientRPC not initialized. Call initialize() first.");
+        return instance;
+    }
+
+    // Add initialization method
+    public static synchronized void initialize(String username, String password) {
+        if (instance != null) throw new IllegalStateException("ClientRPC already initialized");
+        instance = new ClientRPC(username, password);
+        instance.start();
     }
 
     /**
@@ -56,8 +73,9 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
      */
     public void start() {
         running.set(true);
-        connectAndAuthenticate(); // Replace connect() with new method
+        connectAndAuthenticate();
         startHealthCheck();
+        initialized = true;
     }
 
     /**
@@ -75,10 +93,8 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
             try {
                 Socket socket = new Socket(host, port);
                 // Send credentials immediately
-                ObjectNode authParams = JsonUtils.createObject()
-                                                 .put("username", username)
-                                                 .put("password", password);
-                Request authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
+                ObjectNode authParams  = JsonUtils.createObject().put("username", username).put("password", password);
+                Request    authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
 
                 connection = new RPCConnection("client", socket, this);
                 Response authResponse = connection.sendRequest(authRequest).blockingGet();
@@ -180,11 +196,14 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
         methodHandlers.put(method, handler);
     }
 
+    // Modify close method to reset singleton
     @Override
     public void close() {
         running.set(false);
         healthCheckLoop.shutdown();
         if (connection != null) connection.close();
+        initialized = false;
+        instance    = null;
         log.info("RPC Client shutdown complete");
     }
 }

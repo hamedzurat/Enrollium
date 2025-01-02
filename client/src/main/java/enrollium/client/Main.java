@@ -1,5 +1,6 @@
 package enrollium.client;
 
+import client.ClientRPC;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -24,6 +25,6 @@ public class Main extends Application {
 
     @Override
     public void stop() {
-        RPCManager.getInstance().shutdown();
+        if (ClientRPC.getInstance() != null) ClientRPC.getInstance().close();
     }
 }
