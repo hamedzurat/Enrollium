@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 import server.ServerRPC;
 import version.Version;
+import banner.Issue;
 
 import java.util.Random;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class Main {
 
     public static void main(String[] args) {
         log.info("[VERSION]: {}", Version.getVersion());
+        Issue.print(log);
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
 
