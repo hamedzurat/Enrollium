@@ -23,8 +23,8 @@ public class Main {
     private static final Random random = new Random();
 
     public static void main(String[] args) {
-        log.info("[VERSION]: {}", Version.getVersion());
         Issue.print(log);
+        log.info("[VERSION]: {}", Version.getVersion());
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
 

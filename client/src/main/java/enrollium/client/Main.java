@@ -1,5 +1,6 @@
 package enrollium.client;
 
+import banner.Issue;
 import client.ClientRPC;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -13,6 +14,7 @@ import version.Version;
 @Slf4j
 public class Main extends Application {
     public static void main(String[] args) {
+        Issue.print(log);
         log.info("[VERSION]: {}", Version.getVersion());
         launch(args);
     }

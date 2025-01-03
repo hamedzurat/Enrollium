@@ -3,44 +3,88 @@ package banner;
 import org.slf4j.Logger;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.util.Map;
-import java.util.Properties;
+import java.util.stream.Stream;
 
 
-public class Issue {
+/**
+ * Utility class for system information reporting.
+ */
+public final class Issue {
+    private static final String INDENT   = "    ";
+    private static final String NEW_LINE = System.lineSeparator();
+    private static final long   DIVISOR  = 1024L * 1024L * 1024L;
+
+    private Issue() {
+        throw new AssertionError("Utility class - do not instantiate");
+    }
+
+    /**
+     * Prints system information to the provided logger.
+     *
+     * @param log the logger to use for output
+     *
+     * @throws NullPointerException if log is null
+     */
     public static void print(Logger log) {
-        // Print Java System Properties
-        log.info("JAVA SYSTEM PROPERTIES:");
-        Properties properties = System.getProperties();
-        properties.forEach((key, value) -> log.info("{}: {}", key, value));
-        log.info("");
+        java.util.Objects.requireNonNull(log, "Logger cannot be null");
 
-        // Print Environment Variables
-        log.info("ENVIRONMENT VARIABLES:");
-        Map<String, String> envVars = System.getenv();
-        envVars.forEach((key, value) -> log.info("{}: {}", key, value));
-        log.info("");
+        log.info(formatSection("JAVA SYSTEM PROPERTIES:", getSystemProperties()));
+        log.info(formatSection("ENVIRONMENT VARIABLES:", getEnvironmentVariables()));
+        log.info(formatSection("HARDWARE INFORMATION:", getHardwareInfo()));
+    }
 
-        // Print Hardware Info
-        log.info("HARDWARE INFORMATION:");
-        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+    private static String formatSection(String title, Stream<Map.Entry<String, String>> content) {
+        StringBuilder output = new StringBuilder(title).append(NEW_LINE);
+        content.forEach(entry -> output.append(INDENT)
+                                       .append(entry.getKey())
+                                       .append(": ")
+                                       .append(entry.getValue())
+                                       .append(NEW_LINE));
+        return output.toString();
+    }
 
-        // Check for optional methods (available only on some JVMs)
-        log.info("OS Name: {}", osBean.getName());
-        log.info("OS Version: {}", osBean.getVersion());
-        log.info("OS Architecture: {}", osBean.getArch());
-        log.info("Available Processors (Cores): {}", osBean.getAvailableProcessors());
+    private static Stream<Map.Entry<String, String>> getSystemProperties() {
+        return System.getProperties()
+                     .entrySet()
+                     .stream()
+                     .map(entry -> Map.entry(entry.getKey().toString(), entry.getValue().toString()))
+                     .sorted(Map.Entry.comparingByKey());
+    }
 
-        // Attempt to retrieve memory info (requires casting to com.sun.management.OperatingSystemMXBean)
+    private static Stream<Map.Entry<String, String>> getEnvironmentVariables() {
+        return System.getenv()
+                     .entrySet()
+                     .stream()
+                     .map(entry -> Map.entry(entry.getKey(), entry.getValue()))
+                     .sorted(Map.Entry.comparingByKey());
+    }
+
+    private static Stream<Map.Entry<String, String>> getHardwareInfo() {
+        var osBean = ManagementFactory.getOperatingSystemMXBean();
+        Stream<Map.Entry<String, String>> basicInfo = Stream.of( //
+                Map.entry("OS Name", osBean.getName()), //
+                Map.entry("OS Version", osBean.getVersion()), //
+                Map.entry("OS Architecture", osBean.getArch()), //
+                Map.entry("Available Processors (Cores)", String.valueOf(osBean.getAvailableProcessors())));
+
+        return Stream.concat(basicInfo, getExtendedHardwareInfo(osBean));
+    }
+
+    private static Stream<Map.Entry<String, String>> getExtendedHardwareInfo(Object osBean) {
         try {
-            com.sun.management.OperatingSystemMXBean osMxBean = (com.sun.management.OperatingSystemMXBean) osBean;
-            log.info("Total Physical Memory: {} MB", osMxBean.getTotalPhysicalMemorySize() / 1_024 / 1_024);
-            log.info("Free Physical Memory: {} MB", osMxBean.getFreePhysicalMemorySize() / 1_024 / 1_024);
-            log.info("Total Swap Space: {} MB", osMxBean.getTotalSwapSpaceSize() / 1_024 / 1_024);
-            log.info("Free Swap Space: {} MB", osMxBean.getFreeSwapSpaceSize() / 1_024 / 1_024);
+            var extendedBean = (com.sun.management.OperatingSystemMXBean) osBean;
+            return Stream.of( //
+                    Map.entry("Total Physical Memory", formatMemory(extendedBean.getTotalMemorySize())), //
+                    Map.entry("Free Physical Memory", formatMemory(extendedBean.getFreeMemorySize())), //
+                    Map.entry("Total Swap Space", formatMemory(extendedBean.getTotalSwapSpaceSize())), //
+                    Map.entry("Free Swap Space", formatMemory(extendedBean.getFreeSwapSpaceSize())));
         } catch (ClassCastException e) {
-            log.info("Extended hardware details are not available on this JVM.");
+            return Stream.of(Map.entry("Extended Hardware Info", "Extended hardware details are not available on this JVM."));
         }
+    }
+
+    private static String formatMemory(long bytes) {
+        return bytes / DIVISOR + " GB";
     }
 }
