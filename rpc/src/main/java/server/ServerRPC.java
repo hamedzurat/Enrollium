@@ -1,11 +1,13 @@
 package server;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import core.*;
+import core.MessageHandler;
+import core.RPCConnection;
+import core.Request;
+import core.Response;
 import io.reactivex.rxjava3.core.Single;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import version.Version;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 
@@ -24,24 +27,42 @@ import java.util.function.BiFunction;
  */
 @Slf4j
 public class ServerRPC implements AutoCloseable, MessageHandler {
-    private static final int                                                         DEFAULT_PORT       = 12321;
-    private final        Map<String, BiFunction<JsonNode, String, Single<JsonNode>>> methodHandlers     = new ConcurrentHashMap<>();
-    private final        ExecutorService                                             connectionExecutor = Executors.newCachedThreadPool();
-    private final        AtomicLong                                                  messageIdCounter   = new AtomicLong(1);
-    private final        SessionManager                                              sessionManager;
-    private final        RateLimiter                                                 rateLimiter;
-    private final        int                                                         port;
-    private volatile     boolean                                                     running            = true;
-    private              ServerSocket                                                serverSocket;
+    private static final    int                                                          DEFAULT_PORT       = 12321;
+    private static volatile ServerRPC                                                    instance;
+    private final           Map<String, BiFunction<JsonNode, Request, Single<JsonNode>>> methodHandlers     = new ConcurrentHashMap<>();
+    private final           ExecutorService                                              connectionExecutor = Executors.newCachedThreadPool();
+    private final           AtomicLong                                                   messageIdCounter   = new AtomicLong(1);
+    @Getter
+    private final           SessionManager                                               sessionManager;
+    private final           RateLimiter                                                  rateLimiter;
+    private final           int                                                          port;
+    private volatile        boolean                                                      running            = true;
+    private                 ServerSocket                                                 serverSocket;
 
-    public ServerRPC(int port) {
-        this.port           = port;
-        this.rateLimiter    = new RateLimiter();
-        this.sessionManager = new SessionManager(this);
+    private ServerRPC(int port) {
+        this.port = port;
+        RateLimiter.getInstance();
+        SessionManager.initialize(this);
+        this.sessionManager = SessionManager.getInstance();
+        this.rateLimiter    = RateLimiter.getInstance();
     }
 
-    public ServerRPC() {
+    private ServerRPC() {
         this(DEFAULT_PORT);
+    }
+
+    public static synchronized ServerRPC getInstance() {
+        if (instance == null) instance = new ServerRPC();
+        return instance;
+    }
+
+    public static synchronized void initialize() {
+        initialize(DEFAULT_PORT);
+    }
+
+    public static synchronized void initialize(int port) {
+        if (instance != null) throw new IllegalStateException("ServerRPC already initialized");
+        instance = new ServerRPC(port);
     }
 
     /**
@@ -75,7 +96,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
     private void handleNewConnection(Socket socket) {
         String ip = socket.getInetAddress().getHostAddress();
 
-        if (!rateLimiter.allowRequest(ip)) {
+        if (rateLimiter.isRequestDenied(ip)) {
             log.warn("Connection rejected due to rate limiting: {}", ip);
             try {
                 socket.close();
@@ -86,30 +107,31 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
         }
 
         try {
-            // Create connection
+            // Create the RPC connection
             RPCConnection connection = new RPCConnection("tmp", socket, this);
 
-            // Handle first auth message
-            Request firstRequest = connection.waitForRequest("auth").blockingGet();
-
-            String username = JsonUtils.getString(firstRequest.getParams(), "username");
-            String password = JsonUtils.getString(firstRequest.getParams(), "password");
-
-            if (username == null || password == null) {
-                connection.sendResponse(Response.error(firstRequest.getId(), "Invalid credentials"));
+            // Wait for the auth request with timeout
+            connection.waitForRequest("auth").timeout(30, TimeUnit.SECONDS).subscribe(authRequest -> {
+                // Process auth request using the registered auth method handler
+                handleRequest(authRequest).subscribe(authResponse -> {
+                    if (authResponse.isError()) {
+                        connection.sendResponse(authResponse);
+                        connection.close();
+                    } else {
+                        // Send success response
+                        connection.sendResponse(authResponse);
+                        // Start the read loop for subsequent messages
+                        connection.startReadLoop();
+                    }
+                }, error -> {
+                    log.error("Error during authentication", error);
+                    connection.sendResponse(Response.error(authRequest.getId(), "Authentication failed: " + error.getMessage()));
+                    connection.close();
+                });
+            }, error -> {
+                log.error("Auth failed for connection from {}: {}", ip, error.getMessage());
                 connection.close();
-                return;
-            }
-
-            // Create authenticated session
-            String      userId  = "user-" + System.nanoTime();
-            SessionInfo session = sessionManager.createSession(userId, socket, this);
-
-            // Send success response with session token
-            ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());
-            connection.sendResponse(Response.success(firstRequest.getId(), response));
-
-            log.info("New authenticated connection from: {} with session: {}", ip, session.getSessionToken());
+            });
         } catch (Exception e) {
             log.error("Error handling new connection from {}", ip, e);
             try {
@@ -122,75 +144,29 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
 
     @Override
     public Single<Response> handleRequest(Request request) {
-        // Handle auth requests without session validation
-        if ("auth".equals(request.getMethod())) return handleAuth(request);
+        // Handle rate limiting
+        String rateLimitKey = request.getSessionToken() != null
+                              ? request.getSessionToken()
+                              : request.getConnection().getIP();
+        if (rateLimiter.isRequestDenied(rateLimitKey))
+            return Single.just(Response.error(request.getId(), "Rate limited"));
 
-        String token = request.getSessionToken();
-
-        // Validate session for all other requests
-        if (token == null || sessionManager.validateSession(token))
+        // For non-auth requests, validate session token
+        if (!"auth".equals(request.getMethod()) && (request.getSessionToken() == null || sessionManager.validateSession(request.getSessionToken())))
             return Single.just(Response.error(request.getId(), "Invalid session"));
 
-        // Update session heartbeat
-        sessionManager.updateHeartbeat(token);
-
-        // Handle special cases first
-        if ("health".equals(request.getMethod())) return handleHealthCheck(request);
-
-        if (!rateLimiter.allowRequest(token)) {
-            log.warn("Request rejected due to rate limiting: {}", token);
-            return Single.just(Response.error(request.getId(), "Rate limited session"));
-        }
+        // Update session heartbeat for authenticated requests
+        if (request.getSessionToken() != null) sessionManager.updateHeartbeat(request.getSessionToken());
 
         // Get method handler
-        BiFunction<JsonNode, String, Single<JsonNode>> handler = methodHandlers.get(request.getMethod());
+        BiFunction<JsonNode, Request, Single<JsonNode>> handler = methodHandlers.get(request.getMethod());
         if (handler == null)
             return Single.just(Response.error(request.getId(), "Unknown method: " + request.getMethod()));
 
         // Execute handler
-        return handler.apply(request.getParams(), request.getSessionToken())
+        return handler.apply(request.getParams(), request)
                       .map(result -> Response.success(request.getId(), result))
                       .onErrorReturn(error -> Response.error(request.getId(), error.getMessage()));
-    }
-
-    private Single<Response> handleAuth(Request request) {
-        try {
-            // Validate request parameters
-            if (request.getParams() == null) {
-                return Single.just(Response.error(request.getId(), "Missing auth parameters"));
-            }
-
-            String username = JsonUtils.getString(request.getParams(), "username");
-            String password = JsonUtils.getString(request.getParams(), "password");
-
-            if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-                return Single.just(Response.error(request.getId(), "Invalid credentials"));
-            }
-
-            // For demo, accept any credentials
-            String userId = "user-" + System.nanoTime();
-
-            // Create new session
-            Socket socket = request.getConnection()
-                                   .getSocket();  // You'll need to add getConnection() to Request class
-            SessionInfo session = sessionManager.createSession(userId, socket, this);
-
-            ObjectNode response = JsonUtils.createObject().put("sessionToken", session.getSessionToken());
-            return Single.just(Response.success(request.getId(), response));
-        } catch (Exception e) {
-            log.error("Auth error", e);
-            return Single.just(Response.error(request.getId(), "Authentication failed: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Handles health check requests.
-     */
-    private Single<Response> handleHealthCheck(Request request) {
-        ObjectNode params = JsonUtils.createObject()
-                                     .put("serverTime", System.currentTimeMillis())
-                                     .put("serverVersion", Version.getVersion());
-        return Single.just(Response.success(request.getId(), params));
     }
 
     @Override
@@ -207,7 +183,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
     /**
      * Registers a method handler.
      */
-    public void registerMethod(String method, BiFunction<JsonNode, String, Single<JsonNode>> handler) {
+    public void registerMethod(String method, BiFunction<JsonNode, Request, Single<JsonNode>> handler) {
         methodHandlers.put(method, handler);
     }
 
@@ -215,9 +191,7 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
      * Sends a request to a specific session.
      */
     public Single<Response> call(String method, JsonNode params, String sessionToken) {
-        if (sessionManager.validateSession(sessionToken)) {
-            return Single.error(new IllegalStateException("Invalid session"));
-        }
+        if (sessionManager.validateSession(sessionToken)) return Single.error(new IllegalStateException("Invalid session"));
 
         Request request = Request.create(messageIdCounter.getAndIncrement(), method, params, sessionToken);
         return sessionManager.sendRequest(sessionToken, request);
@@ -233,7 +207,8 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
 
     @Override
     public void close() {
-        running = false;
+        running  = false;
+        instance = null;
 
         try {
             if (serverSocket != null) serverSocket.close();

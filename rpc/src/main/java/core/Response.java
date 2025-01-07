@@ -75,9 +75,7 @@ public class Response extends Message {
      * @return error message or null if this is not an error response
      */
     public String getErrorMessage() {
-        if (!isError() || getParams() == null) {
-            return null;
-        }
+        if (!isError() || getParams() == null) return null;
         return getParams().get("message").asText();
     }
 }

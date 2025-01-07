@@ -82,8 +82,8 @@ public class SessionInfo {
     /**
      * Gets the remote IP address of the session.
      */
-    public String getRemoteAddress() {
-        return connection.getRemoteAddress();
+    public String getIP() {
+        return connection.getIP();
     }
 
     /**
@@ -115,6 +115,6 @@ public class SessionInfo {
 
     @Override
     public String toString() {
-        return String.format("Session[token=%s, user=%s, remote=%s]", sessionToken, userId, getRemoteAddress());
+        return String.format("Session[token=%s, user=%s, remote=%s]", sessionToken, userId, getIP());
     }
 }
