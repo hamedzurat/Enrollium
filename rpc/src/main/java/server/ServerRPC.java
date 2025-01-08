@@ -191,7 +191,8 @@ public class ServerRPC implements AutoCloseable, MessageHandler {
      * Sends a request to a specific session.
      */
     public Single<Response> call(String method, JsonNode params, String sessionToken) {
-        if (sessionManager.validateSession(sessionToken)) return Single.error(new IllegalStateException("Invalid session"));
+        if (sessionManager.validateSession(sessionToken))
+            return Single.error(new IllegalStateException("Invalid session"));
 
         Request request = Request.create(messageIdCounter.getAndIncrement(), method, params, sessionToken);
         return sessionManager.sendRequest(sessionToken, request);
