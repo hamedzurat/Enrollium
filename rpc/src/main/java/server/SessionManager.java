@@ -22,16 +22,29 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class SessionManager implements AutoCloseable {
-    private static final long                                   HEARTBEAT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(30);
-    private static final long                                   CLEANUP_INTERVAL_MS  = TimeUnit.MINUTES.toMillis(1);
-    private final        SecureRandom                           secureRandom         = new SecureRandom();
-    private final        ConcurrentHashMap<String, SessionInfo> sessions             = new ConcurrentHashMap<>();
-    private final        ScheduledExecutorService               cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
-    private final        MessageHandler                         defaultMessageHandler;
+    private static final    long                                   HEARTBEAT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(30);
+    private static final    long                                   CLEANUP_INTERVAL_MS  = TimeUnit.MINUTES.toMillis(1);
+    private static volatile SessionManager                         instance;
+    private final           SecureRandom                           secureRandom         = new SecureRandom();
+    private final           ConcurrentHashMap<String, SessionInfo> sessions             = new ConcurrentHashMap<>();
+    private final           ScheduledExecutorService               cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
+    private final           MessageHandler                         defaultMessageHandler;
 
-    public SessionManager(MessageHandler defaultMessageHandler) {
+    private SessionManager(MessageHandler defaultMessageHandler) {
         this.defaultMessageHandler = defaultMessageHandler;
-        startCleanupTask();
+        cleanupExecutor.scheduleAtFixedRate(this::cleanupSessions, CLEANUP_INTERVAL_MS, CLEANUP_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
+        log.info("Starting session manager");
+    }
+
+    public static synchronized SessionManager getInstance() {
+        if (instance == null)
+            throw new IllegalStateException("SessionManager not initialized. Call initialize() first.");
+        return instance;
+    }
+
+    public static synchronized void initialize(MessageHandler defaultMessageHandler) {
+        if (instance == null) instance = new SessionManager(defaultMessageHandler);
     }
 
     /**
@@ -59,9 +72,10 @@ public class SessionManager implements AutoCloseable {
      */
     private String generateSessionToken() {
         String token;
-        do {
-            token = secureRandom.ints(64, 0, 10).mapToObj(String::valueOf).collect(Collectors.joining());
-        } while (sessions.containsKey(token));
+
+        do token = secureRandom.ints(64, 0, 10).mapToObj(String::valueOf).collect(Collectors.joining());
+        while (sessions.containsKey(token));
+
         return token;
     }
 
@@ -79,7 +93,7 @@ public class SessionManager implements AutoCloseable {
     public void updateHeartbeat(String token) {
         SessionInfo session = sessions.get(token);
         if (session != null) session.updateHeartbeat();
-        log.info("Heartbeat from {}", session.getSessionToken());
+        log.info("Heartbeat from {}", session == null ? "UNKNOWN" : session.getSessionToken());
     }
 
     /**
@@ -119,7 +133,7 @@ public class SessionManager implements AutoCloseable {
         for (SessionInfo session : targetSessions) {
             try {
                 session.sendRequest(request)
-                       .subscribe(response -> log.debug("Broadcast response received from session: {}", session.getSessionToken()), error -> log.error("Broadcast failed for session: {}", session.getSessionToken(), error));
+                       .subscribe(_ -> log.debug("Broadcast response received from session: {}", session.getSessionToken()), error -> log.error("Broadcast failed for session: {}", session.getSessionToken(), error));
             } catch (Exception e) {
                 log.error("Error broadcasting to session: {}", session.getSessionToken(), e);
             }
@@ -141,17 +155,11 @@ public class SessionManager implements AutoCloseable {
     }
 
     /**
-     * Starts the periodic cleanup task.
-     */
-    private void startCleanupTask() {
-        cleanupExecutor.scheduleAtFixedRate(this::cleanupSessions, CLEANUP_INTERVAL_MS, CLEANUP_INTERVAL_MS, TimeUnit.MILLISECONDS);
-        log.info("Starting session manager");
-    }
-
-    /**
      * Cleans up expired and inactive sessions.
      */
     private void cleanupSessions() {
+        log.info("sessions: \n{}", JsonUtils.toPrettyJson(sessions));
+
         log.info("Cleaning up SessionManager");
 
         sessions.entrySet().removeIf(entry -> {
@@ -182,6 +190,7 @@ public class SessionManager implements AutoCloseable {
 
     @Override
     public void close() {
+        instance = null;
         cleanupExecutor.shutdown();
         sessions.values().forEach(SessionInfo::close);
         sessions.clear();

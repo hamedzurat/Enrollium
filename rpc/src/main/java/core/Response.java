@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import version.Version;
 
 
 /**
@@ -30,7 +31,7 @@ public class Response extends Message {
         return Response.builder()
                        .id(id)
                        .timestamp(System.currentTimeMillis())
-                       .version("1.0")
+                       .version(Version.getVersion())
                        .type("res")
                        .method("success")
                        .params(params)
@@ -52,7 +53,7 @@ public class Response extends Message {
         return Response.builder()
                        .id(id)
                        .timestamp(System.currentTimeMillis())
-                       .version("1.0")
+                       .version(Version.getVersion())
                        .type("res")
                        .method("error")
                        .params(params)
@@ -74,9 +75,7 @@ public class Response extends Message {
      * @return error message or null if this is not an error response
      */
     public String getErrorMessage() {
-        if (!isError() || getParams() == null) {
-            return null;
-        }
+        if (!isError() || getParams() == null) return null;
         return getParams().get("message").asText();
     }
 }

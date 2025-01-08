@@ -1,14 +1,21 @@
 package enrollium.client;
 
+import banner.Issue;
+import client.ClientRPC;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
+import version.Version;
 
 
+@Slf4j
 public class Main extends Application {
     public static void main(String[] args) {
+        Issue.print(log);
+        log.info("[VERSION]: {}", Version.getVersion());
         launch(args);
     }
 
@@ -24,6 +31,6 @@ public class Main extends Application {
 
     @Override
     public void stop() {
-        RPCManager.getInstance().shutdown();
+        if (ClientRPC.getInstance() != null) ClientRPC.getInstance().close();
     }
 }

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 public class RPCConnection implements AutoCloseable {
+    public static final  int                                MAX_MESSAGE_SIZE        = 8 * 1024 * 1024; // 8MB
     private static final int                                REQUEST_TIMEOUT_SECONDS = 30;
     private static final ObjectMapper                       MAPPER                  = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     @Getter
@@ -34,8 +35,6 @@ public class RPCConnection implements AutoCloseable {
     private final        ExecutorService                    readExecutor            = Executors.newSingleThreadExecutor();
     private final        Object                             writeLock               = new Object();
     private final        AtomicBoolean                      active                  = new AtomicBoolean(true);
-    private              BufferedOutputStream               bufferedOut;
-    private              BufferedInputStream                bufferedIn;
 
     /**
      * Creates a new RPC connection.
@@ -51,15 +50,48 @@ public class RPCConnection implements AutoCloseable {
         this.in             = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         this.out            = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 
-        startReadLoop();
+        socket.setSoTimeout(0);
+    }
+
+    /**
+     * Reads a single message from the input stream.
+     *
+     * @return The parsed message, or null if connection was closed cleanly
+     *
+     * @throws IOException if there's an error reading the message
+     */
+    private Message readMessage() throws IOException {
+        byte[] lengthBytes = new byte[4];
+
+        // Read message length
+        int bytesRead = in.read(lengthBytes);
+        if (bytesRead == -1) return null; // Connection closed cleanly
+
+        if (bytesRead != 4) throw new IOException("Incomplete message length read");
+
+        // Parse and validate message length
+        int messageLength = ByteBuffer.wrap(lengthBytes).getInt();
+        if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE)
+            throw new IOException("Invalid message length: " + messageLength);
+
+        // Read the message body
+        byte[] messageBytes = new byte[messageLength];
+        bytesRead = in.read(messageBytes);
+        if (bytesRead == -1) return null; // Connection closed while reading message
+
+        if (bytesRead != messageLength) throw new IOException("Incomplete message read");
+
+        // Parse and return the message
+        String json = new String(messageBytes, StandardCharsets.UTF_8);
+        log.info("Received message: {}", json);
+        return MAPPER.readValue(json, Message.class);
     }
 
     /**
      * Starts the message reading loop in a separate thread.
      */
-    private void startReadLoop() {
+    public void startReadLoop() {
         readExecutor.submit(() -> {
-            byte[] lengthBytes = new byte[4];
             while (active.get()) {
                 try {
                     if (socket.isClosed()) {
@@ -67,46 +99,16 @@ public class RPCConnection implements AutoCloseable {
                         break;
                     }
 
-                    // First read message length
-                    int bytesRead = in.read(lengthBytes);
-                    if (bytesRead == -1) { // Client closed the connection
-                        log.info("Client disconnected: {}", getRemoteAddress());
-                        handleDisconnect(null); // Trigger disconnect handling
-                        break;
-                    }
-                    if (bytesRead != 4) { // Invalid message length read
-                        throw new IOException("Incomplete message length read");
-                    }
+                    Message message = readMessage();
 
-                    int messageLength = ByteBuffer.wrap(lengthBytes).getInt();
-                    if (messageLength <= 0 || messageLength > 1048576) { // Max 1MB
-                        throw new IOException("Invalid message length: " + messageLength);
-                    }
-
-                    // Then read the actual message
-                    byte[] messageBytes = new byte[messageLength];
-                    bytesRead = in.read(messageBytes);
-                    if (bytesRead == -1) { // Client closed the connection
-                        log.info("Client disconnected while reading message: {}", getRemoteAddress());
+                    if (message == null) {
+                        log.info("Client disconnected: {}", getIP());
                         handleDisconnect(null);
                         break;
-                    }
-                    if (bytesRead != messageLength) { // Incomplete message
-                        throw new IOException("Incomplete message read");
-                    }
-
-                    String json = new String(messageBytes, StandardCharsets.UTF_8);
-                    log.info("Received message: {}", json);
-
-                    Message message = MAPPER.readValue(json, Message.class);
-
-                    if (message instanceof Request) {
-                        handleIncomingRequest((Request) message);
-                    } else if (message instanceof Response) {
-                        handleIncomingResponse((Response) message);
-                    }
+                    } else if (message instanceof Request request) handleIncomingRequest(request);
+                    else if (message instanceof Response response) handleIncomingResponse(response);
                 } catch (EOFException e) {
-                    log.info("Client disconnected: {}", getRemoteAddress());
+                    log.info("Client disconnected via exception: {}", getIP());
                     handleDisconnect(null);
                     break;
                 } catch (IOException e) {
@@ -123,100 +125,37 @@ public class RPCConnection implements AutoCloseable {
             }
         });
     }
-    //    private void startReadLoop() {
-    //        readExecutor.submit(() -> {
-    //            byte[] lengthBytes = new byte[4];
-    //            while (active.get()) {
-    //                try {
-    //                    if (socket.isClosed()) {
-    //                        log.warn("Socket closed, exiting read loop");
-    //                        break;
-    //                    }
-    //
-    //                    // First read message length
-    //                    int bytesRead = in.read(lengthBytes);
-    //                    if (bytesRead != 4) {
-    //                        if (bytesRead == -1) {
-    //                            log.info("End of stream reached");
-    //                            break;
-    //                        }
-    //                        throw new IOException("Incomplete message length read");
-    //                    }
-    //
-    //                    int messageLength = ByteBuffer.wrap(lengthBytes).getInt();
-    //                    if (messageLength <= 0 || messageLength > 1048576) { // Max 1MB
-    //                        throw new IOException("Invalid message length: " + messageLength);
-    //                    }
-    //
-    //                    // Then read the actual message
-    //                    byte[] messageBytes = new byte[messageLength];
-    //                    bytesRead = in.read(messageBytes);
-    //                    if (bytesRead != messageLength) {
-    //                        throw new IOException("Incomplete message read");
-    //                    }
-    //
-    //                    String json = new String(messageBytes, StandardCharsets.UTF_8);
-    //                    log.info("Received message: {}", json);
-    //
-    //                    Message message = MAPPER.readValue(json, Message.class);
-    //
-    //                    if (message instanceof Request) {
-    //                        handleIncomingRequest((Request) message);
-    //                    } else if (message instanceof Response) {
-    //                        handleIncomingResponse((Response) message);
-    //                    }
-    //                } catch (EOFException e) {
-    //                    if (active.get()) {
-    //                        log.info("Connection closed by peer");
-    //                        handleDisconnect(null);
-    //                    }
-    //                    break;
-    //                } catch (IOException e) {
-    //                    if (active.get()) {
-    //                        log.error("Error reading message", e);
-    //                        handleDisconnect(e);
-    //                    }
-    //                    break;
-    //                } catch (Exception e) {
-    //                    log.error("Unexpected error in read loop", e);
-    //                    handleDisconnect(e);
-    //                    break;
-    //                }
-    //            }
-    //        });
-    //    }
 
     /**
+     * Waits for a specific request type with timeout.
      *
+     * @param expectedMethod The method name to wait for
+     *
+     * @return Single that completes with the matching request
      */
-    private void handleTimeout(long requestId) {
-        SingleSubject<Response> pending = pendingRequests.remove(requestId);
-        if (pending != null) {
-            Response timeoutResponse = Response.error(requestId, "Request timed out");
-            pending.onSuccess(timeoutResponse);
+    public Single<Request> waitForRequest(String expectedMethod) {
+        return Single.<Request>create(emitter -> readExecutor.submit(() -> {
+            try {
+                while (active.get() && !socket.isClosed()) {
+                    Message message = readMessage();
 
-            // If there are no more pending requests, check connection health
-            if (pendingRequests.isEmpty()) {
-                checkConnectionHealth();
+                    if (message == null) {
+                        emitter.onError(new IOException("Connection closed while waiting for " + expectedMethod));
+                        return;
+                    }
+
+                    if (message instanceof Request request && expectedMethod.equals(message.getMethod())) {
+                        request.setConnection(this);
+                        emitter.onSuccess(request);
+                        return;
+                    }
+                }
+
+                if (!active.get() || socket.isClosed()) emitter.onError(new IOException("Connection closed while waiting for " + expectedMethod));
+            } catch (Exception e) {
+                emitter.onError(e);
             }
-        }
-    }
-
-    private void checkConnectionHealth() {
-        if (!isActive()) {
-            return;
-        }
-
-        try {
-            String json = MAPPER.writeValueAsString(Request.create(0, "health", null, null));
-            synchronized (writeLock) {
-                out.writeUTF(json);
-                out.flush();
-            }
-        } catch (IOException e) {
-            log.error("Health check failed", e);
-            handleDisconnect(e);
-        }
+        })).timeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
@@ -240,12 +179,8 @@ public class RPCConnection implements AutoCloseable {
      */
     private void handleIncomingResponse(Response response) {
         SingleSubject<Response> pending = pendingRequests.remove(response.getId());
-        if (pending != null) {
-            pending.onSuccess(response);
-            messageHandler.handleResponse(response);
-        } else {
-            log.warn("Received response for unknown request: {} on connection {}", response.getId(), id);
-        }
+        if (pending != null) pending.onSuccess(response);
+        else log.warn("Received response for unknown request: {} on connection {}", response.getId(), id);
     }
 
     /**
@@ -263,13 +198,15 @@ public class RPCConnection implements AutoCloseable {
             String json         = MAPPER.writeValueAsString(request);
             byte[] messageBytes = json.getBytes(StandardCharsets.UTF_8);
 
+            if (messageBytes.length > MAX_MESSAGE_SIZE)
+                throw new IOException("Message too large: " + messageBytes.length + " bytes");
+
             synchronized (writeLock) {
-                // Write message length first
-                out.writeInt(messageBytes.length);
-                // Then write the message
-                out.write(messageBytes);
+                out.writeInt(messageBytes.length);  // Write message length first
+                out.write(messageBytes);            // Then write the message
                 out.flush();
             }
+
             log.info("Sent request: {}", json);
         } catch (IOException e) {
             pendingRequests.remove(request.getId());
@@ -277,10 +214,16 @@ public class RPCConnection implements AutoCloseable {
         }
 
         return responseSubject.timeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).doOnError(error -> {
-            if (error instanceof TimeoutException) {
-                handleTimeout(request.getId());
-            }
+            if (error instanceof TimeoutException) handleTimeout(request.getId());
         }).doFinally(() -> pendingRequests.remove(request.getId()));
+    }
+
+    /**
+     * Handles timeout if response is not back within REQUEST_TIMEOUT_SECONDS
+     */
+    private void handleTimeout(long requestId) {
+        SingleSubject<Response> pending = pendingRequests.remove(requestId);
+        if (pending != null) pending.onSuccess(Response.error(requestId, "Request timed out"));
     }
 
     /**
@@ -310,35 +253,21 @@ public class RPCConnection implements AutoCloseable {
      */
     private void handleDisconnect(Throwable error) {
         if (active.compareAndSet(true, false)) {
-            if (error != null && !(error instanceof EOFException)) {
-                log.error("Connection error on {}", id, error);
-            } else if (error == null) {
-                log.info("Connection {} closed by client", id);
-            } else {
-                log.info("Connection {} closed due to EOF", id);
+            if (error != null && !(error instanceof EOFException)) log.error("Connection error on {}", id, error);
+            else {
+                if (error == null) log.info("Connection {} closed by client", id);
+                else log.info("Connection {} closed due to EOF", id);
             }
 
             messageHandler.handleDisconnect(error);
             close();
         }
     }
-    //    private void handleDisconnect(Throwable error) {
-    //        if (active.compareAndSet(true, false)) {
-    //            if (error != null && !(error instanceof EOFException)) {
-    //                log.error("Connection error on {}", id, error);
-    //            } else {
-    //                log.info("Connection {} closed", id);
-    //            }
-    //
-    //            messageHandler.handleDisconnect(error);
-    //            close();
-    //        }
-    //    }
 
     /**
      * Gets the remote IP address.
      */
-    public String getRemoteAddress() {
+    public String getIP() {
         return socket.getInetAddress().getHostAddress();
     }
 
@@ -347,30 +276,6 @@ public class RPCConnection implements AutoCloseable {
      */
     public boolean isActive() {
         return active.get() && !socket.isClosed();
-    }
-
-    /**
-     *
-     */
-    public Single<Request> waitForRequest(String expectedMethod) {
-        return Single.create(emitter -> {
-            // Implementation to wait for specific request
-            // This is a simplified version - you might want to add timeout and better error handling
-            readExecutor.submit(() -> {
-                try {
-                    while (active.get()) {
-                        String  json    = in.readUTF();
-                        Message message = MAPPER.readValue(json, Message.class);
-                        if (message instanceof Request && expectedMethod.equals(message.getMethod())) {
-                            emitter.onSuccess((Request) message);
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    emitter.onError(e);
-                }
-            });
-        });
     }
 
     @Override
@@ -385,9 +290,7 @@ public class RPCConnection implements AutoCloseable {
             // Shutdown read executor
             readExecutor.shutdown();
             try {
-                if (!readExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
-                    readExecutor.shutdownNow();
-                }
+                if (!readExecutor.awaitTermination(1, TimeUnit.SECONDS)) readExecutor.shutdownNow();
             } catch (InterruptedException e) {
                 readExecutor.shutdownNow();
                 Thread.currentThread().interrupt();
@@ -395,9 +298,7 @@ public class RPCConnection implements AutoCloseable {
 
             // Close socket
             try {
-                if (!socket.isClosed()) {
-                    socket.close();
-                }
+                if (!socket.isClosed()) socket.close();
             } catch (IOException e) {
                 log.error("Error closing socket on connection {}", id, e);
             }

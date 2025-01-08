@@ -1,5 +1,6 @@
 package enrollium.client;
 
+import client.ClientRPC;
 import com.fasterxml.jackson.databind.JsonNode;
 import core.JsonUtils;
 import javafx.application.Platform;
@@ -8,7 +9,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -40,20 +40,20 @@ public class StudentController {
         loadStudents();
 
         // Add selection listener
-        studentTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+        studentTable.getSelectionModel().selectedItemProperty().addListener((_, _, newSelection) -> {
             if (newSelection != null) {
-                nameField.setText(newSelection.getName());
-                emailField.setText(newSelection.getEmail());
+                nameField.setText(newSelection.name());
+                emailField.setText(newSelection.email());
                 passwordField.clear(); // Always clear password field on selection
             }
         });
     }
 
     private void setupTable() {
-        idColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
-        nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
-        emailColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
-        universityIdColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUniversityId()));
+        idColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().id()));
+        nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
+        emailColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().email()));
+        universityIdColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().universityId()));
 
         studentTable.setItems(students);
     }
@@ -61,7 +61,7 @@ public class StudentController {
     @FXML
     public void loadStudents() {
         var params = JsonUtils.createObject();
-        RPCManager.getInstance().getClient().call("getStudents", params).subscribe(response -> {
+        ClientRPC.getInstance().call("Students.getAll", params).subscribe(response -> {
             if (!response.isError()) {
                 Platform.runLater(() -> {
                     students.clear();
@@ -89,7 +89,7 @@ public class StudentController {
                               .put("email", emailField.getText().trim())
                               .put("password", passwordField.getText());
 
-        RPCManager.getInstance().getClient().call("createStudent", params).subscribe(response -> {
+        ClientRPC.getInstance().call("Student.create", params).subscribe(response -> {
             if (!response.isError()) {
                 loadStudents();
                 clearFields();
@@ -111,11 +111,11 @@ public class StudentController {
         if (!validateInput(false)) return;
 
         var params = JsonUtils.createObject()
-                              .put("id", selected.getId())
+                              .put("id", selected.id())
                               .put("name", nameField.getText().trim())
                               .put("email", emailField.getText().trim());
 
-        RPCManager.getInstance().getClient().call("updateStudent", params).subscribe(response -> {
+        ClientRPC.getInstance().call("Student.update", params).subscribe(response -> {
             if (!response.isError()) {
                 loadStudents();
                 clearFields();
@@ -137,12 +137,12 @@ public class StudentController {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Confirm Delete");
         confirmation.setHeaderText("Delete Student");
-        confirmation.setContentText("Are you sure you want to delete " + selected.getName() + "?");
+        confirmation.setContentText("Are you sure you want to delete " + selected.name() + "?");
 
         confirmation.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                var params = JsonUtils.createObject().put("id", selected.getId());
-                RPCManager.getInstance().getClient().call("deleteStudent", params).subscribe(resp -> {
+                var params = JsonUtils.createObject().put("id", selected.id());
+                ClientRPC.getInstance().call("Student.delete", params).subscribe(resp -> {
                     if (!resp.isError()) {
                         loadStudents();
                         clearFields();
@@ -189,11 +189,5 @@ public class StudentController {
         Platform.runLater(() -> messageLabel.setText(message));
     }
 
-    @Data
-    public static class StudentData {
-        private final String id;
-        private final String name;
-        private final String email;
-        private final String universityId;
-    }
+    public record StudentData(String id, String name, String email, String universityId) {}
 }

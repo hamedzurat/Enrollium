@@ -22,7 +22,7 @@ dependencies {
     implementation(libs.jakarta.el.api)
     implementation(libs.hibernate.validator)
     implementation(libs.json)
-//    implementation(project(":lib"))
+    implementation(project(":lib"))
     implementation(project(":rpc"))
 //    implementation(project(":design-system"))
     //

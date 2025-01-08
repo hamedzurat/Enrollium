@@ -41,17 +41,13 @@ public abstract class User extends BaseEntity {
     private String   password;
 
     public void setPassword(String plainPassword) {
-        if (plainPassword == null) {
-            throw new IllegalArgumentException("Password cannot be null");
-        }
-        if (plainPassword.length() < 8) {
+        if (plainPassword == null) throw new IllegalArgumentException("Password cannot be null");
+        if (plainPassword.length() < 8)
             throw new IllegalArgumentException("Password must be at least 8 characters long");
-        }
         this.password = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
     }
 
     public boolean verifyPassword(String plainPassword) {
-        return plainPassword != null &&
-               BCrypt.verifyer().verify(plainPassword.toCharArray(), this.password).verified;
+        return plainPassword != null && BCrypt.verifyer().verify(plainPassword.toCharArray(), this.password).verified;
     }
 }

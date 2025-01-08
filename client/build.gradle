@@ -7,6 +7,12 @@ application {
     mainClass = 'enrollium.client.Main'
 }
 
+jar {
+    manifest {
+        attributes('Main-Class': application.mainClass.get())
+    }
+}
+
 javafx {
     version = libs.versions.javafx.get()
     modules = ['javafx.controls', 'javafx.fxml']
@@ -22,7 +28,7 @@ dependencies {
     implementation(libs.javafx.fxml)
     implementation(libs.json)
     implementation 'io.github.palexdev:materialfx:11.16.1'
-//    implementation(project(":lib"))
+    implementation(project(":lib"))
     implementation(project(":rpc"))
 //    implementation(project(":design-system"))
 }

@@ -11,3 +11,57 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
 }
+
+def generateVersion() {
+    def gitDir = project.rootDir
+    if (!new File(gitDir, ".git").exists()) {
+        return 'unknown'
+    }
+
+    try {
+        def describe = ['git', 'describe', '--long', '--abbrev=7'].execute(null, gitDir)
+        def output = new StringWriter()
+        def error = new StringWriter()
+        describe.consumeProcessOutput(output, error)
+        describe.waitFor()
+
+        if (describe.exitValue() == 0) {
+            return output.toString().trim()
+                    .replaceFirst(/([^-]*-g)/, 'r$1')
+                    .replaceAll(/-/, '.')
+        }
+
+        // Fallback: generate r{commit-count}.{short-hash}
+        def revList = ['git', 'rev-list', '--count', 'HEAD'].execute(null, gitDir)
+        def revListOutput = new StringWriter()
+        revList.consumeProcessOutput(revListOutput, error)
+        revList.waitFor()
+
+        def shortHash = ['git', 'rev-parse', '--short=7', 'HEAD'].execute(null, gitDir)
+        def shortHashOutput = new StringWriter()
+        shortHash.consumeProcessOutput(shortHashOutput, error)
+        shortHash.waitFor()
+
+        return "r${revListOutput.toString().trim()}.${shortHashOutput.toString().trim()}"
+    } catch (Exception e) {
+        return 'unknown'
+    }
+}
+
+version = generateVersion()
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name, 'Implementation-Version': version)
+    }
+}
+
+tasks.register('writeVersionProperties') {
+    doLast {
+        def versionFile = layout.buildDirectory.file("resources/main/version.properties").get().asFile
+        versionFile.parentFile.mkdirs()
+        versionFile.text = "version=${project.version}\n"
+    }
+}
+
+processResources.dependsOn writeVersionProperties

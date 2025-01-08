@@ -3,6 +3,7 @@ package core;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import version.Version;
 
 
 /**
@@ -33,7 +34,7 @@ public class Request extends Message {
         return Request.builder()
                       .id(id)
                       .timestamp(System.currentTimeMillis())
-                      .version("1.0")
+                      .version(Version.getVersion())
                       .type("req")
                       .method(method)
                       .params(params)

@@ -1,5 +1,6 @@
 package core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.reactivex.rxjava3.core.Single;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class SessionInfo {
     private final        String        sessionToken;          // Unique session identifier
     private final        String        userId;                // Associated user identifier
     private final        Set<String>   tags;                  // Session tags for grouping/filtering
+    @JsonIgnore
     private final        RPCConnection connection;            // Network connection
     private final        long          createdAt;             // Session creation timestamp
     private volatile     long          lastHeartbeat;         // Last activity timestamp
@@ -80,8 +82,8 @@ public class SessionInfo {
     /**
      * Gets the remote IP address of the session.
      */
-    public String getRemoteAddress() {
-        return connection.getRemoteAddress();
+    public String getIP() {
+        return connection.getIP();
     }
 
     /**
@@ -113,6 +115,6 @@ public class SessionInfo {
 
     @Override
     public String toString() {
-        return String.format("Session[token=%s, user=%s, remote=%s]", sessionToken, userId, getRemoteAddress());
+        return String.format("Session[token=%s, user=%s, remote=%s]", sessionToken, userId, getIP());
     }
 }
