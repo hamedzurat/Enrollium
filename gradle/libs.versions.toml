@@ -22,6 +22,8 @@ jakarta-el-api = "6.0.1"
 hibernate-validator = "8.0.1.Final"
 bcrypt = "0.10.2"
 json = "2.18.2"
+materialfx = "11.17.0"
+cssfx = "11.5.1"
 
 
 [libraries]
@@ -33,6 +35,8 @@ bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 # UI
 javafx-controls = { module = "org.openjfx:javafx-controls", version.ref = "javafx" }
 javafx-fxml = { module = "org.openjfx:javafx-fxml", version.ref = "javafx" }
+materialfx = { module = "io.github.palexdev:materialfx", version.ref = "materialfx" }
+cssfx = { module = "fr.brouillard.oss:cssfx", version.ref = "cssfx" }
 
 # Logging
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
