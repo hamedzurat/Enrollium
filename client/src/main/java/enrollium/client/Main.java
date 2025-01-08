@@ -1,9 +1,6 @@
 package enrollium.client;
 
-import fr.brouillard.oss.cssfx.CSSFX;
-import io.github.palexdev.materialfx.theming.JavaFXThemes;
-import io.github.palexdev.materialfx.theming.MaterialFXStylesheets;
-import io.github.palexdev.materialfx.theming.UserAgentBuilder;
+import atlantafx.base.theme.PrimerDark;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -21,20 +18,12 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            CSSFX.start();
+            Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
             // Load the FXML file
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/enrollium/client/counter-view.fxml"));
             Parent     root       = fxmlLoader.load();
             Scene      scene      = new Scene(root);
-
-            UserAgentBuilder.builder()
-                            .themes(JavaFXThemes.MODENA)
-                            .themes(MaterialFXStylesheets.forAssemble(true))
-                            .setDeploy(true)
-                            .setResolveAssets(true)
-                            .build()
-                            .setGlobal();
 
             primaryStage.setTitle("Counter");
             primaryStage.setScene(scene);

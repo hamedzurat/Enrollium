@@ -1,0 +1,26 @@
+/* Style for the header label */
+.header-label {
+    -fx-font-size: 32px; /* Set the font size */
+    -fx-text-fill: #333; /* Set text color */
+    -fx-font-weight: bold; /* Make text bold */
+}
+
+/* Optional: Style the VBox background */
+.grid-background {
+    -fx-background-color: #f5f5f5; /* Light gray background */
+}
+
+/* Button styles for outline-button */
+.outline-button {
+    -fx-border-color: #333; /* Border color */
+    -fx-border-width: 2px; /* Border thickness */
+    -fx-background-color: transparent; /* Transparent background */
+    -fx-text-fill: #333; /* Text color */
+    -fx-padding: 8px 16px; /* Padding inside the button */
+    -fx-font-size: 14px; /* Font size */
+    -fx-cursor: hand; /* Change cursor to pointer on hover */
+}
+
+.outline-button:hover {
+    -fx-background-color: #ddd; /* Light background on hover */
+}

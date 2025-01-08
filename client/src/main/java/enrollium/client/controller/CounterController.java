@@ -1,8 +1,8 @@
 package enrollium.client.controller;
 
-import io.github.palexdev.materialfx.controls.MFXButton;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 
@@ -11,11 +11,11 @@ public class CounterController {
     @FXML
     private       Label                    counterDisplay;
     @FXML
-    private       MFXButton                incrementButton;
+    private       Button                   incrementButton;
     @FXML
-    private       MFXButton                decrementButton;
+    private       Button                   decrementButton;
     @FXML
-    private       MFXButton                resetButton;
+    private       Button                   resetButton;
 
     @FXML
     private void initialize() {

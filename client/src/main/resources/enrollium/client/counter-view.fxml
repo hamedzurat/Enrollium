@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import io.github.palexdev.materialfx.controls.MFXButton?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.VBox?>
@@ -9,7 +9,7 @@
       alignment="CENTER"
       spacing="20.0"
       fx:controller="enrollium.client.controller.CounterController"
-      stylesheets="@css/Buttons.css"
+      stylesheets="@css/index.css"
       prefHeight="300.0"
       prefWidth="400.0"
       styleClass="grid-background">
@@ -20,24 +20,21 @@
            text="0"
            GridPane.columnSpan="3"/>
 
-    <MFXButton fx:id="incrementButton"
-               text="Increment"
-               onAction="#onIncrementClick"
-               buttonType="RAISED"
-               styleClass="outline-button"
-               prefWidth="150"/>
+    <Button fx:id="incrementButton"
+            text="Increment"
+            onAction="#onIncrementClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
 
-    <MFXButton fx:id="decrementButton"
-               text="Decrement"
-               onAction="#onDecrementClick"
-               buttonType="RAISED"
-               styleClass="outline-button"
-               prefWidth="150"/>
+    <Button fx:id="decrementButton"
+            text="Decrement"
+            onAction="#onDecrementClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
 
-    <MFXButton fx:id="resetButton"
-               text="Reset"
-               onAction="#onResetClick"
-               buttonType="RAISED"
-               styleClass="outline-button"
-               prefWidth="150"/>
+    <Button fx:id="resetButton"
+            text="Reset"
+            onAction="#onResetClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
 </VBox>
