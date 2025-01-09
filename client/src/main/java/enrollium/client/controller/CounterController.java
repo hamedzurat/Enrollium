@@ -1,39 +1,47 @@
 package enrollium.client.controller;
 
-import io.reactivex.rxjava3.subjects.BehaviorSubject;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import settings.Setting;
+import settings.SettingsManager;
 
 
 public class CounterController {
-    private final BehaviorSubject<Integer> counterSubject = BehaviorSubject.createDefault(0);
+    private final SettingsManager settings = SettingsManager.getInstance();
     @FXML
-    private       Label                    counterDisplay;
+    private       Label           counterDisplay;
     @FXML
-    private       Button                   incrementButton;
+    private       Button          incrementButton;
     @FXML
-    private       Button                   decrementButton;
+    private       Button          decrementButton;
     @FXML
-    private       Button                   resetButton;
+    private       Button          resetButton;
 
     @FXML
     private void initialize() {
-        counterSubject.distinctUntilChanged().map(String::valueOf).subscribe(counterDisplay::setText);
+        // Initialize counter display with current value
+        Platform.runLater(() -> counterDisplay.setText(String.valueOf((Integer) settings.get(Setting.COUNTER))));
+
+        // Subscribe to counter changes
+        settings.observe(Setting.COUNTER)
+                .distinctUntilChanged()
+                .subscribe(value -> Platform.runLater(() -> counterDisplay.setText(String.valueOf(value))));
     }
 
     @FXML
     private void onIncrementClick() {
-        counterSubject.onNext(counterSubject.getValue() + 1);
+        settings.set(Setting.COUNTER, (int) settings.get(Setting.COUNTER) + 1);
     }
 
     @FXML
     private void onDecrementClick() {
-        counterSubject.onNext(counterSubject.getValue() - 1);
+        settings.set(Setting.COUNTER, (int) settings.get(Setting.COUNTER) - 1);
     }
 
     @FXML
     private void onResetClick() {
-        counterSubject.onNext(0);
+        settings.set(Setting.COUNTER, 0);
     }
 }

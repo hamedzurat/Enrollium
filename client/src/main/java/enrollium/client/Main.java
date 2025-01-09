@@ -7,12 +7,19 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import settings.SettingsManager;
 
 
 @Slf4j
 public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
+    }
+
+    @Override
+    public void init() throws Exception {
+        super.init();
+        SettingsManager.BlockingInit();
     }
 
     @Override
@@ -31,6 +38,8 @@ public class Main extends Application {
             primaryStage.show();
         } catch (Exception e) {
             log.error(e.getMessage());
+            javafx.application.Platform.exit();
+            System.exit(1);
         }
     }
 }
