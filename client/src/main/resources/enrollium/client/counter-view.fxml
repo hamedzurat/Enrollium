@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      xmlns="http://javafx.com/javafx"
+      alignment="CENTER"
+      spacing="20.0"
+      fx:controller="enrollium.client.controller.CounterController"
+      stylesheets="@css/index.css"
+      prefHeight="400.0"
+      prefWidth="400.0"
+      styleClass="grid-background">
+
+    <Label fx:id="helloText"
+           alignment="CENTER"
+           styleClass="header-label"
+           text="0"/>
+
+    <Label fx:id="counterDisplay"
+           alignment="CENTER"
+           styleClass="header-label"
+           text="0"/>
+
+    <Button fx:id="incrementButton"
+            onAction="#onIncrementClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
+
+    <Button fx:id="decrementButton"
+            onAction="#onDecrementClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
+
+    <Button fx:id="resetButton"
+            onAction="#onResetClick"
+            styleClass="outline-button"
+            prefWidth="150"/>
+
+    <ComboBox fx:id="languageDropdown"
+              onAction="#onLanguageChange"
+              prefWidth="150"/>
+
+</VBox>

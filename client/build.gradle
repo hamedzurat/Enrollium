@@ -27,8 +27,9 @@ dependencies {
     implementation(libs.javafx.controls)
     implementation(libs.javafx.fxml)
     implementation(libs.json)
-    implementation 'io.github.palexdev:materialfx:11.16.1'
+    implementation(libs.atlantafx)
+    implementation(libs.ikonli)
     implementation(project(":lib"))
     implementation(project(":rpc"))
-//    implementation(project(":design-system"))
+    implementation(project(":design-system"))
 }

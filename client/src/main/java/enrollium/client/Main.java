@@ -1,13 +1,16 @@
 package enrollium.client;
 
+import atlantafx.base.theme.PrimerDark;
 import banner.Issue;
-import client.ClientRPC;
+import i18n.I18nManager;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import settings.SettingsManager;
 import version.Version;
 
 
@@ -20,17 +23,42 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/enrollium/client/login.fxml"));
-        Parent     root   = loader.load();
+    public void init() throws Exception {
+        super.init();
+        SettingsManager.BlockingInit();
+        I18nManager.BlockingInit();
+    }
 
-        stage.setTitle("Enrollium Login");
-        stage.setScene(new Scene(root));
-        stage.show();
+    @Override
+    public void start(Stage primaryStage) {
+        try {
+            Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+
+            // Load the FXML file
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/enrollium/client/counter-view.fxml"));
+            Parent     root       = fxmlLoader.load();
+            Scene      scene      = new Scene(root);
+
+            primaryStage.setTitle("Counter");
+            primaryStage.setScene(scene);
+            primaryStage.setResizable(false);
+            primaryStage.show();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            Platform.exit();
+        }
     }
 
     @Override
     public void stop() {
-        if (ClientRPC.getInstance() != null) ClientRPC.getInstance().close();
+        try {
+            log.info("Application shutting down...");
+            SettingsManager.getInstance().shutdown();
+            log.info("Application shutdown complete");
+        } catch (Exception e) {
+            log.error("Error during shutdown", e);
+        } finally {
+            Platform.exit();
+        }
     }
 }

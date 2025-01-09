@@ -1,0 +1,13 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    annotationProcessor(libs.lombok)
+//
+    implementation(libs.rxjava)
+    implementation(libs.lombok)
+    implementation(libs.logback.classic)
+    implementation(libs.json)
+    implementation(project(":lib"))
+}
