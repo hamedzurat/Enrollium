@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass = 'enrollium.client.Main'
+    mainClass = 'enrollium.demoClient.Main'
 }
 
 jar {
