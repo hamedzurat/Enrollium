@@ -1,6 +1,7 @@
 package enrollium.client;
 
 import atlantafx.base.theme.PrimerDark;
+import i18n.I18nManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -20,6 +21,7 @@ public class Main extends Application {
     public void init() throws Exception {
         super.init();
         SettingsManager.BlockingInit();
+        I18nManager.BlockingInit();
     }
 
     @Override
