@@ -1,6 +1,9 @@
 package settings;
 
+import i18n.Language;
 import lombok.Getter;
+
+import java.util.Arrays;
 
 
 public enum Setting {
@@ -19,6 +22,30 @@ public enum Setting {
     Setting(Class<?> type, Object defaultValue) {
         this.type         = type;
         this.defaultValue = defaultValue;
+    }
+
+    public static boolean validateValue(Setting setting, Object value) {
+        if (value == null) return false;
+
+        if (setting.isType(Integer.class)) {
+            int intValue = (Integer) value;
+            switch (setting) {
+                case FONT_SIZE:
+                    return intValue >= 2 && intValue <= 128;
+                case COUNTER:
+                    return true;
+            }
+        } else if (setting.isType(String.class)) {
+            String strValue = (String) value;
+            switch (setting) {
+                case LANGUAGE:
+                    return Arrays.stream(Language.values()).map(Language::getCode).toList().contains(value);
+                case FONT_FAMILY:
+                    return !strValue.isEmpty() && strValue.length() <= 50;
+            }
+        }
+
+        return true;
     }
 
     @SuppressWarnings("unchecked")

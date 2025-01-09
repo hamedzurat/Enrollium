@@ -1,19 +1,24 @@
 package enrollium.client;
 
 import atlantafx.base.theme.PrimerDark;
+import banner.Issue;
 import i18n.I18nManager;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import settings.SettingsManager;
+import version.Version;
 
 
 @Slf4j
 public class Main extends Application {
     public static void main(String[] args) {
+        Issue.print(log);
+        log.info("[VERSION]: {}", Version.getVersion());
         launch(args);
     }
 
@@ -40,8 +45,20 @@ public class Main extends Application {
             primaryStage.show();
         } catch (Exception e) {
             log.error(e.getMessage());
-            javafx.application.Platform.exit();
-            System.exit(1);
+            Platform.exit();
+        }
+    }
+
+    @Override
+    public void stop() {
+        try {
+            log.info("Application shutting down...");
+            SettingsManager.getInstance().shutdown();
+            log.info("Application shutdown complete");
+        } catch (Exception e) {
+            log.error("Error during shutdown", e);
+        } finally {
+            Platform.exit();
         }
     }
 }
