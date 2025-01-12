@@ -24,6 +24,10 @@ bcrypt = "0.10.2"
 json = "2.18.2"
 atlantafx = "2.0.1"
 ikonli = "12.3.1"
+jetbrains-annotations = "26.0.1"
+assertj-core = "3.27.2"
+cssfx = "11.5.1"
+datafaker = "2.4.2"
 
 
 [libraries]
@@ -31,12 +35,22 @@ rxjava = { module = "io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 commonsText = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj-core" }
 
 # UI
 javafx-controls = { module = "org.openjfx:javafx-controls", version.ref = "javafx" }
 javafx-fxml = { module = "org.openjfx:javafx-fxml", version.ref = "javafx" }
+javafx-media = { module = "org.openjfx:javafx-media", version.ref = "javafx" }
+javafx-web = { module = "org.openjfx:javafx-web", version.ref = "javafx" }
+javafx-graphics = { module = "org.openjfx:javafx-graphics", version.ref = "javafx" }
+javafx-swing = { module = "org.openjfx:javafx-swing", version.ref = "javafx" }
 atlantafx = { module = "io.github.mkpaz:atlantafx-base", version.ref = "atlantafx" }
 ikonli = { module = "org.kordamp.ikonli:ikonli-javafx", version.ref = "ikonli" }
+ikonli-material2 = { module = "org.kordamp.ikonli:ikonli-material2-pack", version.ref = "ikonli" }
+ikonli-feather = { module = "org.kordamp.ikonli:ikonli-feather-pack", version.ref = "ikonli" }
+cssfx = { module = "fr.brouillard.oss:cssfx", version.ref = "cssfx" }
+datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
 
 # Logging
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
