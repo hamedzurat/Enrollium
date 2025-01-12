@@ -4,7 +4,8 @@ plugins {
 }
 
 application {
-    mainClass = 'enrollium.client.Main'
+//    mainClass = 'enrollium.demoClient.Main'
+    mainClass = 'enrollium.client.Launcher'
 }
 
 jar {
@@ -15,7 +16,7 @@ jar {
 
 javafx {
     version = libs.versions.javafx.get()
-    modules = ['javafx.controls', 'javafx.fxml']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.media', 'javafx.graphics', 'javafx.swing']
 }
 
 dependencies {
@@ -26,10 +27,66 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.javafx.controls)
     implementation(libs.javafx.fxml)
+    implementation(libs.javafx.graphics)
+    implementation(libs.javafx.media)
+    implementation(libs.javafx.web)
+    implementation(libs.javafx.swing)
     implementation(libs.json)
     implementation(libs.atlantafx)
     implementation(libs.ikonli)
+    implementation(libs.ikonli.material2)
+    implementation(libs.ikonli.feather)
+    implementation(libs.cssfx)
+    implementation(libs.jetbrains.annotations)
+    implementation(libs.assertj.core)
+    implementation(libs.datafaker)
     implementation(project(":lib"))
     implementation(project(":rpc"))
     implementation(project(":design-system"))
+}
+
+
+// This task copies all `.java` source files from `src/main/java` into the `build/resources/main` directory.
+// Purpose:
+// - Ensures that Java source files are available as runtime resources (on the classpath).
+// - This is useful when `.java` files need to be accessed during program execution (e.g., for reflection, dynamic loading, or code analysis).
+tasks.register('copyJavaToResources', Copy) {
+    from 'src/main/java'
+    into 'build/resources/main'
+    include '**/*.java'
+}
+
+compileJava.dependsOn copyJavaToResources
+
+// This task compiles SCSS files into CSS using the system's installed Sass compiler.
+// Purpose:
+// - Converts SCSS stylesheets into CSS to be used in the application.
+// - Ensures that styles are properly built and included in the runtime classpath.
+tasks.register('compileScss', Exec) {
+    group = 'build'
+    description = 'Compile SCSS files into CSS using the system Sass installation'
+
+    def inputFile = file('src/main/resources/enrollium/client/assets/styles/scss/index.scss')
+    def outputFile = layout.buildDirectory.file('classes/java/main/enrollium/client/assets/styles/index.css').get().asFile
+
+    inputs.file(inputFile)
+    outputs.file(outputFile)
+
+    commandLine 'bash', '-c', """
+    sass ${inputFile.absolutePath}:${outputFile.absolutePath} --no-source-map
+    """
+}
+
+// This task copies font files from the resources directory into the build output directory.
+// Purpose:
+// - Ensures that all font assets are bundled into the runtime classpath.
+// - Makes the fonts available in the final build for UI styling.
+tasks.register('copyFonts', Copy) {
+    from 'src/main/resources/enrollium/client/assets/fonts'
+    into layout.buildDirectory.dir('classes/java/main/enrollium/client/assets/fonts')
+}
+
+compileJava {
+    dependsOn tasks.named('copyFonts')
+    dependsOn tasks.named('compileScss')
 }

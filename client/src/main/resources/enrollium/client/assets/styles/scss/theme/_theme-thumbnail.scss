@@ -1,0 +1,18 @@
+
+.theme-thumbnail {
+  -fx-spacing: 20px;
+  -fx-padding: 20px;
+  -fx-alignment: CENTER;
+
+  &:hover {
+    -color-thumbnail-border: -color-accent-muted;
+  }
+
+  &:selected {
+    -color-thumbnail-border: -color-accent-emphasis;
+
+    .label {
+      -fx-underline: true;
+    }
+  }
+}

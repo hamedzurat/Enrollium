@@ -1,4 +1,4 @@
-package enrollium.client.controller;
+package enrollium.demoClient.controller;
 
 import i18n.I18nManager;
 import i18n.Language;

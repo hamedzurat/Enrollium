@@ -1,4 +1,4 @@
-package enrollium.client;
+package enrollium.demoClient;
 
 import atlantafx.base.theme.PrimerDark;
 import banner.Issue;
@@ -35,7 +35,7 @@ public class Main extends Application {
             Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
             // Load the FXML file
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/enrollium/client/counter-view.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/enrollium/demoClient/counter-view.fxml"));
             Parent     root       = fxmlLoader.load();
             Scene      scene      = new Scene(root);
 
