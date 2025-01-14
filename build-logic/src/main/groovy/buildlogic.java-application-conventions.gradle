@@ -15,7 +15,7 @@ plugins {
 def generateVersion() {
     def gitDir = project.rootDir
     if (!new File(gitDir, ".git").exists()) {
-        return 'unknown'
+        throw new GradleException(".git directory not found. Cannot generate version.")
     }
 
     try {
@@ -42,9 +42,12 @@ def generateVersion() {
         shortHash.consumeProcessOutput(shortHashOutput, error)
         shortHash.waitFor()
 
+        if (revList.exitValue() != 0 || shortHash.exitValue() != 0)
+            throw new GradleException("Failed to generate version from git. Error: ${error.toString().trim()}")
+
         return "r${revListOutput.toString().trim()}.${shortHashOutput.toString().trim()}"
     } catch (Exception e) {
-        return 'unknown'
+        throw new GradleException("Error generating version from git: ${e.message}", e)
     }
 }
 
