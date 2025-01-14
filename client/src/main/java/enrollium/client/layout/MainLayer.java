@@ -59,33 +59,33 @@ class MainLayer extends BorderPane {
 
     private void loadPage(Class<? extends Page> pageClass) {
         try {
+            // Remove the previous page from the view
             final Page prevPage = (Page) subLayerPane
                     .getChildren()
                     .stream()
                     .filter(c -> c instanceof Page)
                     .findFirst()
                     .orElse(null);
-            final Page nextPage = pageClass.getDeclaredConstructor().newInstance();
 
-            // For first time, no animation
-            if (getScene() == null) subLayerPane.getChildren().add(nextPage.getView());
-            else {
-                Objects.requireNonNull(prevPage);
-
-                prevPage.reset();  // Clean up the previous page
-
-                // animate switching between pages
-                subLayerPane.getChildren().add(nextPage.getView());
+            if (prevPage != null) {
+                prevPage.reset(); // Clean up the previous page
                 subLayerPane.getChildren().remove(prevPage.getView());
-                var transition = new FadeTransition(Duration.millis(PAGE_TRANSITION_DURATION_MS), nextPage.getView());
-                transition.setFromValue(0.0);
-                transition.setToValue(1.0);
-                transition.setOnFinished(_ -> {
-                    if (nextPage instanceof Pane nextPane) nextPane.toFront();
-                });
-                transition.play();
             }
+
+            // Load the new page and add it to the StackPane
+            final Page nextPage = pageClass.getDeclaredConstructor().newInstance();
+            javafx.scene.Node nextView = nextPage.getView();
+
+            if (nextView == null) {
+                throw new RuntimeException("getView() returned null for " + pageClass.getSimpleName());
+            }
+
+            // Add the new page view
+            subLayerPane.getChildren().clear(); // Clear existing children
+            subLayerPane.getChildren().add(nextView);
+
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
