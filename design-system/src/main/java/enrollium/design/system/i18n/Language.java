@@ -1,4 +1,4 @@
-package i18n;
+package enrollium.design.system.i18n;
 
 import lombok.Getter;
 

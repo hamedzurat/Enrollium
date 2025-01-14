@@ -1,15 +1,15 @@
 package enrollium.demoClient.controller;
 
-import i18n.I18nManager;
-import i18n.Language;
-import i18n.TranslationKey;
+import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.i18n.Language;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import settings.Setting;
-import settings.SettingsManager;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
 
 
 public class CounterController extends BaseController {

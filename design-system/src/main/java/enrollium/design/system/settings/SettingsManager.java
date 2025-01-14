@@ -1,4 +1,4 @@
-package settings;
+package enrollium.design.system.settings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,7 +7,7 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import version.Version;
+import enrollium.lib.version.Version;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class SettingsManager {
-    private static final String                                APP_NAME             = "Enrollium";
+    private static final String                                APP_NAME             = "enrollium";
     private static final ObjectMapper                          MAPPER               = new ObjectMapper();
     private static final String                                CURRENT_VERSION      = Version.getVersion();
     private static       SettingsManager                       instance;
@@ -100,7 +100,7 @@ public class SettingsManager {
             JsonNode root = MAPPER.readTree(settingsFile.toFile());
 
             // Version check
-            String fileVersion = root.has("version") ? root.get("version").toString() : null;
+            String fileVersion = root.has("version") ? root.get("version").asText() : null;
             if (!CURRENT_VERSION.equals(fileVersion)) {
                 log.info("Settings version mismatch. Expected: {}, Found: {}. Resetting to defaults.", CURRENT_VERSION, fileVersion);
                 setDefaultsAndSave();

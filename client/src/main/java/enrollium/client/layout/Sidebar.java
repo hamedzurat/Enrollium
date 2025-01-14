@@ -26,7 +26,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
-import version.Version;
+import enrollium.lib.version.Version;
 
 import java.net.URI;
 import java.util.Objects;

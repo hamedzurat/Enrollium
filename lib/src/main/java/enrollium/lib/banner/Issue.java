@@ -1,4 +1,4 @@
-package banner;
+package enrollium.lib.banner;
 
 import org.slf4j.Logger;
 

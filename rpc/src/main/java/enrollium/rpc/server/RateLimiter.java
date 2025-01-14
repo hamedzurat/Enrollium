@@ -1,6 +1,6 @@
-package server;
+package enrollium.rpc.server;
 
-import core.JsonUtils;
+import enrollium.rpc.core.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ConcurrentHashMap;

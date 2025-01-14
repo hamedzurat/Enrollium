@@ -1,19 +1,19 @@
 package enrollium.server;
 
-import banner.Issue;
+import enrollium.lib.banner.Issue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import core.JsonUtils;
-import core.SessionInfo;
+import enrollium.rpc.core.JsonUtils;
+import enrollium.rpc.core.SessionInfo;
 import enrollium.server.db.DB;
 import enrollium.server.db.entity.*;
 import enrollium.server.db.entity.types.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
-import server.ServerRPC;
-import server.SessionManager;
-import version.Version;
+import enrollium.rpc.server.ServerRPC;
+import enrollium.rpc.server.SessionManager;
+import enrollium.lib.version.Version;
 
 import java.security.SecureRandom;
 import java.time.DayOfWeek;

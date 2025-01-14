@@ -1,6 +1,6 @@
-package settings;
+package enrollium.design.system.settings;
 
-import i18n.Language;
+import enrollium.design.system.i18n.Language;
 import lombok.Getter;
 
 import java.util.Arrays;

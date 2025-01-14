@@ -1,4 +1,4 @@
-package core;
+package enrollium.rpc.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.reactivex.rxjava3.core.Single;

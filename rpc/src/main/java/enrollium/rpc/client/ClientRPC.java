@@ -1,8 +1,8 @@
-package client;
+package enrollium.rpc.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import core.*;
+import enrollium.rpc.core.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
@@ -96,14 +96,14 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
                 Socket socket = new Socket(host, port);
                 socket.setSoTimeout(30000); // 30-second timeout for socket operations
 
-                connection = new RPCConnection("client", socket, this);
+                connection = new RPCConnection("enrollium/rpc/client", socket, this);
 
                 // Start the read loop to handle incoming messages
                 connection.startReadLoop();
 
                 // Send authentication request and wait for response
                 ObjectNode authParams  = JsonUtils.createObject().put("username", username).put("password", password);
-                Request    authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
+                Request authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
                 Response authResponse = connection.sendRequest(authRequest)
                                                   .timeout(5, TimeUnit.SECONDS) // 5-second timeout for auth
                                                   .blockingGet();

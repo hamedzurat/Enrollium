@@ -1,4 +1,4 @@
-package version;
+package enrollium.lib.version;
 
 import java.io.IOException;
 import java.io.InputStream;

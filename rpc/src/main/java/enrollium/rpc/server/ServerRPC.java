@@ -1,10 +1,10 @@
-package server;
+package enrollium.rpc.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import core.MessageHandler;
-import core.RPCConnection;
-import core.Request;
-import core.Response;
+import enrollium.rpc.core.MessageHandler;
+import enrollium.rpc.core.RPCConnection;
+import enrollium.rpc.core.Request;
+import enrollium.rpc.core.Response;
 import io.reactivex.rxjava3.core.Single;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

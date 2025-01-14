@@ -1,6 +1,6 @@
-package server;
+package enrollium.rpc.server;
 
-import core.*;
+import enrollium.rpc.core.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,8 +27,8 @@ public class SessionManager implements AutoCloseable {
     private static volatile SessionManager                         instance;
     private final           SecureRandom                           secureRandom         = new SecureRandom();
     private final           ConcurrentHashMap<String, SessionInfo> sessions             = new ConcurrentHashMap<>();
-    private final           ScheduledExecutorService               cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
-    private final           MessageHandler                         defaultMessageHandler;
+    private final ScheduledExecutorService cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
+    private final MessageHandler           defaultMessageHandler;
 
     private SessionManager(MessageHandler defaultMessageHandler) {
         this.defaultMessageHandler = defaultMessageHandler;

@@ -1,9 +1,9 @@
-package i18n;
+package enrollium.design.system.i18n;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import settings.Setting;
-import settings.SettingsManager;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
