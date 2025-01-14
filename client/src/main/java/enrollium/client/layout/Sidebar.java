@@ -7,6 +7,7 @@ import enrollium.client.event.BrowseEvent;
 import enrollium.client.event.DefaultEventBus;
 import enrollium.client.event.HotkeyEvent;
 import enrollium.client.util.Lazy;
+import enrollium.lib.version.Version;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -26,7 +27,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
-import enrollium.lib.version.Version;
 
 import java.net.URI;
 import java.util.Objects;
@@ -35,9 +35,9 @@ import static atlantafx.base.theme.Styles.*;
 
 
 final class Sidebar extends VBox {
-    private final NavTree            navTree; // Displays the navigation structure built from MainModel.
-    private final Lazy<SearchDialog> searchDialog;
-    private final Lazy<ThemeDialog>  themeDialog;
+    private final NavTree              navTree; // Displays the navigation structure built from MainModel.
+    private final Lazy<SearchDialog>   searchDialog;
+    private final Lazy<SettingsDialog> themeDialog;
 
     public Sidebar(MainModel model) {
         super();
@@ -61,7 +61,7 @@ final class Sidebar extends VBox {
         });
 
         themeDialog = new Lazy<>(() -> {
-            var dialog = new ThemeDialog();
+            var dialog = new SettingsDialog();
             dialog.setClearOnClose(true);
             return dialog;
         });
@@ -120,7 +120,6 @@ final class Sidebar extends VBox {
         Platform.runLater(dialog::requestFocus);
     }
 
-
     private class Header extends VBox {
         public Header() {
             super();
@@ -146,7 +145,7 @@ final class Sidebar extends VBox {
 
             var themeSwitchBtn = new Button();
             themeSwitchBtn.getStyleClass().add("palette");
-            themeSwitchBtn.setGraphic(new FontIcon(Material2MZ.WB_SUNNY));
+            themeSwitchBtn.setGraphic(new FontIcon(Material2MZ.SETTINGS));
             themeSwitchBtn.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             themeSwitchBtn.getStyleClass().addAll(Styles.BUTTON_CIRCLE, Styles.FLAT);
             themeSwitchBtn.setAlignment(Pos.CENTER_RIGHT);

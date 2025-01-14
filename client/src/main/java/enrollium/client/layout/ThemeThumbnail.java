@@ -45,9 +45,9 @@ public final class ThemeThumbnail extends VBox implements Toggle {
             Styles.appendStyle(nameLbl, "-fx-text-fill", colors.get("-color-fg-muted"));
 
             setStyle("""
-                             -fx-background-radius: 10px, 8px;
-                             -fx-background-insets: 0, 3px
-                             """
+                    -fx-background-radius: 10px, 8px;
+                    -fx-background-insets: 0, 3px
+                    """
             );
             Styles.appendStyle(
                     this,
