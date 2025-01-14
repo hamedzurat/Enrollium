@@ -72,9 +72,17 @@ tasks.register('compileScss', Exec) {
     inputs.file(inputFile)
     outputs.file(outputFile)
 
-    commandLine 'bash', '-c', """
-    sass ${inputFile.absolutePath}:${outputFile.absolutePath} --no-source-map
-    """
+    // Set up the command based on the operating system
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        commandLine 'cmd', '/c', "sass ${inputFile.absolutePath}:${outputFile.absolutePath} --no-source-map"
+    } else {
+        // For Linux, macOS, and other Unix-like systems
+        commandLine 'sass', inputFile.absolutePath + ':' + outputFile.absolutePath, '--no-source-map'
+    }
+
+    doFirst {
+        outputFile.parentFile.mkdirs()
+    }
 }
 
 // This task copies font files from the resources directory into the build output directory.
