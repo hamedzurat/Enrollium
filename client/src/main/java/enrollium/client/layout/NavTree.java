@@ -4,6 +4,11 @@ import atlantafx.base.controls.Spacer;
 import atlantafx.base.theme.Tweaks;
 import enrollium.client.page.Page;
 import enrollium.client.util.NodeUtils;
+import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
+import javafx.application.Platform;
 import javafx.css.PseudoClass;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -125,20 +130,51 @@ public final class NavTree extends TreeView<Nav> {
             return new Item(new Nav(title, graphic, null, null));
         }
 
-        // Page Item: Creates a clickable navigation link.
-        public static Item page(String title, @Nullable Class<? extends Page> pageClass) {
+        public static Item page(TranslationKey name, @Nullable Class<? extends Page> pageClass) {
             Objects.requireNonNull(pageClass, "pageClass");
-            return new Item(new Nav(title, null, pageClass, Collections.emptyList()));
+            String localizedTitle = I18nManager.getInstance().get(name);
+            Item   item           = new Item(new Nav(localizedTitle, null, pageClass, Collections.emptyList()));
+
+            // Observe language changes and update the title dynamically
+            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+                           .distinctUntilChanged()
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+
+            return item;
         }
 
-        public static Item page(String title, Node graphic, @Nullable Class<? extends Page> pageClass) {
+        public static Item page(TranslationKey name, Node graphic, @Nullable Class<? extends Page> pageClass) {
             Objects.requireNonNull(pageClass, "pageClass");
-            return new Item(new Nav(title, graphic, pageClass, Collections.emptyList()));
+            String localizedTitle = I18nManager.getInstance().get(name);
+            Item   item           = new Item(new Nav(localizedTitle, graphic, pageClass, Collections.emptyList()));
+
+            // Observe language changes and update the title dynamically
+            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+                           .distinctUntilChanged()
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+
+            return item;
         }
 
-        public static Item page(String title, @Nullable Class<? extends Page> pageClass, String... searchKeywords) {
+        public static Item page(TranslationKey name, @Nullable Class<? extends Page> pageClass, String... searchKeywords) {
             Objects.requireNonNull(pageClass, "pageClass");
-            return new Item(new Nav(title, null, pageClass, List.of(searchKeywords)));
+            String localizedTitle = I18nManager.getInstance().get(name);
+            Item   item           = new Item(new Nav(localizedTitle, null, pageClass, List.of(searchKeywords)));
+
+            // Observe language changes and update the title dynamically
+            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+                           .distinctUntilChanged()
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+
+            return item;
+        }
+
+        public void setTitle(String newTitle) {
+            if (isGroup()) {
+                throw new UnsupportedOperationException("Cannot set title on a group item.");
+            }
+            // Replace the current Nav with a new one that has the updated title
+            setValue(new Nav(newTitle, getValue().graphic(), getValue().pageClass(), getValue().searchKeywords()));
         }
 
         public boolean isGroup() {

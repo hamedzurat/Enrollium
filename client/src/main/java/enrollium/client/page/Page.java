@@ -6,6 +6,11 @@ import enrollium.client.event.BrowseEvent;
 import enrollium.client.event.DefaultEventBus;
 import enrollium.client.event.NavEvent;
 import enrollium.client.layout.ApplicationWindow;
+import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -44,7 +49,7 @@ public interface Page {
     int    VGAP_20   = 20;
     Faker  FAKER     = new Faker();
     Random RANDOM    = new Random();
-    String getName();
+    TranslationKey getName();
     Parent getView();
     @Nullable Node getSnapshotTarget();
     void reset();
@@ -106,8 +111,15 @@ public interface Page {
 
             Objects.requireNonNull(page, "page");
 
-            var titleLbl = new Label(page.getName());
+            var titleLbl = new Label();
             titleLbl.getStyleClass().add(Styles.TITLE_1);
+
+            SettingsManager.getInstance()
+                           .observe(Setting.LANGUAGE)
+                           .distinctUntilChanged()
+                           .subscribe(_ -> Platform.runLater(() -> {
+                               titleLbl.setText(I18nManager.getInstance().get(page.getName()));
+                           }));
 
             getStyleClass().add("header");
             setSpacing(20);

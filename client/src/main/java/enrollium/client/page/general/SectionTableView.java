@@ -1,6 +1,7 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -11,11 +12,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+
 public class SectionTableView extends OutlinePage {
-
-    public static final String NAME = "Section Table View";
-
-    private final ObservableList<Section> sections = getSampleData();
+    public static final TranslationKey          NAME     = TranslationKey.SECTION;
+    private final       ObservableList<Section> sections = getSampleData();
 
     public SectionTableView() {
         super();
@@ -31,7 +31,12 @@ public class SectionTableView extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    protected void updateTexts() {
+
+    }
+
+    @Override
+    public TranslationKey getName() {
         return NAME;
     }
 
@@ -60,7 +65,8 @@ public class SectionTableView extends OutlinePage {
         currentCapacityColumn.setCellValueFactory(data -> data.getValue().currentCapacityProperty().asObject());
 
         // Add columns to the table
-        table.getColumns().addAll(nameColumn, idColumn, subjectColumn, trimesterColumn, maxCapacityColumn, currentCapacityColumn);
+        table.getColumns()
+             .addAll(nameColumn, idColumn, subjectColumn, trimesterColumn, maxCapacityColumn, currentCapacityColumn);
 
         // Set items to the table
         table.setItems(sections);
@@ -81,8 +87,8 @@ public class SectionTableView extends OutlinePage {
         // Add Edit Button
         Button editButton = new Button("Edit");
         editButton.setOnAction(event -> {
-            TableView<Section> table = (TableView<Section>) actionsBox.getParent().lookup(".table-view");
-            Section selectedSection = table.getSelectionModel().getSelectedItem();
+            TableView<Section> table           = (TableView<Section>) actionsBox.getParent().lookup(".table-view");
+            Section            selectedSection = table.getSelectionModel().getSelectedItem();
             if (selectedSection != null) {
                 openEditPopup(selectedSection, table);
             } else {
@@ -93,8 +99,8 @@ public class SectionTableView extends OutlinePage {
         // Add Delete Button
         Button deleteButton = new Button("Delete");
         deleteButton.setOnAction(event -> {
-            TableView<Section> table = (TableView<Section>) actionsBox.getParent().lookup(".table-view");
-            Section selectedSection = table.getSelectionModel().getSelectedItem();
+            TableView<Section> table           = (TableView<Section>) actionsBox.getParent().lookup(".table-view");
+            Section            selectedSection = table.getSelectionModel().getSelectedItem();
             if (selectedSection != null) {
                 sections.remove(selectedSection);
             } else {
@@ -144,7 +150,8 @@ public class SectionTableView extends OutlinePage {
             popupStage.close();
         });
 
-        layout.getChildren().addAll(new Label("Edit Section Details"), nameField, idField, subjectField, trimesterField, maxCapacityField, currentCapacityField, saveButton);
+        layout.getChildren()
+              .addAll(new Label("Edit Section Details"), nameField, idField, subjectField, trimesterField, maxCapacityField, currentCapacityField, saveButton);
 
         popupStage.setScene(new Scene(layout, 300, 400));
         popupStage.showAndWait();
@@ -172,19 +179,19 @@ public class SectionTableView extends OutlinePage {
 
     // Inner class representing a Section entity
     public static class Section {
-        private final SimpleStringProperty name;
-        private final SimpleStringProperty section;
-        private final SimpleStringProperty subject;
-        private final SimpleStringProperty trimester;
+        private final SimpleStringProperty  name;
+        private final SimpleStringProperty  section;
+        private final SimpleStringProperty  subject;
+        private final SimpleStringProperty  trimester;
         private final SimpleIntegerProperty maxCapacity;
         private final SimpleIntegerProperty currentCapacity;
 
         public Section(String name, String section, String subject, String trimester, int maxCapacity, int currentCapacity) {
-            this.name = new SimpleStringProperty(name);
-            this.section = new SimpleStringProperty(section);
-            this.subject = new SimpleStringProperty(subject);
-            this.trimester = new SimpleStringProperty(trimester);
-            this.maxCapacity = new SimpleIntegerProperty(maxCapacity);
+            this.name            = new SimpleStringProperty(name);
+            this.section         = new SimpleStringProperty(section);
+            this.subject         = new SimpleStringProperty(subject);
+            this.trimester       = new SimpleStringProperty(trimester);
+            this.maxCapacity     = new SimpleIntegerProperty(maxCapacity);
             this.currentCapacity = new SimpleIntegerProperty(currentCapacity);
         }
 

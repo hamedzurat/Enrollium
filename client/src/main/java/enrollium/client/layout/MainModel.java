@@ -15,11 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+
 public class MainModel {
-    public static final Class<? extends Page> DEFAULT_PAGE = Button.class;
-    private static final Map<Class<? extends Page>, NavTree.Item> NAV_TREE = createNavItems();
-    private final ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
-    private final ReadOnlyObjectWrapper<NavTree.Item> navTree = new ReadOnlyObjectWrapper<>(createTree());
+    public static final  Class<? extends Page>                        DEFAULT_PAGE = Button.class;
+    private static final Map<Class<? extends Page>, NavTree.Item>     NAV_TREE     = createNavItems();
+    private final        ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
+    private final        ReadOnlyObjectWrapper<NavTree.Item>          navTree      = new ReadOnlyObjectWrapper<>(createTree());
 
     public MainModel() {
         // Load page if NavEvent happens
@@ -34,12 +35,13 @@ public class MainModel {
         map.put(Button.class, NavTree.Item.page(Button.NAME, Button.class));
 
         // general
+        map.put(Login.class, NavTree.Item.page(Login.NAME, Login.class));
 
         // new pages
-        map.put(SpaceTimeFormView.class, NavTree.Item.page("SpaceTime Form", SpaceTimeFormView.class));
-        map.put(SpaceTimeTableView.class, NavTree.Item.page("SpaceTime Table", SpaceTimeTableView.class));
-        map.put(SectionFormView.class, NavTree.Item.page("Section Form", SectionFormView.class));
-        map.put(SectionTableView.class, NavTree.Item.page("Section Table", SectionTableView.class));
+        map.put(SpaceTimeFormView.class, NavTree.Item.page(SpaceTimeFormView.NAME, SpaceTimeFormView.class));
+        map.put(SpaceTimeTableView.class, NavTree.Item.page(SpaceTimeTableView.NAME, SpaceTimeTableView.class));
+        map.put(SectionFormView.class, NavTree.Item.page(SectionFormView.NAME, SectionFormView.class));
+        map.put(SectionTableView.class, NavTree.Item.page(SectionTableView.NAME, SectionTableView.class));
 
         return map;
     }
@@ -47,7 +49,7 @@ public class MainModel {
     // Constructing the Sidebar Tree
     private NavTree.Item createTree() {
         var general = NavTree.Item.group("General", new FontIcon(Material2OutlinedMZ.SPEED));
-        general.getChildren().setAll(  );
+        general.getChildren().setAll(NAV_TREE.get(Login.class));
         general.setExpanded(true);
 
         var spaceTime = NavTree.Item.group("SpaceTime", new FontIcon(Material2OutlinedMZ.PUBLIC));
@@ -79,11 +81,10 @@ public class MainModel {
 
     // for search dialog
     List<NavTree.Item> findPages(String filter) {
-        return NAV_TREE
-                .values()
-                .stream()
-                .filter(item -> item.getValue() != null && item.getValue().matches(filter))
-                .toList();
+        return NAV_TREE.values()
+                       .stream()
+                       .filter(item -> item.getValue() != null && item.getValue().matches(filter))
+                       .toList();
     }
 
     // exposes observable

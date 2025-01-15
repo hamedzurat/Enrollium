@@ -10,6 +10,13 @@ public enum TranslationKey {
     DECREMENT("decrement"), //
     RESET("reset"), //
     SELECT_LANGUAGE("select_language"), //
+    LOGIN("login"),
+    SECTION("section"),
+    SPACETIME("space_time"),
+    BUTTON("button"),
+    CHANGEPASSWORD("change_pass"),
+    USERPAGE("user_page"),
+    ADVISING("advising"),
     ;
     /*
      *

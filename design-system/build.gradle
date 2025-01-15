@@ -11,3 +11,15 @@ dependencies {
     implementation(libs.json)
     implementation(project(":lib"))
 }
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(ProcessResources) {
+    filteringCharset = 'UTF-8'
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+}

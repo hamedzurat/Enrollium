@@ -32,7 +32,9 @@ final class SettingsDialog extends ModalDialog {
     private final        ToggleGroup      thumbnailsGroup   = new ToggleGroup();
     private final        ComboBox<String> fontFamilyChooser = createFontFamilyChooser();
     private final        Spinner<Integer> fontSizeSpinner   = createFontSizeSpinner();
-    private final ColorPicker accentColorPicker = createAccentColorPicker();    private final ComboBox<String> languageDropdown = createLanguageDropdown();
+    private final        ColorPicker      accentColorPicker = createAccentColorPicker();
+    private final        ComboBox<String> languageDropdown = createLanguageDropdown();
+
     public SettingsDialog() {
         super();
 

@@ -1,6 +1,7 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,10 +10,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
 
-public class SpaceTimeTableView extends OutlinePage {
 
-    public static final String NAME = "SpaceTime Table View";
-    private final ObservableList<SpaceTime> spaceTimeData;
+public class SpaceTimeTableView extends OutlinePage {
+    public static final TranslationKey            NAME = TranslationKey.SPACETIME;
+    private final       ObservableList<SpaceTime> spaceTimeData;
 
     // Default constructor with some initial content
     public SpaceTimeTableView() {
@@ -38,7 +39,12 @@ public class SpaceTimeTableView extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    protected void updateTexts() {
+
+    }
+
+    @Override
+    public TranslationKey getName() {
         return NAME;
     }
 
@@ -83,11 +89,11 @@ public class SpaceTimeTableView extends OutlinePage {
         private final SimpleStringProperty timeSlot;
 
         public SpaceTime(String roomName, String roomNumber, String roomType, String day, String timeSlot) {
-            this.roomName = new SimpleStringProperty(roomName);
+            this.roomName   = new SimpleStringProperty(roomName);
             this.roomNumber = new SimpleStringProperty(roomNumber);
-            this.roomType = new SimpleStringProperty(roomType);
-            this.day = new SimpleStringProperty(day);
-            this.timeSlot = new SimpleStringProperty(timeSlot);
+            this.roomType   = new SimpleStringProperty(roomType);
+            this.day        = new SimpleStringProperty(day);
+            this.timeSlot   = new SimpleStringProperty(timeSlot);
         }
 
         public String getRoomName() {

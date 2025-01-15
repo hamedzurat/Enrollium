@@ -1,6 +1,7 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -9,9 +10,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
-public class SpaceTimeFormView extends OutlinePage {
 
-    public static final String NAME = "SpaceTime Form View";
+public class SpaceTimeFormView extends OutlinePage {
+    public static final TranslationKey NAME = TranslationKey.SPACETIME;
 
     public SpaceTimeFormView() {
         super();
@@ -24,7 +25,12 @@ public class SpaceTimeFormView extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    protected void updateTexts() {
+
+    }
+
+    @Override
+    public TranslationKey getName() {
         return NAME;
     }
 
@@ -39,19 +45,19 @@ public class SpaceTimeFormView extends OutlinePage {
         form.setVgap(10);
         form.setPadding(new Insets(10));
 
-        Label roomNameLabel = new Label("Room Name:");
+        Label     roomNameLabel = new Label("Room Name:");
         TextField roomNameField = new TextField();
 
-        Label roomNumberLabel = new Label("Room Number:");
+        Label     roomNumberLabel = new Label("Room Number:");
         TextField roomNumberField = new TextField();
 
-        Label roomTypeLabel = new Label("Room Type:");
+        Label     roomTypeLabel = new Label("Room Type:");
         TextField roomTypeField = new TextField();
 
-        Label dayLabel = new Label("Day:");
+        Label     dayLabel = new Label("Day:");
         TextField dayField = new TextField();
 
-        Label timeSlotLabel = new Label("Time Slot:");
+        Label     timeSlotLabel = new Label("Time Slot:");
         TextField timeSlotField = new TextField();
 
         Button submitButton = new Button("Submit");

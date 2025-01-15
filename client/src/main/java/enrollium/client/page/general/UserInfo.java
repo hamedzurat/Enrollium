@@ -1,25 +1,28 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
+
 public class UserInfo extends OutlinePage {
-
-    public static final String NAME = "User Info";
-
-    private final String studentName = "Mr X";
-    private final String studentID = "123456";
-    private final String department = "Computer Science";
-    private final String email = "mrx@gmail.com";
-    private final String contactNumber = "01123456789";
-    private final double cgpa = 3.85;
-    private final int runningCourses = 5;
-    private final int completedCredits = 90;
-    private final int maxCreditLimit = 120;
+    public static final TranslationKey NAME             = TranslationKey.USERPAGE;
+    private final       String         studentName      = "Mr X";
+    private final       String         studentID        = "123456";
+    private final       String         department       = "Computer Science";
+    private final       String         email            = "mrx@gmail.com";
+    private final       String         contactNumber    = "01123456789";
+    private final       double         cgpa             = 3.85;
+    private final       int            runningCourses   = 5;
+    private final       int            completedCredits = 90;
+    private final       int            maxCreditLimit   = 120;
 
     public UserInfo() {
         super();
@@ -117,22 +120,22 @@ public class UserInfo extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    public TranslationKey getName() {
         return NAME;
     }
 
     // Inner Class to Represent Courses
     public static class Course {
-        private final javafx.beans.property.SimpleStringProperty courseCode;
-        private final javafx.beans.property.SimpleStringProperty courseName;
-        private final javafx.beans.property.SimpleStringProperty instructor;
+        private final javafx.beans.property.SimpleStringProperty  courseCode;
+        private final javafx.beans.property.SimpleStringProperty  courseName;
+        private final javafx.beans.property.SimpleStringProperty  instructor;
         private final javafx.beans.property.SimpleIntegerProperty credits;
 
         public Course(String courseCode, String courseName, String instructor, int credits) {
             this.courseCode = new javafx.beans.property.SimpleStringProperty(courseCode);
             this.courseName = new javafx.beans.property.SimpleStringProperty(courseName);
             this.instructor = new javafx.beans.property.SimpleStringProperty(instructor);
-            this.credits = new javafx.beans.property.SimpleIntegerProperty(credits);
+            this.credits    = new javafx.beans.property.SimpleIntegerProperty(credits);
         }
 
         public javafx.beans.property.SimpleStringProperty courseCodeProperty() {

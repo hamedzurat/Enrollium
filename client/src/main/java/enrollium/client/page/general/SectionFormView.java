@@ -1,16 +1,19 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import org.jetbrains.annotations.Nullable;
 
-public class SectionFormView extends OutlinePage {
 
-    public static final String NAME = "Section Form View";
+public class SectionFormView extends OutlinePage {
+    public static final TranslationKey NAME = TranslationKey.SECTION;
 
     public SectionFormView() {
         super();
@@ -23,7 +26,12 @@ public class SectionFormView extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    protected void updateTexts() {
+
+    }
+
+    @Override
+    public TranslationKey getName() {
         return NAME;
     }
 
@@ -47,22 +55,22 @@ public class SectionFormView extends OutlinePage {
         form.setVgap(10);
         form.setPadding(new Insets(10));
 
-        Label sectionNameLabel = new Label("Section Name:");
+        Label     sectionNameLabel = new Label("Section Name:");
         TextField sectionNameField = new TextField();
 
-        Label sectionIdLabel = new Label("Section ID:");
+        Label     sectionIdLabel = new Label("Section ID:");
         TextField sectionIdField = new TextField();
 
-        Label subjectLabel = new Label("Subject:");
+        Label     subjectLabel = new Label("Subject:");
         TextField subjectField = new TextField();
 
-        Label trimesterLabel = new Label("Trimester:");
+        Label     trimesterLabel = new Label("Trimester:");
         TextField trimesterField = new TextField();
 
-        Label maxCapacityLabel = new Label("Max Capacity:");
+        Label     maxCapacityLabel = new Label("Max Capacity:");
         TextField maxCapacityField = new TextField();
 
-        Label currentCapacityLabel = new Label("Current Capacity:");
+        Label     currentCapacityLabel = new Label("Current Capacity:");
         TextField currentCapacityField = new TextField();
 
         Button submitButton = new Button("Submit");

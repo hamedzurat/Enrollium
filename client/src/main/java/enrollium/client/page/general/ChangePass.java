@@ -1,14 +1,15 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.geometry.Insets;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+
 
 public class ChangePass extends OutlinePage {
-    public static final String NAME = "Change Password";
+    public static final TranslationKey NAME = TranslationKey.CHANGEPASSWORD;
 
     public ChangePass() {
         super();
@@ -43,8 +44,8 @@ public class ChangePass extends OutlinePage {
         // Add Submit Button
         Button submitButton = new Button("Change Password");
         submitButton.setOnAction(event -> {
-            String oldPassword = oldPasswordField.getText();
-            String newPassword = newPasswordField.getText();
+            String oldPassword     = oldPasswordField.getText();
+            String newPassword     = newPasswordField.getText();
             String confirmPassword = confirmPasswordField.getText();
 
             if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
@@ -76,7 +77,7 @@ public class ChangePass extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    public TranslationKey getName() {
         return NAME;
     }
 }

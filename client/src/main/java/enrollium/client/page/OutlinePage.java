@@ -2,6 +2,9 @@ package enrollium.client.page;
 
 import atlantafx.base.theme.Styles;
 import enrollium.client.util.NodeUtils;
+import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
 import javafx.application.Platform;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
@@ -37,12 +40,14 @@ import static javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER;
 // |  +-------------------+  +--------------------+  |
 // +--------------------------------------------------+
 public abstract class OutlinePage extends StackPane implements Page {
-    protected static final int        OUTLINE_WIDTH   = 200;
-    protected final        ScrollPane scrollPane      = new ScrollPane();
-    protected final        VBox       userContent     = new VBox();
-    protected final        StackPane  userContentArea = new StackPane(userContent);
-    protected final        Outline    outline         = new Outline(createOutlineHandler());
-    protected              boolean    isRendered      = false;
+    protected static final int             OUTLINE_WIDTH   = 200;
+    protected final        ScrollPane      scrollPane      = new ScrollPane();
+    protected final        VBox            userContent     = new VBox();
+    protected final        StackPane       userContentArea = new StackPane(userContent);
+    protected final        Outline         outline         = new Outline(createOutlineHandler());
+    protected final        SettingsManager settings        = SettingsManager.getInstance();
+    protected final        I18nManager     i18nManager     = I18nManager.getInstance();
+    protected              boolean         isRendered      = false;
 
     protected OutlinePage() {
         super();
@@ -52,6 +57,21 @@ public abstract class OutlinePage extends StackPane implements Page {
 
         createPageLayout();
     }
+
+    protected void initializeBase() {
+        // Subscribe to language changes and trigger text updates
+        settings.observe(Setting.LANGUAGE)
+                .distinctUntilChanged()
+                .subscribe(_ -> Platform.runLater(this::updateTexts));
+
+        // Initial update of texts
+        updateTexts();
+    }
+
+    /**
+     * This method must be implemented by child controllers to update their texts.
+     */
+    protected abstract void updateTexts();
 
     protected void createPageLayout() {
         StackPane.setMargin(userContent, new Insets(0, OUTLINE_WIDTH, 0, 0));
@@ -64,8 +84,8 @@ public abstract class OutlinePage extends StackPane implements Page {
 
         // Scroll Spy: Highlights the outline section corresponding to the visible content.
         scrollPane.vvalueProperty().addListener((obs, old, val) ->
-                                                        // we need a little gap between changing vValue and fetching header bounds
-                                                        Platform.runLater(() -> outline.select(getFirstVisibleHeader())));
+                // we need a little gap between changing vValue and fetching header bounds
+                Platform.runLater(() -> outline.select(getFirstVisibleHeader())));
 
         var pageBody = new StackPane();
         pageBody.getChildren().setAll(scrollPane, outline);

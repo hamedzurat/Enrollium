@@ -4,6 +4,7 @@ import atlantafx.base.theme.Styles;
 import atlantafx.base.util.BBCodeParser;
 import enrollium.client.page.ExampleBox;
 import enrollium.client.page.OutlinePage;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.geometry.Pos;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.layout.HBox;
@@ -14,22 +15,22 @@ import org.kordamp.ikonli.material2.Material2AL;
 
 
 public final class Button extends OutlinePage {
-    public static final String NAME = "Button";
+    public static final TranslationKey NAME = TranslationKey.BUTTON;
 
     public Button() {
         super();
 
         addPageHeader();
         addFormattedText("""
-                                 A simple button control. The button control can contain text and/or a graphic.
-                                 A button control has three different modes:
+                A simple button control. The button control can contain text and/or a graphic.
+                A button control has three different modes:
 
-                                 [ul]
-                                 [li]Normal: A normal push button.[/li]
-                                 [li]Default: A default button is the button that receives a keyboard [code]VK_ENTER[/code] press,
-                                 if no other node in the scene consumes it.[/li]
-                                 [li]Cancel: A cancel button is the button that receives a keyboard [code]VK_ESC[/code] press,
-                                 if no other node in the scene consumes it.[/li][/ul]""");
+                [ul]
+                [li]Normal: A normal push button.[/li]
+                [li]Default: A default button is the button that receives a keyboard [code]VK_ENTER[/code] press,
+                if no other node in the scene consumes it.[/li]
+                [li]Cancel: A cancel button is the button that receives a keyboard [code]VK_ESC[/code] press,
+                if no other node in the scene consumes it.[/li][/ul]""");
         addSection("Usage", buttonUsageExample());
         addSection("Colored", coloredButtonExample());
         addSection("Icon Button", iconButtonExample());
@@ -41,7 +42,12 @@ public final class Button extends OutlinePage {
     }
 
     @Override
-    public String getName() {
+    protected void updateTexts() {
+
+    }
+
+    @Override
+    public TranslationKey getName() {
         return NAME;
     }
 
@@ -62,9 +68,9 @@ public final class Button extends OutlinePage {
 
         var box = new HBox(HGAP_20, normalBtn, defaultBtn, outlinedBtn, flatBtn);
         var description = BBCodeParser.createFormattedText("""
-                                                                   The [i]Button[/i] comes with four CSS variants: normal (default), colored, \
-                                                                   outlined, and flat (or text). To change the appearance of the [i]Button[/i], \
-                                                                   you set the corresponding style classes that work as modifiers.""");
+                The [i]Button[/i] comes with four CSS variants: normal (default), colored, \
+                outlined, and flat (or text). To change the appearance of the [i]Button[/i], \
+                you set the corresponding style classes that work as modifiers.""");
         return new ExampleBox(box, description);
     }
 
@@ -113,7 +119,7 @@ public final class Button extends OutlinePage {
 
         var box = new VBox(VGAP_20, new HBox(HGAP_20, accentBtn, successBtn, dangerBtn), new HBox(HGAP_20, accentOutBtn, successOutBtn, dangerOutBtn), new HBox(HGAP_20, accentFlatBtn, successFlatBtn, dangerFlatBtn));
         var description = BBCodeParser.createFormattedText("""
-                                                                   You can change the [i]Button[/i] color simply by using predefined style class modifiers.""");
+                You can change the [i]Button[/i] color simply by using predefined style class modifiers.""");
 
         return new ExampleBox(box, description);
     }
@@ -143,9 +149,9 @@ public final class Button extends OutlinePage {
 
         var box = new HBox(HGAP_20, normalBtn, accentBtn, successBtn, dangerBtn, flatAccentBtn, flatSuccessBtn, flatDangerBtn);
         var description = BBCodeParser.createFormattedText("""
-                                                                   Icon buttons are present in two variants. The first one is just a \
-                                                                   normal [i]Button[/i] but with no text and the second one is a flat button - \
-                                                                   suitable for toolbars and similar controls.""");
+                Icon buttons are present in two variants. The first one is just a \
+                normal [i]Button[/i] but with no text and the second one is a flat button - \
+                suitable for toolbars and similar controls.""");
 
         return new ExampleBox(box, description);
     }
@@ -176,8 +182,8 @@ public final class Button extends OutlinePage {
         var box = new HBox(HGAP_20, normalBtn, accentBtn, successBtn, dangerBtn, flatAccentBtn, flatSuccessBtn, flatDangerBtn);
 
         var description = BBCodeParser.createFormattedText("""
-                                                                   You can also apply the [code]setShape()[/code] method to make the \
-                                                                   [i]Button[/i] look circular.""");
+                You can also apply the [code]setShape()[/code] method to make the \
+                [i]Button[/i] look circular.""");
 
         return new ExampleBox(box, description);
     }
@@ -199,8 +205,8 @@ public final class Button extends OutlinePage {
 
         var box = new HBox(HGAP_20, accentOutBtn, successOutBtn, dangerOutBtn);
         var description = BBCodeParser.createFormattedText("""
-                                                                   Outlined buttons are medium-emphasis buttons. They contain actions that are \
-                                                                   important but aren't the primary action in an app.""");
+                Outlined buttons are medium-emphasis buttons. They contain actions that are \
+                important but aren't the primary action in an app.""");
 
         return new ExampleBox(box, description);
     }
@@ -220,8 +226,8 @@ public final class Button extends OutlinePage {
         box.setAlignment(Pos.CENTER_LEFT);
 
         var description = BBCodeParser.createFormattedText("""
-                                                                   [i]Button[/i] corners can be rounded with the [code]Styles.ROUNDED[/code] \
-                                                                   style class modifier.""");
+                [i]Button[/i] corners can be rounded with the [code]Styles.ROUNDED[/code] \
+                style class modifier.""");
 
         return new ExampleBox(box, description);
     }
@@ -240,8 +246,8 @@ public final class Button extends OutlinePage {
         box.setAlignment(Pos.CENTER_LEFT);
 
         var description = BBCodeParser.createFormattedText("""
-                                                                   For larger or smaller buttons, use the [code]Styles.SMALL[/code] or \
-                                                                   [code]Styles.LARGE[/code] style classes, respectively.""");
+                For larger or smaller buttons, use the [code]Styles.SMALL[/code] or \
+                [code]Styles.LARGE[/code] style classes, respectively.""");
 
         return new ExampleBox(box, description);
     }
@@ -251,33 +257,33 @@ public final class Button extends OutlinePage {
         var btn = new javafx.scene.control.Button("DO SOMETHING!");
         btn.getStyleClass().addAll(Styles.SUCCESS, Styles.LARGE);
         btn.setStyle("""
-                             -color-button-bg: linear-gradient(
-                                 to bottom right, -color-success-emphasis, darkblue
-                             );
-                             -color-button-bg-hover:   -color-button-bg;
-                             -color-button-bg-focused: -color-button-bg;
-                             -color-button-bg-pressed: -color-button-bg;""");
+                -color-button-bg: linear-gradient(
+                    to bottom right, -color-success-emphasis, darkblue
+                );
+                -color-button-bg-hover:   -color-button-bg;
+                -color-button-bg-focused: -color-button-bg;
+                -color-button-bg-pressed: -color-button-bg;""");
 
         var iconBtn = new javafx.scene.control.Button(null, new FontIcon(Material2AL.FAVORITE));
         iconBtn.getStyleClass().addAll("favorite-button", Styles.BUTTON_CIRCLE, Styles.FLAT, Styles.DANGER);
         iconBtn.getStylesheets().add(Styles.toDataURI("""
-                                                              .favorite-button.button >.ikonli-font-icon {
-                                                                  -fx-fill: linear-gradient(
-                                                                      to bottom right, pink, -color-danger-emphasis
-                                                                  );
-                                                                  -fx-icon-color: linear-gradient(
-                                                                      to bottom right, pink, -color-danger-emphasis
-                                                                  );
-                                                                  -fx-font-size:  32px;
-                                                                  -fx-icon-size:  32px;
-                                                              }"""));
+                .favorite-button.button >.ikonli-font-icon {
+                    -fx-fill: linear-gradient(
+                        to bottom right, pink, -color-danger-emphasis
+                    );
+                    -fx-icon-color: linear-gradient(
+                        to bottom right, pink, -color-danger-emphasis
+                    );
+                    -fx-font-size:  32px;
+                    -fx-icon-size:  32px;
+                }"""));
 
         var box = new HBox(HGAP_20, btn, iconBtn);
         box.setAlignment(Pos.CENTER_LEFT);
 
         var description = BBCodeParser.createFormattedText("""
-                                                                   In addition to using the predefined [i]Button[/i] colors, you can add custom ones \
-                                                                   by manipulating the looked-up color variables.""");
+                In addition to using the predefined [i]Button[/i] colors, you can add custom ones \
+                by manipulating the looked-up color variables.""");
 
         return new ExampleBox(box, description);
     }

@@ -1,27 +1,35 @@
 package enrollium.client.page.general;
 
 import enrollium.client.page.Page;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.geometry.Pos;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Random;
 
+
 public class Advising implements Page {
-
-    private final HashMap<String, String> courseSchedule = new HashMap<>();
-    private String selectedCourseCode = null;
-    private String selectedSection = null;
-
-    private GridPane planner;
-    private Button takeCourseButton;
+    public static final TranslationKey          NAME               = TranslationKey.ADVISING;
+    private final       HashMap<String, String> courseSchedule     = new HashMap<>();
+    private             String                  selectedCourseCode = null;
+    private             String                  selectedSection    = null;
+    private             GridPane                planner;
+    private             Button                  takeCourseButton;
 
     public VBox createAdvisingUI() {
         populateCourseSchedule();
@@ -40,7 +48,7 @@ public class Advising implements Page {
         planner.setVgap(10);
         planner.setPadding(new Insets(10));
 
-        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Saturday"};
+        String[] days      = {"Monday", "Tuesday", "Wednesday", "Thursday", "Saturday"};
         String[] timeSlots = {"8:30-9:50", "9:51-11:10", "11:11-12:30", "12:31-1:50", "1:51-3:10", "3:11-4:30"};
 
         configureGrid(days, timeSlots);
@@ -57,7 +65,7 @@ public class Advising implements Page {
             if (selectedCourseCode != null && selectedSection != null) {
                 if (courseSchedule.containsKey(selectedCourseCode)) {
                     String selectedCourseName = courseSchedule.get(selectedCourseCode);
-                    String message = "Successfully registered for Section " + selectedSection + " of " + selectedCourseCode + " (" + selectedCourseName + ").";
+                    String message            = "Successfully registered for Section " + selectedSection + " of " + selectedCourseCode + " (" + selectedCourseName + ").";
                     showPopup("Success", message);
                 } else {
                     String message = "Selected course does not exist in the schedule.";
@@ -110,7 +118,7 @@ public class Advising implements Page {
         Random random = new Random();
 
         String[] courseCodes = courseSchedule.keySet().toArray(new String[0]);
-        int courseIndex = 0;
+        int      courseIndex = 0;
 
         for (int row = 1; row <= timeSlots.length; row++) {
             for (int col = 1; col <= days.length; col++) {
@@ -123,13 +131,13 @@ public class Advising implements Page {
                 courseButton.setPrefSize(150, 80); // Set uniform size for all buttons
 
                 ContextMenu sectionMenu = new ContextMenu();
-                int numSections = 4 + random.nextInt(4);
+                int         numSections = 4 + random.nextInt(4);
                 for (int i = 1; i <= numSections; i++) {
-                    String section = "Section " + (char) ('A' + (i - 1));
+                    String   section     = "Section " + (char) ('A' + (i - 1));
                     MenuItem sectionItem = new MenuItem(section);
                     sectionItem.setOnAction(e -> {
                         selectedCourseCode = courseCode;
-                        selectedSection = section;
+                        selectedSection    = section;
                         showPopup("Selection", courseCode + " - " + courseName + " selected. Section: " + section);
                     });
                     sectionMenu.getItems().add(sectionItem);
@@ -202,15 +210,14 @@ public class Advising implements Page {
     }
 
     @Override
-    public String getName() {
-        return "Advising UI"; // Name to display in the navigation tree
+    public TranslationKey getName() {
+        return NAME;
     }
 
     @Override
     public Parent getView() {
         return createAdvisingUI(); // Return the UI for the Advising page
     }
-
 
     @Override
     public @Nullable Node getSnapshotTarget() {

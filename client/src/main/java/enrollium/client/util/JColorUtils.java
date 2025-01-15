@@ -390,7 +390,7 @@ public class JColorUtils {
      */
     public static float[] toHSL(int red, int green, int blue) {
         return toHSL(toArithmeticRGB(red), toArithmeticRGB(green),
-                     toArithmeticRGB(blue));
+                toArithmeticRGB(blue));
     }
 
     /**
@@ -837,12 +837,12 @@ public class JColorUtils {
                 opacity * fgColor.getRed() + (1 - opacity) * bg.getRed(),
                 opacity * fgColor.getGreen() + (1 - opacity) * bg.getGreen(),
                 opacity * fgColor.getBlue() + (1 - opacity) * bg.getBlue(),
-                }
+        }
                : new double[]{
                        fgColor.getRed(),
                        fgColor.getGreen(),
                        fgColor.getBlue(),
-                       };
+               };
     }
 
     /**

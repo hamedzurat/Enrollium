@@ -1,15 +1,10 @@
 package enrollium.client.layout;
 
 import enrollium.client.page.Page;
-import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.util.Duration;
-
-import java.util.Objects;
 
 import static javafx.scene.layout.Priority.ALWAYS;
 
@@ -73,7 +68,7 @@ class MainLayer extends BorderPane {
             }
 
             // Load the new page and add it to the StackPane
-            final Page nextPage = pageClass.getDeclaredConstructor().newInstance();
+            final Page        nextPage = pageClass.getDeclaredConstructor().newInstance();
             javafx.scene.Node nextView = nextPage.getView();
 
             if (nextView == null) {
@@ -83,7 +78,6 @@ class MainLayer extends BorderPane {
             // Add the new page view
             subLayerPane.getChildren().clear(); // Clear existing children
             subLayerPane.getChildren().add(nextView);
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
