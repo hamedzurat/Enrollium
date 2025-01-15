@@ -3,6 +3,7 @@ package enrollium.client.layout;
 import enrollium.client.event.DefaultEventBus;
 import enrollium.client.event.NavEvent;
 import enrollium.client.page.Page;
+import enrollium.client.page.database.*;
 import enrollium.client.page.debug.Button;
 import enrollium.client.page.general.*;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -43,6 +44,17 @@ public class MainModel {
         map.put(SectionFormView.class, NavTree.Item.page(SectionFormView.NAME, SectionFormView.class));
         map.put(SectionTableView.class, NavTree.Item.page(SectionTableView.NAME, SectionTableView.class));
 
+        // DB
+        map.put(CoursePage.class, NavTree.Item.page(CoursePage.NAME, CoursePage.class));
+        map.put(FacultyPage.class, NavTree.Item.page(FacultyPage.NAME, FacultyPage.class));
+        map.put(NotificationPage.class, NavTree.Item.page(NotificationPage.NAME, NotificationPage.class));
+        map.put(PrerequisitePage.class, NavTree.Item.page(PrerequisitePage.NAME, PrerequisitePage.class));
+        map.put(SectionPage.class, NavTree.Item.page(SectionPage.NAME, SectionPage.class));
+        map.put(SpaceTimePage.class, NavTree.Item.page(SpaceTimePage.NAME, SpaceTimePage.class));
+        map.put(StudentPage.class, NavTree.Item.page(StudentPage.NAME, StudentPage.class));
+        map.put(SubjectPage.class, NavTree.Item.page(SubjectPage.NAME, SubjectPage.class));
+        map.put(UserPage.class, NavTree.Item.page(UserPage.NAME, UserPage.class));
+
         return map;
     }
 
@@ -63,8 +75,12 @@ public class MainModel {
         var debug = NavTree.Item.group("DEBUG", new FontIcon(Material2OutlinedMZ.SETTINGS));
         debug.getChildren().setAll(NAV_TREE.get(Button.class));
 
+        var db = NavTree.Item.group("Database", new FontIcon(Material2OutlinedMZ.SETTINGS));
+        db.getChildren()
+          .setAll(NAV_TREE.get(CoursePage.class), NAV_TREE.get(FacultyPage.class), NAV_TREE.get(NotificationPage.class), NAV_TREE.get(PrerequisitePage.class), NAV_TREE.get(SectionPage.class), NAV_TREE.get(SpaceTimePage.class), NAV_TREE.get(StudentPage.class), NAV_TREE.get(SubjectPage.class), NAV_TREE.get(UserPage.class));
+
         var root = NavTree.Item.root();
-        root.getChildren().setAll(debug, general, spaceTime, sections);
+        root.getChildren().setAll(debug, general, spaceTime, sections, db);
 
         return root;
     }

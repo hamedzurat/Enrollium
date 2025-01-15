@@ -13,10 +13,19 @@ public enum TranslationKey {
     LOGIN("login"),
     SECTION("section"),
     SPACETIME("space_time"),
+    SPACE_TIME("space_time"),
     BUTTON("button"),
     CHANGEPASSWORD("change_pass"),
     USERPAGE("user_page"),
     ADVISING("advising"),
+    COURSE("COURSE"),
+    STUDENT("STUDENT"),
+    TRIMESTER("TRIMESTER"),
+    FACULTY("FACULTY"),
+    NOTIFICATION("NOTIFICATION"),
+    SUBJECT("SUBJECT"),
+    PREREQUISITE("PREREQUISITE"),
+    USER("USER"),
     ;
     /*
      *
