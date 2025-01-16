@@ -1,9 +1,9 @@
 package enrollium.rpc.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import enrollium.lib.version.Version;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import enrollium.lib.version.Version;
 
 
 /**

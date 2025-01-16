@@ -151,7 +151,8 @@ public class RPCConnection implements AutoCloseable {
                     }
                 }
 
-                if (!active.get() || socket.isClosed()) emitter.onError(new IOException("Connection closed while waiting for " + expectedMethod));
+                if (!active.get() || socket.isClosed())
+                    emitter.onError(new IOException("Connection closed while waiting for " + expectedMethod));
             } catch (Exception e) {
                 emitter.onError(e);
             }

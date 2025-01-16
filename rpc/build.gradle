@@ -10,4 +10,5 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.json)
     implementation(project(":lib"))
+    implementation(project(":design-system"))
 }

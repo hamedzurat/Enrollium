@@ -27,8 +27,8 @@ public class SessionManager implements AutoCloseable {
     private static volatile SessionManager                         instance;
     private final           SecureRandom                           secureRandom         = new SecureRandom();
     private final           ConcurrentHashMap<String, SessionInfo> sessions             = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
-    private final MessageHandler           defaultMessageHandler;
+    private final           ScheduledExecutorService               cleanupExecutor      = Executors.newSingleThreadScheduledExecutor();
+    private final           MessageHandler                         defaultMessageHandler;
 
     private SessionManager(MessageHandler defaultMessageHandler) {
         this.defaultMessageHandler = defaultMessageHandler;

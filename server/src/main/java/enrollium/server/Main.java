@@ -1,19 +1,19 @@
 package enrollium.server;
 
-import enrollium.lib.banner.Issue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import enrollium.lib.banner.Issue;
+import enrollium.lib.version.Version;
 import enrollium.rpc.core.JsonUtils;
 import enrollium.rpc.core.SessionInfo;
+import enrollium.rpc.server.ServerRPC;
+import enrollium.rpc.server.SessionManager;
 import enrollium.server.db.DB;
 import enrollium.server.db.entity.*;
 import enrollium.server.db.entity.types.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
-import enrollium.rpc.server.ServerRPC;
-import enrollium.rpc.server.SessionManager;
-import enrollium.lib.version.Version;
 
 import java.security.SecureRandom;
 import java.time.DayOfWeek;
@@ -81,7 +81,7 @@ public class Main {
             if (!adminExists) {
                 // Generate random 16 digit password
                 String password = secureRandom.ints(16, 0, 10).mapToObj(String::valueOf).collect(Collectors.joining());
-                // password = "adminpass";
+                password = "adminpass";
 
                 Faculty admin = new Faculty();
                 admin.setEmail(ADMIN_EMAIL);
@@ -124,18 +124,19 @@ public class Main {
                                                    .firstOrError()
                                                    .cast(User.class);
 
-                    // Try both tables
-                    return Single.merge(studentSearch, facultySearch).firstOrError().flatMap(user1 -> {
-                        if (!user1.verifyPassword(password))
-                            return Single.error(new IllegalArgumentException("Invalid password"));
+                    return studentSearch
+                            .onErrorResumeNext(error -> facultySearch)  // If student search fails, try faculty
+                            .flatMap(user1 -> {
+                                if (!user1.verifyPassword(password))
+                                    return Single.error(new IllegalArgumentException("Invalid password"));
 
-                        return Single.just(user1);
-                    }).onErrorResumeNext(error -> {
-                        if (error instanceof NoSuchElementException)
-                            return Single.error(new IllegalArgumentException("User not found"));
+                                return Single.just(user1);
+                            }).onErrorResumeNext(error -> {
+                                if (error instanceof NoSuchElementException)
+                                    return Single.error(new IllegalArgumentException("User not found"));
 
-                        return Single.error(error);
-                    });
+                                return Single.error(error);
+                            });
                 }).flatMap(user -> {
                     // Generate user ID and create session
                     String UUID = user.getId().toString();

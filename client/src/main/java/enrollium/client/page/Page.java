@@ -17,6 +17,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.TextFlow;
 import net.datafaker.Faker;
 import org.jetbrains.annotations.Nullable;
 import org.kordamp.ikonli.feather.Feather;
@@ -67,8 +68,8 @@ public interface Page {
     //  - Opens external links in a browser.
     //  - Navigates to internal pages using "local://PageName".
     @SuppressWarnings("unchecked")
-    default Node createFormattedText(String text, boolean handleUrl) {
-        var node = BBCodeParser.createFormattedText(text);
+    default TextFlow createFormattedText(String text, boolean handleUrl) {
+        TextFlow node = BBCodeParser.createFormattedText(text);
 
         if (handleUrl) {
             node.addEventFilter(ActionEvent.ACTION, e -> {
