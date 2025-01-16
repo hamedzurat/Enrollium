@@ -15,8 +15,6 @@ public final class Login extends OutlinePage {
 
         addPageHeader();
         addNode(loginPortal());
-
-        initializeBase();
     }
 
     @Override

@@ -18,7 +18,7 @@ import java.util.Objects;
 
 
 public class MainModel {
-    public static final  Class<? extends Page>                        DEFAULT_PAGE = Button.class;
+    public static final  Class<? extends Page>                        DEFAULT_PAGE = CoursePage.class;
     private static final Map<Class<? extends Page>, NavTree.Item>     NAV_TREE     = createNavItems();
     private final        ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
     private final        ReadOnlyObjectWrapper<NavTree.Item>          navTree      = new ReadOnlyObjectWrapper<>(createTree());

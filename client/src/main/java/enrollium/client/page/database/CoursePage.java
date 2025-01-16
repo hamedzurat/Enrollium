@@ -1,22 +1,23 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import net.datafaker.Faker;
 
 import java.util.UUID;
 
 
-public class CoursePage extends OutlinePage {
+public class CoursePage extends BasePage {
     public static final TranslationKey             NAME           = TranslationKey.COURSE;
     private final       TableView<CourseData>      tableView      = new TableView<>();
     private final       ObservableList<CourseData> courseDataList = FXCollections.observableArrayList();
@@ -36,6 +37,7 @@ public class CoursePage extends OutlinePage {
 
     @Override
     protected void updateTexts() {
+        super.updateTexts();
     }
 
     @Override
@@ -84,7 +86,11 @@ public class CoursePage extends OutlinePage {
             return row;
         });
 
+        Utils.styleCourseTableView(tableView);
+        courseDataList.addListener((ListChangeListener<CourseData>) change -> Utils.adjustTableHeight(tableView));
+
         VBox container = new VBox(10, tableView);
+        VBox.setVgrow(tableView, Priority.ALWAYS);
         container.setPadding(new Insets(10));
         return container;
     }
@@ -92,36 +98,24 @@ public class CoursePage extends OutlinePage {
     private VBox createCourseForm() {
         statusField     = new TextField();
         studentDropdown = new ComboBox<>(studentList);
-        Button createBtn = new Button("Create");
-        Button updateBtn = new Button("Update");
-        Button deleteBtn = new Button("Delete");
 
-        HBox actions = new HBox(10, createBtn, updateBtn, deleteBtn);
-        actions.setAlignment(Pos.CENTER);
-        VBox form = new VBox(10, new Label("Status:"), statusField, new Label("Student:"), studentDropdown, actions);
-        form.setPadding(new Insets(10));
-
-        createBtn.setOnAction(e -> {
-            courseDataList.add(new CourseData(UUID.randomUUID()
-                                                  .toString(), statusField.getText(), studentDropdown.getValue()));
-        });
-
-        updateBtn.setOnAction(e -> {
+        HBox actions = Utils.createActionButtons(() -> courseDataList.add(new CourseData(UUID.randomUUID()
+                                                                                             .toString(), statusField.getText(), studentDropdown.getValue())), () -> {
             CourseData selected = tableView.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 selected.setStatus(statusField.getText());
                 selected.setStudent(studentDropdown.getValue());
                 tableView.refresh();
             }
-        });
-
-        deleteBtn.setOnAction(e -> {
+        }, () -> {
             CourseData selected = tableView.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 courseDataList.remove(selected);
             }
         });
 
+        VBox form = new VBox(10, new Label("Status:"), statusField, new Label("Student:"), studentDropdown, actions);
+        form.setPadding(new Insets(10));
         return form;
     }
 

@@ -38,7 +38,7 @@ import static javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER;
 // |  |     Outline       |  |    Content Area    |  |
 // |  |   (Navigation)    |  |   (Scrollable)     |  |
 // |  +-------------------+  +--------------------+  |
-// +--------------------------------------------------+
+// +-------------------------------------------------+
 public abstract class OutlinePage extends StackPane implements Page {
     protected static final int             OUTLINE_WIDTH   = 200;
     protected final        ScrollPane      scrollPane      = new ScrollPane();
@@ -56,9 +56,7 @@ public abstract class OutlinePage extends StackPane implements Page {
         getStyleClass().add("outline-page");
 
         createPageLayout();
-    }
 
-    protected void initializeBase() {
         // Subscribe to language changes and trigger text updates
         settings.observe(Setting.LANGUAGE)
                 .distinctUntilChanged()
