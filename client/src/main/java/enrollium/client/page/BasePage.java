@@ -1,9 +1,13 @@
 package enrollium.client.page;
 
+import atlantafx.base.controls.Notification;
 import atlantafx.base.theme.Styles;
+import atlantafx.base.util.Animations;
+import enrollium.client.page.general.NotificationType;
 import enrollium.design.system.i18n.I18nManager;
 import enrollium.design.system.settings.Setting;
 import enrollium.design.system.settings.SettingsManager;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,18 +16,25 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.scene.text.TextFlow;
+import javafx.util.Duration;
 import org.kordamp.ikonli.feather.Feather;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public abstract class BasePage extends StackPane implements Page {
-    protected final ScrollPane      scrollPane      = new ScrollPane();
-    protected final VBox            userContent     = new VBox();
-    protected final StackPane       userContentArea = new StackPane(userContent);
-    private final   SettingsManager settings        = SettingsManager.getInstance();
-    private final   I18nManager     i18nManager     = I18nManager.getInstance();
-    private final   Label           titleLbl        = new Label();
-    protected       boolean         isRendered      = false;
+    private static final double             NOTIFICATION_SPACING = 10.0;
+    private static final double             NOTIFICATION_HEIGHT  = 60.0;  // Estimated notification height
+    protected final      ScrollPane         scrollPane           = new ScrollPane();
+    protected final      VBox               userContent          = new VBox();
+    protected final      StackPane          userContentArea      = new StackPane(userContent);
+    private final        SettingsManager    settings             = SettingsManager.getInstance();
+    private final        I18nManager        i18nManager          = I18nManager.getInstance();
+    private final        Label              titleLbl             = new Label();
+    private final        List<Notification> activeNotifications  = new ArrayList<>();
+    protected            boolean            isRendered           = false;
 
     protected BasePage() {
         super();
@@ -121,4 +132,54 @@ public abstract class BasePage extends StackPane implements Page {
     }
 
     protected void onRendered() {}
+
+    protected void showNotification(String message, NotificationType type) {
+        showNotification(message, type, Duration.seconds(3));
+    }
+
+    protected void showNotification(String message, NotificationType type, Duration duration) {
+        Notification notification = new Notification(message, new FontIcon(type.getIcon()));
+        notification.getStyleClass().addAll(type.getStyleClass(), Styles.ELEVATED_1);
+
+        notification.setPrefHeight(Region.USE_PREF_SIZE);
+        notification.setMaxHeight(Region.USE_PREF_SIZE);
+
+        // Manage notification stacking (max 3)
+        if (activeNotifications.size() >= 3) {
+            Notification oldest = activeNotifications.remove(0);
+            getChildren().remove(oldest);
+        }
+
+        activeNotifications.add(notification);
+        getChildren().add(notification);
+
+        // Stack vertically by adjusting the top margin
+        updateNotificationPositions();
+
+        // Slide-in animation
+        Animations.slideInDown(notification, Duration.millis(250)).playFromStart();
+
+        // Auto-dismiss after duration
+        PauseTransition delay = new PauseTransition(duration != null ? duration : Duration.seconds(3));
+        delay.setOnFinished(e -> {
+            var out = Animations.slideOutUp(notification, Duration.millis(250));
+            out.setOnFinished(ev -> {
+                getChildren().remove(notification);
+                activeNotifications.remove(notification);
+                updateNotificationPositions();
+            });
+            out.playFromStart();
+        });
+        delay.play();
+    }
+
+    // Adjusts the vertical position of stacked notifications
+    private void updateNotificationPositions() {
+        for (int i = 0; i < activeNotifications.size(); i++) {
+            Notification ntf       = activeNotifications.get(i);
+            double       topMargin = 10 + i * (NOTIFICATION_HEIGHT + NOTIFICATION_SPACING);
+            StackPane.setAlignment(ntf, Pos.TOP_RIGHT);
+            StackPane.setMargin(ntf, new Insets(topMargin, 10, 0, 0));
+        }
+    }
 }
