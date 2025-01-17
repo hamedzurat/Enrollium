@@ -79,7 +79,8 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
                 }
             }
 
-            // Subscribe to auth state to emit the instance
+            // Subscribe to auth state and pass specific error if any
+            // Pass the exact error back to the UI
             instance.observeAuthState().firstElement().subscribe(authenticated -> {
                 if (authenticated) {
                     emitter.onNext(instance);
@@ -87,7 +88,7 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
                 } else {
                     emitter.onError(new RuntimeException("Authentication failed"));
                 }
-            }, error -> emitter.onError(error));
+            }, emitter::onError);
         });
     }
 
@@ -152,10 +153,11 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
                 if (authResponse.isError()) {
                     // Stop retrying for invalid credentials
                     String e = authResponse.getParams().get("message").asText();
-                    log.error("e: {}", e);
-                    if (e != null && e.contains("User not found") && e.contains("Invalid password")) {
-                        log.error("Authentication failed: Invalid credentials");
+                    if (e != null || e.contains("User not found") || e.contains("Invalid password")) {
+                        log.error("Authentication failed: {}", e);
+                        authStateSubject.onError(new RuntimeException(e));
                         logout();
+                        running.set(false);
                         return;
                     }
 
@@ -259,8 +261,7 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
         // This method handles any server-initiated responses that aren't part of a client call
 
         if (response.isError()) log.warn("Received unexpected error response: {}", response.getErrorMessage());
-        else
-            log.info("Received unexpected success response with id: {} | {}", response.getId(), JsonUtils.toJson(response));
+        else log.info("Received unexpected success response with id: {} | {}", response.getId(), JsonUtils.toJson(response));
     }
 
     @Override
@@ -279,6 +280,8 @@ public class ClientRPC implements AutoCloseable, MessageHandler {
     }
 
     public void logout() {
+        running.set(false);
+
         // Clear auth data first
         Volatile.getInstance().remove(AUTH_SESSION_TOKEN);
         Volatile.getInstance().remove(AUTH_USER_TYPE);

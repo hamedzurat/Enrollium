@@ -11,12 +11,14 @@ import enrollium.rpc.client.ClientRPC;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import org.kordamp.ikonli.feather.Feather;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
@@ -45,9 +47,9 @@ public final class Login extends BasePage {
     public Node loginPortal() {
         VBox container = new VBox(10);
         container.setPadding(new Insets(0, //
-                0.2 * javafx.stage.Screen.getPrimary().getBounds().getWidth(), //
+                0.2 * Screen.getPrimary().getBounds().getWidth(), //
                 0, //
-                0.2 * javafx.stage.Screen.getPrimary().getBounds().getWidth()) //
+                0.2 * Screen.getPrimary().getBounds().getWidth()) //
         );
 
         statusMessage = new Message("Welcome", "Please enter your credentials.", new FontIcon(Material2OutlinedAL.HELP_OUTLINE));
@@ -71,7 +73,7 @@ public final class Login extends BasePage {
         passwordField.getStyleClass().add(Styles.LARGE);
 
         var icon = new FontIcon(Feather.EYE_OFF);
-        icon.setCursor(javafx.scene.Cursor.HAND);
+        icon.setCursor(Cursor.HAND);
         icon.setOnMouseClicked(_ -> togglePasswordVisibility(icon));
         icon.getStyleClass().add(Styles.LARGE);
         passwordField.setRight(icon);
@@ -88,7 +90,7 @@ public final class Login extends BasePage {
         logoutButton.setMnemonicParsing(true);
         logoutButton.setOnAction(_ -> {
             ClientRPC.getInstance().logout();
-            replaceStatusMessage(new Message("Success", "Logout  Successful!", new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE)), Styles.SUCCESS);
+            replaceStatusMessage(new Message("Success", "Logout Successful!", new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE)), Styles.SUCCESS);
             toggleButton();
         });
         logoutButton.setDisable(true);
@@ -96,15 +98,15 @@ public final class Login extends BasePage {
         Button fillStudentButton = new Button("Fill demo Student");
         fillStudentButton.getStyleClass().addAll(Styles.LARGE, Styles.BUTTON_OUTLINED);
         fillStudentButton.setOnAction(e -> {
-            emailField.setText("student@example.com");
-            passwordField.setText("studentPass123");
+            emailField.setText("demo.student@uiu.ac.bd");
+            passwordField.setText("demo$tudentP4ss");
         });
 
         Button fillFacultyButton = new Button("Fill demo Faculty");
         fillFacultyButton.getStyleClass().addAll(Styles.LARGE, Styles.BUTTON_OUTLINED);
         fillFacultyButton.setOnAction(e -> {
             emailField.setText("admin@uiu.ac.bd");
-            passwordField.setText("adminpass");
+            passwordField.setText("demoAdm1nPa$$");
         });
 
         HBox buttonRow = new HBox(10, loginButton, logoutButton, fillStudentButton, fillFacultyButton);
@@ -122,7 +124,7 @@ public final class Login extends BasePage {
         });
 
         container.getChildren().addAll(new Region() {{
-                                           setPrefHeight(javafx.stage.Screen.getPrimary().getBounds().getHeight() * 0.15);
+                                           setPrefHeight(Screen.getPrimary().getBounds().getHeight() * 0.15);
                                        }}, //
                 statusMessage, //
                 new Region() {{
@@ -149,11 +151,11 @@ public final class Login extends BasePage {
     private String getPasswordStrength(String password) {
         if (password == null || password.isEmpty()) return "Weak";
 
-        boolean hasUppercase = password.matches(".*[A-Z].*");
-        boolean hasLowercase = password.matches(".*[a-z].*");
-        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasUppercase   = password.matches(".*[A-Z].*");
+        boolean hasLowercase   = password.matches(".*[a-z].*");
+        boolean hasDigit       = password.matches(".*\\d.*");
         boolean hasSpecialChar = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
-        int length = password.length();
+        int     length         = password.length();
 
         int strengthCount = 0;
         if (hasUppercase) strengthCount++;
@@ -168,7 +170,8 @@ public final class Login extends BasePage {
     }
 
     private void validateEmail(String email) {
-        emailField.pseudoClassStateChanged(Styles.STATE_DANGER, !EMAIL_PATTERN.matcher(email).matches() && !email.isEmpty());
+        emailField.pseudoClassStateChanged(Styles.STATE_DANGER, !EMAIL_PATTERN.matcher(email)
+                                                                              .matches() && !email.isEmpty());
     }
 
     private void togglePasswordVisibility(FontIcon icon) {
@@ -181,7 +184,7 @@ public final class Login extends BasePage {
     }
 
     private void toggleButton() {
-        boolean isEmailValid = EMAIL_PATTERN.matcher(emailField.getText()).matches();
+        boolean isEmailValid    = EMAIL_PATTERN.matcher(emailField.getText()).matches();
         boolean isPasswordValid = passwordField.getText().length() >= 8;
         loginButton.setDisable(!(isEmailValid && isPasswordValid && !isAuth()));
         logoutButton.setDisable(!isAuth());
@@ -191,16 +194,23 @@ public final class Login extends BasePage {
         loginButton.setDisable(true);
         replaceStatusMessage(new Message("Loading", "Connecting to server...", new FontIcon(Feather.LOADER)), Styles.WARNING);
 
-        String emailInput = emailField.getText();
+        String emailInput    = emailField.getText();
         String passwordInput = passwordField.getPassword();
 
         ClientRPC.initialize(emailInput, passwordInput).subscribeOn(Schedulers.io()).subscribe(client -> {
+            String type = switch (memory.get("auth_user_type").toString().toUpperCase()) {
+                case "STUDENT" -> "Student";
+                case "TEACHER" -> "Faculty";
+                case "ADMIN" -> "System Administrator";
+                default -> "Known User Type";
+            };
+
             String message = String.format("""
                     Login Successful!
                     User Type: %s
                     Session Token: %s
                     User ID: %s
-                    """, memory.get("auth_user_type"), memory.get("auth_session_token"), memory.get("auth_user_id"));
+                    """, type, memory.get("auth_session_token"), memory.get("auth_user_id"));
 
             Platform.runLater(() -> {
                 replaceStatusMessage(new Message("Success", message, new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE)), Styles.SUCCESS);
@@ -208,7 +218,16 @@ public final class Login extends BasePage {
             });
         }, error -> {
             Platform.runLater(() -> {
-                replaceStatusMessage(new Message("Error", "Login failed: " + error.getMessage(), new FontIcon(Material2OutlinedAL.ERROR_OUTLINE)), Styles.DANGER);
+                String errorMessage      = error.getMessage();
+                String finalErrorMessage = "Unknown Error";
+
+                if (errorMessage.contains("Connection refused")) finalErrorMessage = "Cannot connect to the server. Please check if the server is running.";
+                else if (errorMessage.contains("User not found")) finalErrorMessage = "Email address not found. Please check your email.";
+                else if (errorMessage.contains("Invalid password")) finalErrorMessage = "Incorrect password. Please try again.";
+                else if (errorMessage.contains("Set email and password first")) finalErrorMessage = "Please enter your email and password.";
+                else if (errorMessage.contains("Authentication failed")) finalErrorMessage = "Authentication failed. Please check your credentials and try again.";
+
+                replaceStatusMessage(new Message("Error", "Login failed: " + finalErrorMessage, new FontIcon(Material2OutlinedAL.ERROR_OUTLINE)), Styles.DANGER);
                 toggleButton();
             });
         });
@@ -216,7 +235,7 @@ public final class Login extends BasePage {
 
     private void replaceStatusMessage(Message newMessage, String style) {
         VBox parent = (VBox) statusMessage.getParent();
-        int index = parent.getChildren().indexOf(statusMessage);
+        int  index  = parent.getChildren().indexOf(statusMessage);
         newMessage.getStyleClass().add(style);
         parent.getChildren().set(index, newMessage);
         statusMessage = newMessage;

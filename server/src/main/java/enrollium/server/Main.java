@@ -31,13 +31,14 @@ public class Main {
     private static final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private static final String         ADMIN         = "admin";
     private static final String         ADMIN_EMAIL   = "admin@uiu.ac.bd";
+    private static final String         STUDENT_EMAIL = "demo.student@uiu.ac.bd";
 
     public static void main(String[] args) {
         Issue.print(log);
         log.info("[VERSION]: {}", Version.getVersion());
 
-        // Create admin user if it doesn't exist
-        createAdminUserIfNeeded();
+        // Create demo user if it doesn't exist
+        createDemoUserIfNeeded();
 
         // Add shutdown hook for graceful termination
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -70,7 +71,7 @@ public class Main {
         }
     }
 
-    private static void createAdminUserIfNeeded() {
+    private static void createDemoUserIfNeeded() {
         try {
             // Check if admin already exists
             boolean adminExists = DB.read(Faculty.class, 1, 0)
@@ -79,22 +80,47 @@ public class Main {
                                     .blockingGet() > 0;
 
             if (!adminExists) {
-                // Generate random 16 digit password
-                String password = secureRandom.ints(16, 0, 10).mapToObj(String::valueOf).collect(Collectors.joining());
-                password = "adminpass";
+                // Ensure deletion is complete before creating a new admin
+                String adminPassword = secureRandom.ints(16, 0, 10)
+                                                   .mapToObj(String::valueOf)
+                                                   .collect(Collectors.joining());
+                adminPassword = "demoAdm1nPa$$";
 
                 Faculty admin = new Faculty();
                 admin.setEmail(ADMIN_EMAIL);
                 admin.setName(ADMIN);
-                admin.setPassword(password);
+                admin.setPassword(adminPassword);
                 admin.setType(UserType.ADMIN);
                 admin.setShortcode(ADMIN);
 
                 DB.save(admin).blockingGet();
-                log.info("Created admin user with email: {} password: {}", ADMIN_EMAIL, password);
+                log.info("Created admin user with email: {} password: \"{}\"", ADMIN_EMAIL, adminPassword);
+            }
+
+            boolean studentExists = DB.read(Student.class, 1, 0)
+                                      .filter(s -> STUDENT_EMAIL.equals(s.getEmail()))
+                                      .count()
+                                      .blockingGet() > 0;
+
+            if (!studentExists) {
+                // Ensure deletion is complete before creating a new demo student
+                String studentPassword = secureRandom.ints(16, 0, 10)
+                                                     .mapToObj(String::valueOf)
+                                                     .collect(Collectors.joining());
+                studentPassword = "demo$tudentP4ss";
+
+                Student demoStudent = new Student();
+                demoStudent.setEmail(STUDENT_EMAIL);
+                demoStudent.setName("Demo Student");
+                demoStudent.setPassword(studentPassword);
+                demoStudent.setUniversityId(1001);
+                demoStudent.setType(UserType.STUDENT);
+
+                DB.save(demoStudent).blockingGet();
+                log.info("Created demo student with email: {} password: \"{}\"", STUDENT_EMAIL, studentPassword);
             }
         } catch (Exception e) {
-            log.error("Failed to create admin user: {}", e.getMessage());
+            log.error("Failed to create admin or demo student user: {}", e.getMessage(), e);
         }
     }
 
@@ -124,14 +150,13 @@ public class Main {
                                                    .firstOrError()
                                                    .cast(User.class);
 
-                    return studentSearch
-                            .onErrorResumeNext(error -> facultySearch)  // If student search fails, try faculty
-                            .flatMap(user1 -> {
-                                if (!user1.verifyPassword(password))
-                                    return Single.error(new IllegalArgumentException("Invalid password"));
+                    return studentSearch.onErrorResumeNext(error -> facultySearch)  // If student search fails, try faculty
+                                        .flatMap(user1 -> {
+                                            if (!user1.verifyPassword(password))
+                                                return Single.error(new IllegalArgumentException("Invalid password"));
 
-                                return Single.just(user1);
-                            }).onErrorResumeNext(error -> {
+                                            return Single.just(user1);
+                                        }).onErrorResumeNext(error -> {
                                 if (error instanceof NoSuchElementException)
                                     return Single.error(new IllegalArgumentException("User not found"));
 
