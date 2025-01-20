@@ -79,7 +79,6 @@ public class TestHelper {
         section.setSubject(subject);
         section.setTrimester(trimester);
         section.setMaxCapacity(40);
-        section.setCurrentCapacity(0);
 
         SpaceTime spaceTime = saveEntity(createValidSpaceTime());
         section.setSpaceTimeSlots(new HashSet<>(Collections.singleton(spaceTime)));
@@ -706,10 +705,9 @@ public class TestHelper {
         if (dates.length > 3) trimester.setSectionRegistrationEnd(dates[3]);
     }
 
-    public static Section createSectionWithCapacity(Subject subject, Trimester trimester, int maxCapacity, int currentCapacity) {
+    public static Section createSectionWithCapacity(Subject subject, Trimester trimester, int maxCapacity) {
         Section section = createValidSection(subject, trimester);
         section.setMaxCapacity(maxCapacity);
-        section.setCurrentCapacity(currentCapacity);
         return section;
     }
 

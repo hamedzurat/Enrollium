@@ -3,13 +3,13 @@ package enrollium.demoClient.controller;
 import enrollium.design.system.i18n.I18nManager;
 import enrollium.design.system.i18n.Language;
 import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.settings.Setting;
+import enrollium.design.system.settings.SettingsManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import enrollium.design.system.settings.Setting;
-import enrollium.design.system.settings.SettingsManager;
 
 
 public class CounterController extends BaseController {

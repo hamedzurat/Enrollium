@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,15 +17,20 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class SubjectPage extends OutlinePage {
-    public static final TranslationKey              NAME            = TranslationKey.SUBJECT;
-    private final       TableView<SubjectData>      tableView       = new TableView<>();
-    private final       ObservableList<SubjectData> subjectDataList = FXCollections.observableArrayList();
-    private final       Faker                       faker           = new Faker();
-    private             TextField                   nameField;
-    private             TextField                   codeNameField;
-    private             TextField                   creditsField;
-    private             ComboBox<String>            typeDropdown;
+public class SubjectPage extends BasePage {
+    public static final TranslationKey                   NAME            = TranslationKey.SUBJECT;
+    private final       TableView<SubjectData>           tableView       = new TableView<>();
+    private final       ObservableList<SubjectData>      subjectDataList = FXCollections.observableArrayList();
+    private final       Faker                            faker           = new Faker();
+    private final       TableColumn<SubjectData, String> idColumn        = new TableColumn<>("ID");
+    private final       TableColumn<SubjectData, String> nameColumn      = new TableColumn<>("Name");
+    private final       TableColumn<SubjectData, String> codeNameColumn  = new TableColumn<>("Code Name");
+    private final       TableColumn<SubjectData, String> creditsColumn   = new TableColumn<>("Credits");
+    private final       TableColumn<SubjectData, String> typeColumn      = new TableColumn<>("Type");
+    private             TextField                        nameField;
+    private             TextField                        codeNameField;
+    private             TextField                        creditsField;
+    private             ComboBox<String>                 typeDropdown;
 
     public SubjectPage() {
         super();
@@ -36,7 +42,9 @@ public class SubjectPage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -44,8 +52,12 @@ public class SubjectPage extends OutlinePage {
     }
 
     private VBox createSubjectTable() {
-        TableColumn<SubjectData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
+        codeNameColumn.setCellValueFactory(data -> data.getValue().codeNameProperty());
+        creditsColumn.setCellValueFactory(data -> data.getValue().creditsProperty());
+        typeColumn.setCellValueFactory(data -> data.getValue().typeProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<SubjectData, String> cell = new TableCell<>() {
                 @Override
@@ -64,18 +76,6 @@ public class SubjectPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<SubjectData, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
-
-        TableColumn<SubjectData, String> codeNameColumn = new TableColumn<>("Code Name");
-        codeNameColumn.setCellValueFactory(data -> data.getValue().codeNameProperty());
-
-        TableColumn<SubjectData, String> creditsColumn = new TableColumn<>("Credits");
-        creditsColumn.setCellValueFactory(data -> data.getValue().creditsProperty());
-
-        TableColumn<SubjectData, String> typeColumn = new TableColumn<>("Type");
-        typeColumn.setCellValueFactory(data -> data.getValue().typeProperty());
-
         tableView.getColumns().addAll(idColumn, nameColumn, codeNameColumn, creditsColumn, typeColumn);
         tableView.setItems(subjectDataList);
         tableView.setRowFactory(tv -> {
@@ -91,6 +91,9 @@ public class SubjectPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        subjectDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

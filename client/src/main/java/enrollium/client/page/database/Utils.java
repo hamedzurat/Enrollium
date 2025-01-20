@@ -12,13 +12,14 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import org.kordamp.ikonli.feather.Feather;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 
 public class Utils {
-    public static HBox createActionButtons(Runnable onCreate, Runnable onUpdate, Runnable onDelete) {
+    public static VBox createActionButtons(Runnable onCreate, Runnable onUpdate, Runnable onDelete, Runnable onFill) {
         Button createBtn = new Button("Create", new FontIcon(Feather.PLUS));
         createBtn.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.SUCCESS);
         createBtn.setMnemonicParsing(true);
@@ -35,12 +36,23 @@ public class Utils {
         deleteBtn.setMnemonicParsing(true);
         deleteBtn.setOnAction(e -> onDelete.run());
 
-        HBox actions = new HBox(10, createBtn, updateBtn, deleteBtn);
+        HBox CUD = new HBox(10, createBtn, updateBtn, deleteBtn);
+        CUD.setAlignment(Pos.CENTER);
+
+        Button fill = new Button("Fill for demo", new FontIcon(Feather.FILE));
+        fill.setMnemonicParsing(true);
+        fill.setOnAction(e -> onFill.run());
+
+        HBox demo = new HBox(10, fill);
+        demo.setAlignment(Pos.CENTER);
+
+        VBox actions = new VBox(10, CUD, demo);
         actions.setAlignment(Pos.CENTER);
+
         return actions;
     }
 
-    public static void styleCourseTableView(TableView<CourseData> tableView) {
+    public static <T> void styleCourseTableView(TableView<T> tableView) {
         tableView.setStyle("""
                 -color-cell-bg-selected: -color-accent-emphasis;
                 -color-cell-fg-selected: -color-fg-emphasis;
@@ -51,13 +63,10 @@ public class Utils {
         Styles.toggleStyleClass(tableView, Styles.STRIPED);
         Styles.toggleStyleClass(tableView, Styles.DENSE);
 
-//        tableView.setMinHeight(100);
-//        tableView.setMaxHeight(500);
-
         adjustTableHeight(tableView);
     }
 
-    public static void adjustTableHeight(TableView<?> tableView) {
+    public static <T> void adjustTableHeight(TableView<T> tableView) {
         // Add a listener to trigger after items are loaded
         tableView.getItems().addListener((InvalidationListener) change -> {
             Platform.runLater(() -> {

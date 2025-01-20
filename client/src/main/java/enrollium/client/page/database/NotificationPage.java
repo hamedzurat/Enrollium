@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,15 +17,19 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class NotificationPage extends OutlinePage {
-    public static final TranslationKey                   NAME                 = TranslationKey.NOTIFICATION;
-    private final       TableView<NotificationData>      tableView            = new TableView<>();
-    private final       ObservableList<NotificationData> notificationDataList = FXCollections.observableArrayList();
-    private final       Faker                            faker                = new Faker();
-    private             TextField                        titleField;
-    private             TextArea                         contentArea;
-    private             ComboBox<String>                 categoryDropdown;
-    private             ComboBox<String>                 scopeDropdown;
+public class NotificationPage extends BasePage {
+    public static final TranslationKey                        NAME                 = TranslationKey.NOTIFICATION;
+    private final       TableView<NotificationData>           tableView            = new TableView<>();
+    private final       ObservableList<NotificationData>      notificationDataList = FXCollections.observableArrayList();
+    private final       Faker                                 faker                = new Faker();
+    private final       TableColumn<NotificationData, String> idColumn             = new TableColumn<>("ID");
+    private final       TableColumn<NotificationData, String> titleColumn          = new TableColumn<>("Title");
+    private final       TableColumn<NotificationData, String> categoryColumn       = new TableColumn<>("Category");
+    private final       TableColumn<NotificationData, String> scopeColumn          = new TableColumn<>("Scope");
+    private             TextField                             titleField;
+    private             TextArea                              contentArea;
+    private             ComboBox<String>                      categoryDropdown;
+    private             ComboBox<String>                      scopeDropdown;
 
     public NotificationPage() {
         super();
@@ -36,7 +41,9 @@ public class NotificationPage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -44,8 +51,11 @@ public class NotificationPage extends OutlinePage {
     }
 
     private VBox createNotificationTable() {
-        TableColumn<NotificationData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        titleColumn.setCellValueFactory(data -> data.getValue().titleProperty());
+        categoryColumn.setCellValueFactory(data -> data.getValue().categoryProperty());
+        scopeColumn.setCellValueFactory(data -> data.getValue().scopeProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<NotificationData, String> cell = new TableCell<>() {
                 @Override
@@ -64,15 +74,6 @@ public class NotificationPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<NotificationData, String> titleColumn = new TableColumn<>("Title");
-        titleColumn.setCellValueFactory(data -> data.getValue().titleProperty());
-
-        TableColumn<NotificationData, String> categoryColumn = new TableColumn<>("Category");
-        categoryColumn.setCellValueFactory(data -> data.getValue().categoryProperty());
-
-        TableColumn<NotificationData, String> scopeColumn = new TableColumn<>("Scope");
-        scopeColumn.setCellValueFactory(data -> data.getValue().scopeProperty());
-
         tableView.getColumns().addAll(idColumn, titleColumn, categoryColumn, scopeColumn);
         tableView.setItems(notificationDataList);
         tableView.setRowFactory(tv -> {
@@ -88,6 +89,9 @@ public class NotificationPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        notificationDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

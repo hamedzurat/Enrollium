@@ -5,6 +5,7 @@ import atlantafx.base.theme.Styles;
 import atlantafx.base.util.Animations;
 import enrollium.client.page.general.NotificationType;
 import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.i18n.TranslationKey;
 import enrollium.design.system.settings.Setting;
 import enrollium.design.system.settings.SettingsManager;
 import javafx.animation.PauseTransition;
@@ -98,6 +99,37 @@ public abstract class BasePage extends StackPane implements Page {
         titleIcon.getStyleClass().add("icon-subtle");
 
         var titleLabel = new Label(title);
+        titleLabel.getStyleClass().add(Styles.TITLE_2);
+        titleLabel.setGraphic(titleIcon);
+        titleLabel.setGraphicTextGap(10);
+        titleLabel.setPadding(new Insets(0, 0, 0, 0));
+
+        VBox section = new VBox(10, titleLabel, content);
+        section.setPadding(new Insets(0, 0, 30, 0));
+        VBox.setVgrow(content, Priority.ALWAYS);
+
+        userContent.getChildren().add(section);
+    }
+
+    protected void addFormattedText(TranslationKey textKey) {
+        TextFlow description = createFormattedText(i18nManager.get(textKey), true);
+        settings.observe(Setting.LANGUAGE).distinctUntilChanged().subscribe(_ -> Platform.runLater(() -> {
+            description.getChildren().clear();
+            description.getChildren().addAll(createFormattedText(i18nManager.get(textKey), true).getChildren());
+        }));
+        description.getStyleClass().add(Styles.TITLE_4);
+        description.setPadding(new Insets(0, 0, 40, 0));
+        userContent.getChildren().add(description);
+    }
+
+    protected void addSection(TranslationKey titleKey, Node content) {
+        var titleIcon = new FontIcon(Feather.HASH);
+        titleIcon.getStyleClass().add("icon-subtle");
+
+        var titleLabel = new Label(i18nManager.get(titleKey));
+        settings.observe(Setting.LANGUAGE)
+                .distinctUntilChanged()
+                .subscribe(_ -> Platform.runLater(() -> titleLabel.setText(i18nManager.get(titleKey))));
         titleLabel.getStyleClass().add(Styles.TITLE_2);
         titleLabel.setGraphic(titleIcon);
         titleLabel.setGraphicTextGap(10);

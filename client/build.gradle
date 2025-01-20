@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":lib"))
     implementation(project(":rpc"))
     implementation(project(":design-system"))
+    implementation(project(":server"))
 }
 
 

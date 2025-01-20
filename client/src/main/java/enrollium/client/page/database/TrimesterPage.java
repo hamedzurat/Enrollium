@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,15 +17,20 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class TrimesterPage extends OutlinePage {
-    public static final TranslationKey                NAME              = TranslationKey.TRIMESTER;
-    private final       TableView<TrimesterData>      tableView         = new TableView<>();
-    private final       ObservableList<TrimesterData> trimesterDataList = FXCollections.observableArrayList();
-    private final       Faker                         faker             = new Faker();
-    private             TextField                     codeField;
-    private             TextField                     yearField;
-    private             ComboBox<String>              seasonDropdown;
-    private             ComboBox<String>              statusDropdown;
+public class TrimesterPage extends BasePage {
+    public static final TranslationKey                     NAME              = TranslationKey.TRIMESTER;
+    private final       TableView<TrimesterData>           tableView         = new TableView<>();
+    private final       ObservableList<TrimesterData>      trimesterDataList = FXCollections.observableArrayList();
+    private final       Faker                              faker             = new Faker();
+    private final       TableColumn<TrimesterData, String> idColumn          = new TableColumn<>("ID");
+    private final       TableColumn<TrimesterData, String> codeColumn        = new TableColumn<>("Code");
+    private final       TableColumn<TrimesterData, String> yearColumn        = new TableColumn<>("Year");
+    private final       TableColumn<TrimesterData, String> seasonColumn      = new TableColumn<>("Season");
+    private final       TableColumn<TrimesterData, String> statusColumn      = new TableColumn<>("Status");
+    private             TextField                          codeField;
+    private             TextField                          yearField;
+    private             ComboBox<String>                   seasonDropdown;
+    private             ComboBox<String>                   statusDropdown;
 
     public TrimesterPage() {
         super();
@@ -36,7 +42,9 @@ public class TrimesterPage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -44,8 +52,12 @@ public class TrimesterPage extends OutlinePage {
     }
 
     private VBox createTrimesterTable() {
-        TableColumn<TrimesterData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        codeColumn.setCellValueFactory(data -> data.getValue().codeProperty());
+        yearColumn.setCellValueFactory(data -> data.getValue().yearProperty());
+        seasonColumn.setCellValueFactory(data -> data.getValue().seasonProperty());
+        statusColumn.setCellValueFactory(data -> data.getValue().statusProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<TrimesterData, String> cell = new TableCell<>() {
                 @Override
@@ -64,18 +76,6 @@ public class TrimesterPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<TrimesterData, String> codeColumn = new TableColumn<>("Code");
-        codeColumn.setCellValueFactory(data -> data.getValue().codeProperty());
-
-        TableColumn<TrimesterData, String> yearColumn = new TableColumn<>("Year");
-        yearColumn.setCellValueFactory(data -> data.getValue().yearProperty());
-
-        TableColumn<TrimesterData, String> seasonColumn = new TableColumn<>("Season");
-        seasonColumn.setCellValueFactory(data -> data.getValue().seasonProperty());
-
-        TableColumn<TrimesterData, String> statusColumn = new TableColumn<>("Status");
-        statusColumn.setCellValueFactory(data -> data.getValue().statusProperty());
-
         tableView.getColumns().addAll(idColumn, codeColumn, yearColumn, seasonColumn, statusColumn);
         tableView.setItems(trimesterDataList);
         tableView.setRowFactory(tv -> {
@@ -91,6 +91,9 @@ public class TrimesterPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        trimesterDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

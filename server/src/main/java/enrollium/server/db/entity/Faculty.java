@@ -24,8 +24,8 @@ public class Faculty extends User {
     //
     @ManyToMany
     @JoinTable(name = "faculty_subjects", //
-            joinColumns = @JoinColumn(name = "faculty_id"), //
-            inverseJoinColumns = @JoinColumn(name = "subject_id"))
+               joinColumns = @JoinColumn(name = "faculty_id"), //
+               inverseJoinColumns = @JoinColumn(name = "subject_id"))
     private Set<Subject> teachableSubjects = new HashSet<>();
 
     @PrePersist

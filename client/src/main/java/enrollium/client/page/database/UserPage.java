@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,14 +17,18 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class UserPage extends OutlinePage {
-    public static final TranslationKey           NAME         = TranslationKey.USER;
-    private final       TableView<UserData>      tableView    = new TableView<>();
-    private final       ObservableList<UserData> userDataList = FXCollections.observableArrayList();
-    private final       Faker                    faker        = new Faker();
-    private             TextField                nameField;
-    private             TextField                emailField;
-    private             ComboBox<String>         roleDropdown;
+public class UserPage extends BasePage {
+    public static final TranslationKey                NAME         = TranslationKey.USER;
+    private final       TableView<UserData>           tableView    = new TableView<>();
+    private final       ObservableList<UserData>      userDataList = FXCollections.observableArrayList();
+    private final       Faker                         faker        = new Faker();
+    private final       TableColumn<UserData, String> idColumn     = new TableColumn<>("ID");
+    private final       TableColumn<UserData, String> nameColumn   = new TableColumn<>("Name");
+    private final       TableColumn<UserData, String> emailColumn  = new TableColumn<>("Email");
+    private final       TableColumn<UserData, String> roleColumn   = new TableColumn<>("Role");
+    private             TextField                     nameField;
+    private             TextField                     emailField;
+    private             ComboBox<String>              roleDropdown;
 
     public UserPage() {
         super();
@@ -35,7 +40,9 @@ public class UserPage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -43,8 +50,11 @@ public class UserPage extends OutlinePage {
     }
 
     private VBox createUserTable() {
-        TableColumn<UserData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
+        emailColumn.setCellValueFactory(data -> data.getValue().emailProperty());
+        roleColumn.setCellValueFactory(data -> data.getValue().roleProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<UserData, String> cell = new TableCell<>() {
                 @Override
@@ -63,15 +73,6 @@ public class UserPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<UserData, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
-
-        TableColumn<UserData, String> emailColumn = new TableColumn<>("Email");
-        emailColumn.setCellValueFactory(data -> data.getValue().emailProperty());
-
-        TableColumn<UserData, String> roleColumn = new TableColumn<>("Role");
-        roleColumn.setCellValueFactory(data -> data.getValue().roleProperty());
-
         tableView.getColumns().addAll(idColumn, nameColumn, emailColumn, roleColumn);
         tableView.setItems(userDataList);
         tableView.setRowFactory(tv -> {
@@ -86,6 +87,9 @@ public class UserPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        userDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

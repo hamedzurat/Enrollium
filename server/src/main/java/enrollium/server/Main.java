@@ -37,6 +37,14 @@ public class Main {
         Issue.print(log);
         log.info("[VERSION]: {}", Version.getVersion());
 
+        try {
+            DB.resetAndSeed().blockingAwait();
+            log.info("Database reset and seed completed");
+        } catch (Exception e) {
+            log.error("Failed to reset and seed database", e);
+            throw new RuntimeException("Database reset failed", e);
+        }
+
         // Create demo user if it doesn't exist
         createDemoUserIfNeeded();
 
@@ -92,6 +100,7 @@ public class Main {
                 admin.setPassword(adminPassword);
                 admin.setType(UserType.ADMIN);
                 admin.setShortcode(ADMIN);
+                admin.setInfo(adminPassword);
 
                 DB.save(admin).blockingGet();
                 log.info("Created admin user with email: {} password: \"{}\"", ADMIN_EMAIL, adminPassword);
@@ -115,6 +124,7 @@ public class Main {
                 demoStudent.setPassword(studentPassword);
                 demoStudent.setUniversityId(1001);
                 demoStudent.setType(UserType.STUDENT);
+                demoStudent.setInfo(studentPassword);
 
                 DB.save(demoStudent).blockingGet();
                 log.info("Created demo student with email: {} password: \"{}\"", STUDENT_EMAIL, studentPassword);
@@ -136,49 +146,37 @@ public class Main {
                 if (!(email != null && password != null && !email.trim().isEmpty() && !password.trim().isEmpty()))
                     return Single.error(new IllegalArgumentException("Invalid credentials"));
 
-                // Try to find user in both Student and Faculty tables
-                return Single.defer(() -> {
-                    // Try to find user in Student table
-                    Single<User> studentSearch = DB.read(Student.class, 1, 0)
-                                                   .filter(s -> email.equals(s.getEmail()))
-                                                   .firstOrError()
-                                                   .cast(User.class);
+                int size = Math.toIntExact(DB.count(User.class).blockingGet());
 
-                    // Try to find user in Faculty table
-                    Single<User> facultySearch = DB.read(Faculty.class, 1, 0)
-                                                   .filter(f -> email.equals(f.getEmail()))
-                                                   .firstOrError()
-                                                   .cast(User.class);
+                return DB.read(User.class, size, 0)
+                         .filter(user -> email.equals(user.getEmail()))
+                         .firstElement()
+                         .toSingle()
+                         .flatMap(user -> {
+                             if (!user.verifyPassword(password)) {
+                                 return Single.error(new IllegalArgumentException("Invalid password"));
+                             }
 
-                    return studentSearch.onErrorResumeNext(error -> facultySearch)  // If student search fails, try faculty
-                                        .flatMap(user1 -> {
-                                            if (!user1.verifyPassword(password))
-                                                return Single.error(new IllegalArgumentException("Invalid password"));
+                             // Create session
+                             String UUID = user.getId().toString();
+                             SessionInfo session = SessionManager.getInstance()
+                                                                 .createSession(UUID, request.getConnection()
+                                                                                             .getSocket(), server);
 
-                                            return Single.just(user1);
-                                        }).onErrorResumeNext(error -> {
-                                if (error instanceof NoSuchElementException)
-                                    return Single.error(new IllegalArgumentException("User not found"));
+                             // Return success response
+                             JsonNode response = JsonUtils.createObject()
+                                                          .put("sessionToken", session.getSessionToken())
+                                                          .put("uuid", UUID)
+                                                          .put("userType", user.getType().toString());
 
-                                return Single.error(error);
-                            });
-                }).flatMap(user -> {
-                    // Generate user ID and create session
-                    String UUID = user.getId().toString();
-
-                    // Create new session with the authenticated connection
-                    SessionInfo session = SessionManager.getInstance()
-                                                        .createSession(UUID, request.getConnection()
-                                                                                    .getSocket(), server);
-
-                    // Return success response with session token and user details
-                    ObjectNode response = JsonUtils.createObject()
-                                                   .put("sessionToken", session.getSessionToken())
-                                                   .put("uuid", UUID)
-                                                   .put("userType", user.getType().toString());
-
-                    return Single.just(response);
-                });
+                             return Single.just(response);
+                         })
+                         .onErrorResumeNext(error -> {
+                             if (error instanceof NoSuchElementException) {
+                                 return Single.error(new IllegalArgumentException("User not found"));
+                             }
+                             return Single.error(error);
+                         });
             } catch (Exception e) {
                 return Single.error(e);
             }
@@ -550,6 +548,20 @@ public class Main {
             }
         }));
 
+        server.registerMethod("Student.list", (_, _) -> Single.defer(() -> DB.read(Student.class, 1000, 0)
+                                                                             .map(student -> JsonUtils.createObject()
+                                                                                                      .put("id", student.getId()
+                                                                                                                        .toString())
+                                                                                                      .put("name", student.getName()))
+                                                                             .collect(ArrayList::new, (list, item) -> list.add(item))
+                                                                             .map(list -> {
+                                                                                 ObjectNode response = JsonUtils.createObject();
+                                                                                 ArrayNode  items    = JsonUtils.createArray();
+                                                                                 list.forEach(item -> items.add((JsonNode) item));
+                                                                                 response.set("items", items);
+                                                                                 return response;
+                                                                             })));
+
         // Subject methods
         server.registerMethod("Subject.create", (params, _) -> Single.defer(() -> {
             try {
@@ -748,6 +760,20 @@ public class Main {
             }
         }));
 
+        server.registerMethod("Subject.list", (_, _) -> Single.defer(() -> DB.read(Subject.class, 1000, 0)
+                                                                             .map(subject -> JsonUtils.createObject()
+                                                                                                      .put("id", subject.getId()
+                                                                                                                        .toString())
+                                                                                                      .put("name", subject.getName()))
+                                                                             .collect(ArrayList::new, (list, item) -> list.add(item))
+                                                                             .map(list -> {
+                                                                                 ObjectNode response = JsonUtils.createObject();
+                                                                                 ArrayNode  items    = JsonUtils.createArray();
+                                                                                 list.forEach(item -> items.add((JsonNode) item));
+                                                                                 response.set("items", items);
+                                                                                 return response;
+                                                                             })));
+
         // Prerequisite methods
         server.registerMethod("Prerequisite.create", (params, _) -> Single.defer(() -> {
             try {
@@ -913,27 +939,74 @@ public class Main {
                 String       trimesterId = JsonUtils.getString(params, "trimesterId");
                 CourseStatus status      = CourseStatus.valueOf(JsonUtils.getString(params, "status"));
 
-                return Single.zip(DB.findById(Student.class, UUID.fromString(studentId))
-                                    .toSingle(), DB.findById(Subject.class, UUID.fromString(subjectId))
-                                                   .toSingle(), DB.findById(Trimester.class, UUID.fromString(trimesterId))
-                                                                  .toSingle(), (student, subject, trimester) -> {
+                // Get the optional section and grade
+                String sectionId = JsonUtils.getStringOptional(params, "sectionId").orElse(null);
+                Double grade     = params.has("grade") ? JsonUtils.getDouble(params, "grade") : null;
+
+                // First, load all required entities
+                Single<Student> studentSingle = DB.findById(Student.class, UUID.fromString(studentId)).toSingle();
+                Single<Subject> subjectSingle = DB.findById(Subject.class, UUID.fromString(subjectId)).toSingle();
+                Single<Trimester> trimesterSingle = DB.findById(Trimester.class, UUID.fromString(trimesterId))
+                                                      .toSingle();
+
+                // Load section if provided
+                Single<Section> sectionSingle = sectionId != null
+                                                ? DB.findById(Section.class, UUID.fromString(sectionId)).toSingle()
+                                                : Single.just(null);
+
+                // Combine all entities and create course
+                return Single.zip(studentSingle, subjectSingle, trimesterSingle, sectionSingle, (student, subject, trimester, section) -> {
                                  Course course = new Course();
                                  course.setStudent(student);
                                  course.setSubject(subject);
                                  course.setTrimester(trimester);
                                  course.setStatus(status);
+
+                                 // Set section based on status
+                                 if (status != CourseStatus.SELECTED) {
+                                     if (section == null) {
+                                         throw new IllegalArgumentException("Section is required for status: " + status);
+                                     }
+                                     course.setSection(section);
+                                 }
+
+                                 // Set grade only for COMPLETED status
+                                 if (status == CourseStatus.COMPLETED) {
+                                     if (grade == null) {
+                                         throw new IllegalArgumentException("Grade is required for COMPLETED status");
+                                     }
+                                     if (grade < 0.0 || grade > 4.0) {
+                                         throw new IllegalArgumentException("Grade must be between 0.0 and 4.0");
+                                     }
+                                     course.setGrade(grade);
+                                 }
+
                                  return course;
                              })
                              .flatMap(DB::save)
-                             .map(saved -> JsonUtils.createObject()
-                                                    .put("id", saved.getId().toString())
-                                                    .put("studentId", saved.getStudent().getId().toString())
-                                                    .put("studentName", saved.getStudent().getName())
-                                                    .put("subjectId", saved.getSubject().getId().toString())
-                                                    .put("subjectName", saved.getSubject().getName())
-                                                    .put("trimesterId", saved.getTrimester().getId().toString())
-                                                    .put("status", saved.getStatus().toString())
-                                                    .put("grade", saved.getGrade() != null ? saved.getGrade() : null))
+                             .map(saved -> {
+                                 ObjectNode response = JsonUtils.createObject()
+                                                                .put("id", saved.getId().toString())
+                                                                .put("studentId", saved.getStudent().getId().toString())
+                                                                .put("studentName", saved.getStudent().getName())
+                                                                .put("subjectId", saved.getSubject().getId().toString())
+                                                                .put("subjectName", saved.getSubject().getName())
+                                                                .put("trimesterId", saved.getTrimester()
+                                                                                         .getId()
+                                                                                         .toString())
+                                                                .put("trimesterCode", saved.getTrimester().getCode())
+                                                                .put("status", saved.getStatus().toString());
+
+                                 if (saved.getSection() != null) {
+                                     response.put("sectionId", saved.getSection().getId().toString())
+                                             .put("sectionName", saved.getSection().getName());
+                                 }
+                                 if (saved.getGrade() != null) {
+                                     response.put("grade", saved.getGrade());
+                                 }
+
+                                 return response;
+                             })
                              .onErrorResumeNext(error -> Single.error(new RuntimeException("Failed to create course: " + error.getMessage())));
             } catch (Exception e) {
                 return Single.error(new RuntimeException("Invalid course data: " + e.getMessage()));
@@ -950,6 +1023,7 @@ public class Main {
                          .map(course -> {
                              ObjectNode courseObj = JsonUtils.createObject()
                                                              .put("id", course.getId().toString())
+                                                             .put("version", course.getVersion())
                                                              .put("studentId", course.getStudent().getId().toString())
                                                              .put("studentName", course.getStudent().getName())
                                                              .put("subjectId", course.getSubject().getId().toString())
@@ -957,6 +1031,7 @@ public class Main {
                                                              .put("trimesterId", course.getTrimester()
                                                                                        .getId()
                                                                                        .toString())
+                                                             .put("trimesterCode", course.getTrimester().getCode())
                                                              .put("status", course.getStatus().toString());
 
                              if (course.getSection() != null) {
@@ -1013,6 +1088,97 @@ public class Main {
                          .onErrorResumeNext(error -> Single.error(new RuntimeException("Failed to find course: " + error.getMessage())));
             } catch (Exception e) {
                 return Single.error(new RuntimeException("Invalid course ID: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Course.update", (params, _) -> Single.defer(() -> {
+            try {
+                String       id          = JsonUtils.getString(params, "id");
+                String       studentId   = JsonUtils.getString(params, "studentId");
+                String       subjectId   = JsonUtils.getString(params, "subjectId");
+                String       trimesterId = JsonUtils.getString(params, "trimesterId");
+                CourseStatus status      = CourseStatus.valueOf(JsonUtils.getString(params, "status"));
+
+                // Get optional fields
+                String sectionId = JsonUtils.getStringOptional(params, "sectionId").orElse(null);
+                Double grade     = params.has("grade") ? JsonUtils.getDouble(params, "grade") : null;
+
+                // Load the existing course first
+                return DB.findById(Course.class, UUID.fromString(id))
+                         .toSingle()
+                         .flatMap(course -> {
+                             // Load all required entities
+                             Single<Student> studentSingle = DB.findById(Student.class, UUID.fromString(studentId))
+                                                               .toSingle();
+                             Single<Subject> subjectSingle = DB.findById(Subject.class, UUID.fromString(subjectId))
+                                                               .toSingle();
+                             Single<Trimester> trimesterSingle = DB.findById(Trimester.class, UUID.fromString(trimesterId))
+                                                                   .toSingle();
+                             Single<Section> sectionSingle = sectionId != null
+                                                             ? DB.findById(Section.class, UUID.fromString(sectionId))
+                                                                 .toSingle()
+                                                             : Single.just(null);
+
+                             return Single.zip(studentSingle, subjectSingle, trimesterSingle, sectionSingle, (student, subject, trimester, section) -> {
+                                 // Update all fields
+                                 course.setStudent(student);
+                                 course.setSubject(subject);
+                                 course.setTrimester(trimester);
+                                 course.setStatus(status);
+
+                                 // Handle section based on status
+                                 if (status != CourseStatus.SELECTED) {
+                                     if (section == null) {
+                                         throw new IllegalArgumentException("Section is required for status: " + status);
+                                     }
+                                     course.setSection(section);
+                                 } else {
+                                     course.setSection(null);
+                                 }
+
+                                 // Handle grade based on status
+                                 if (status == CourseStatus.COMPLETED) {
+                                     if (grade == null) {
+                                         throw new IllegalArgumentException("Grade is required for COMPLETED status");
+                                     }
+                                     if (grade < 0.0 || grade > 4.0) {
+                                         throw new IllegalArgumentException("Grade must be between 0.0 and 4.0");
+                                     }
+                                     course.setGrade(grade);
+                                 } else {
+                                     course.setGrade(null);
+                                 }
+
+                                 return course;
+                             });
+                         })
+                         .flatMap(DB::update)
+                         .map(updated -> {
+                             ObjectNode response = JsonUtils.createObject()
+                                                            .put("id", updated.getId().toString())
+                                                            .put("studentId", updated.getStudent().getId().toString())
+                                                            .put("studentName", updated.getStudent().getName())
+                                                            .put("subjectId", updated.getSubject().getId().toString())
+                                                            .put("subjectName", updated.getSubject().getName())
+                                                            .put("trimesterId", updated.getTrimester()
+                                                                                       .getId()
+                                                                                       .toString())
+                                                            .put("trimesterCode", updated.getTrimester().getCode())
+                                                            .put("status", updated.getStatus().toString());
+
+                             if (updated.getSection() != null) {
+                                 response.put("sectionId", updated.getSection().getId().toString())
+                                         .put("sectionName", updated.getSection().getName());
+                             }
+                             if (updated.getGrade() != null) {
+                                 response.put("grade", updated.getGrade());
+                             }
+
+                             return response;
+                         })
+                         .onErrorResumeNext(error -> Single.error(new RuntimeException("Failed to update course: " + error.getMessage())));
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Invalid course data: " + e.getMessage()));
             }
         }));
 
@@ -1154,7 +1320,6 @@ public class Main {
                                  section.setSubject(subject);
                                  section.setTrimester(trimester);
                                  section.setMaxCapacity(maxCapacity);
-                                 section.setCurrentCapacity(0);
                                  return section;
                              })
                              .flatMap(section -> {
@@ -1436,6 +1601,29 @@ public class Main {
             } catch (Exception e) {
                 return Single.error(new RuntimeException("Invalid search parameters: " + e.getMessage()));
             }
+        }));
+
+        server.registerMethod("Section.list", (params, _) -> Single.defer(() -> {
+            String subjectId   = JsonUtils.getString(params, "subjectId");
+            String trimesterId = JsonUtils.getString(params, "trimesterId");
+
+            return DB.read(Section.class, 1000, 0)
+                     .filter(section -> section.getSubject()
+                                               .getId()
+                                               .equals(UUID.fromString(subjectId)) && section.getTrimester()
+                                                                                             .getId()
+                                                                                             .equals(UUID.fromString(trimesterId)))
+                     .map(section -> JsonUtils.createObject()
+                                              .put("id", section.getId().toString())
+                                              .put("name", section.getName()))
+                     .collect(ArrayList::new, (list, item) -> list.add(item))
+                     .map(list -> {
+                         ObjectNode response = JsonUtils.createObject();
+                         ArrayNode  items    = JsonUtils.createArray();
+                         list.forEach(item -> items.add((JsonNode) item));
+                         response.set("items", items);
+                         return response;
+                     });
         }));
 
         // SpaceTime methods
@@ -1804,6 +1992,20 @@ public class Main {
                 return Single.error(new RuntimeException("Invalid pagination parameters: " + e.getMessage()));
             }
         }));
+
+        server.registerMethod("Trimester.list", (_, _) -> Single.defer(() -> DB.read(Trimester.class, 1000, 0)
+                                                                               .map(trimester -> JsonUtils.createObject()
+                                                                                                          .put("id", trimester.getId()
+                                                                                                                              .toString())
+                                                                                                          .put("code", trimester.getCode()))
+                                                                               .collect(ArrayList::new, (list, item) -> list.add(item))
+                                                                               .map(list -> {
+                                                                                   ObjectNode response = JsonUtils.createObject();
+                                                                                   ArrayNode  items    = JsonUtils.createArray();
+                                                                                   list.forEach(item -> items.add((JsonNode) item));
+                                                                                   response.set("items", items);
+                                                                                   return response;
+                                                                               })));
 
         // Notification methods
         server.registerMethod("Notification.create", (params, _) -> Single.defer(() -> {

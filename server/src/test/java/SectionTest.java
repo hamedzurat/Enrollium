@@ -66,7 +66,6 @@ class SectionTest {
             section.setName("Test Section 1");
             section.setSection("A1");
             section.setMaxCapacity(40);
-            section.setCurrentCapacity(0);
             section.setTrimester(trimester);
             section.setSubject(null);
             section.setSpaceTimeSlots(new HashSet<>(List.of(spaceTime)));
@@ -88,7 +87,6 @@ class SectionTest {
             section.setName("Test Section 2");
             section.setSection("A2");
             section.setMaxCapacity(40);
-            section.setCurrentCapacity(0);
             section.setSubject(subject);
             section.setTrimester(null);
             section.setSpaceTimeSlots(new HashSet<>(List.of(spaceTime)));
@@ -131,19 +129,19 @@ class SectionTest {
             Trimester trimester = TestHelper.saveEntity(TestHelper.createValidTrimester());
 
             // Test negative current capacity
-            Section negativeCurrentCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 40, -1);
+            Section negativeCurrentCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 40);
             assertThrows(IllegalArgumentException.class, () -> TestHelper.saveEntity(negativeCurrentCapacity), "Should reject negative current capacity");
 
             // Test zero max capacity
-            Section zeroMaxCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 0, 0);
+            Section zeroMaxCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 0);
             assertThrows(IllegalArgumentException.class, () -> TestHelper.saveEntity(zeroMaxCapacity), "Should reject zero max capacity");
 
             // Test current capacity exceeding max capacity
-            Section exceededCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 30, 31);
+            Section exceededCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 30);
             assertThrows(IllegalArgumentException.class, () -> TestHelper.saveEntity(exceededCapacity), "Should reject current capacity exceeding max capacity");
 
             // Test valid capacities
-            Section validCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 40, 20);
+            Section validCapacity = TestHelper.createSectionWithCapacity(subject, trimester, 40);
             assertDoesNotThrow(() -> TestHelper.saveEntity(validCapacity), "Should accept valid capacity values");
         }
     }

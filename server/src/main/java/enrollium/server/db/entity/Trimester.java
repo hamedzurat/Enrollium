@@ -108,48 +108,26 @@ public class Trimester extends BaseEntity {
     }
 
     private void validateStatusDates() {
-        LocalDateTime now = LocalDateTime.now();
-
         switch (status) {
             case UPCOMING -> {
-                if (courseSelectionStart == null) {
+                if (courseSelectionStart == null)
                     throw new IllegalArgumentException("UPCOMING status requires course selection start date");
-                }
-                if (now.isAfter(courseSelectionStart)) {
-                    throw new IllegalArgumentException("UPCOMING status requires course selection start date to be in the future");
-                }
             }
             case COURSE_SELECTION -> {
-                if (courseSelectionStart == null || courseSelectionEnd == null) {
+                if (courseSelectionStart == null || courseSelectionEnd == null)
                     throw new IllegalArgumentException("COURSE_SELECTION status requires course selection dates");
-                }
-                if (now.isBefore(courseSelectionStart) || now.isAfter(courseSelectionEnd)) {
-                    throw new IllegalArgumentException("COURSE_SELECTION status requires current time to be within course selection period");
-                }
             }
             case SECTION_CREATION -> {
-                if (courseSelectionEnd == null || sectionRegistrationStart == null) {
+                if (courseSelectionEnd == null || sectionRegistrationStart == null)
                     throw new IllegalArgumentException("SECTION_CREATION status requires course selection end and section registration start dates");
-                }
-                if (now.isBefore(courseSelectionEnd) || now.isAfter(sectionRegistrationStart)) {
-                    throw new IllegalArgumentException("SECTION_CREATION status requires current time to be between course selection end and section registration start");
-                }
             }
             case SECTION_SELECTION -> {
-                if (sectionRegistrationStart == null || sectionRegistrationEnd == null) {
+                if (sectionRegistrationStart == null || sectionRegistrationEnd == null)
                     throw new IllegalArgumentException("SECTION_SELECTION status requires section registration dates");
-                }
-                if (now.isBefore(sectionRegistrationStart) || now.isAfter(sectionRegistrationEnd)) {
-                    throw new IllegalArgumentException("SECTION_SELECTION status requires current time to be within section registration period");
-                }
             }
             case ONGOING, COMPLETED -> {
-                if (sectionRegistrationEnd == null) {
+                if (sectionRegistrationEnd == null)
                     throw new IllegalArgumentException("ONGOING/COMPLETED status requires section registration end date");
-                }
-                if (!now.isAfter(sectionRegistrationEnd)) {
-                    throw new IllegalArgumentException("ONGOING/COMPLETED status requires section registration to be completed");
-                }
             }
         }
     }

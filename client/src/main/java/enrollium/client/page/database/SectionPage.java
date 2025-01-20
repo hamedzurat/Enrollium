@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,15 +17,20 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class SectionPage extends OutlinePage {
-    public static final TranslationKey              NAME            = TranslationKey.SECTION;
-    private final       TableView<SectionData>      tableView       = new TableView<>();
-    private final       ObservableList<SectionData> sectionDataList = FXCollections.observableArrayList();
-    private final       Faker                       faker           = new Faker();
-    private             TextField                   nameField;
-    private             ComboBox<String>            subjectDropdown;
-    private             ComboBox<String>            trimesterDropdown;
-    private             TextField                   maxCapacityField;
+public class SectionPage extends BasePage {
+    public static final TranslationKey                   NAME            = TranslationKey.SECTION;
+    private final       TableView<SectionData>           tableView       = new TableView<>();
+    private final       ObservableList<SectionData>      sectionDataList = FXCollections.observableArrayList();
+    private final       Faker                            faker           = new Faker();
+    private final       TableColumn<SectionData, String> idColumn        = new TableColumn<>("ID");
+    private final       TableColumn<SectionData, String> nameColumn      = new TableColumn<>("Name");
+    private final       TableColumn<SectionData, String> subjectColumn   = new TableColumn<>("Subject");
+    private final       TableColumn<SectionData, String> trimesterColumn = new TableColumn<>("Trimester");
+    private final       TableColumn<SectionData, String> capacityColumn  = new TableColumn<>("Capacity");
+    private             TextField                        nameField;
+    private             ComboBox<String>                 subjectDropdown;
+    private             ComboBox<String>                 trimesterDropdown;
+    private             TextField                        maxCapacityField;
 
     public SectionPage() {
         super();
@@ -36,7 +42,9 @@ public class SectionPage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -44,8 +52,12 @@ public class SectionPage extends OutlinePage {
     }
 
     private VBox createSectionTable() {
-        TableColumn<SectionData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
+        subjectColumn.setCellValueFactory(data -> data.getValue().subjectProperty());
+        trimesterColumn.setCellValueFactory(data -> data.getValue().trimesterProperty());
+        capacityColumn.setCellValueFactory(data -> data.getValue().capacityProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<SectionData, String> cell = new TableCell<>() {
                 @Override
@@ -64,18 +76,6 @@ public class SectionPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<SectionData, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
-
-        TableColumn<SectionData, String> subjectColumn = new TableColumn<>("Subject");
-        subjectColumn.setCellValueFactory(data -> data.getValue().subjectProperty());
-
-        TableColumn<SectionData, String> trimesterColumn = new TableColumn<>("Trimester");
-        trimesterColumn.setCellValueFactory(data -> data.getValue().trimesterProperty());
-
-        TableColumn<SectionData, String> capacityColumn = new TableColumn<>("Capacity");
-        capacityColumn.setCellValueFactory(data -> data.getValue().capacityProperty());
-
         tableView.getColumns().addAll(idColumn, nameColumn, subjectColumn, trimesterColumn, capacityColumn);
         tableView.setItems(sectionDataList);
         tableView.setRowFactory(tv -> {
@@ -91,6 +91,9 @@ public class SectionPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        sectionDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

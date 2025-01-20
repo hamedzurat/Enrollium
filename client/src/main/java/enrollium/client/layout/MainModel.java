@@ -6,6 +6,7 @@ import enrollium.client.page.Page;
 import enrollium.client.page.database.*;
 import enrollium.client.page.debug.Button;
 import enrollium.client.page.general.*;
+import enrollium.client.page.students.OfferedCoursePage;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -18,7 +19,7 @@ import java.util.Objects;
 
 
 public class MainModel {
-    public static final  Class<? extends Page>                        DEFAULT_PAGE = CoursePage.class;
+    public static final  Class<? extends Page>                        DEFAULT_PAGE = Login.class;
     private static final Map<Class<? extends Page>, NavTree.Item>     NAV_TREE     = createNavItems();
     private final        ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
     private final        ReadOnlyObjectWrapper<NavTree.Item>          navTree      = new ReadOnlyObjectWrapper<>(createTree());
@@ -38,6 +39,9 @@ public class MainModel {
         // general
         map.put(Login.class, NavTree.Item.page(Login.NAME, Login.class));
 
+        // Student
+        map.put(OfferedCoursePage.class, NavTree.Item.page(OfferedCoursePage.NAME, OfferedCoursePage.class));
+
         // new pages
         map.put(SpaceTimeFormView.class, NavTree.Item.page(SpaceTimeFormView.NAME, SpaceTimeFormView.class));
         map.put(SpaceTimeTableView.class, NavTree.Item.page(SpaceTimeTableView.NAME, SpaceTimeTableView.class));
@@ -54,6 +58,7 @@ public class MainModel {
         map.put(StudentPage.class, NavTree.Item.page(StudentPage.NAME, StudentPage.class));
         map.put(SubjectPage.class, NavTree.Item.page(SubjectPage.NAME, SubjectPage.class));
         map.put(UserPage.class, NavTree.Item.page(UserPage.NAME, UserPage.class));
+        map.put(TrimesterPage.class, NavTree.Item.page(TrimesterPage.NAME, TrimesterPage.class));
 
         return map;
     }
@@ -63,6 +68,10 @@ public class MainModel {
         var general = NavTree.Item.group("General", new FontIcon(Material2OutlinedMZ.SPEED));
         general.getChildren().setAll(NAV_TREE.get(Login.class));
         general.setExpanded(true);
+
+        var student = NavTree.Item.group("Student", new FontIcon(Material2OutlinedMZ.PEOPLE));
+        student.getChildren().setAll(NAV_TREE.get(OfferedCoursePage.class));
+        student.setExpanded(true);
 
         var spaceTime = NavTree.Item.group("SpaceTime", new FontIcon(Material2OutlinedMZ.PUBLIC));
         spaceTime.getChildren().setAll(NAV_TREE.get(SpaceTimeFormView.class), NAV_TREE.get(SpaceTimeTableView.class));
@@ -77,10 +86,10 @@ public class MainModel {
 
         var db = NavTree.Item.group("Database", new FontIcon(Material2OutlinedMZ.SETTINGS));
         db.getChildren()
-          .setAll(NAV_TREE.get(CoursePage.class), NAV_TREE.get(FacultyPage.class), NAV_TREE.get(NotificationPage.class), NAV_TREE.get(PrerequisitePage.class), NAV_TREE.get(SectionPage.class), NAV_TREE.get(SpaceTimePage.class), NAV_TREE.get(StudentPage.class), NAV_TREE.get(SubjectPage.class), NAV_TREE.get(UserPage.class));
+          .setAll(NAV_TREE.get(CoursePage.class), NAV_TREE.get(FacultyPage.class), NAV_TREE.get(NotificationPage.class), NAV_TREE.get(PrerequisitePage.class), NAV_TREE.get(SectionPage.class), NAV_TREE.get(SpaceTimePage.class), NAV_TREE.get(StudentPage.class), NAV_TREE.get(SubjectPage.class), NAV_TREE.get(UserPage.class), NAV_TREE.get(TrimesterPage.class));
 
         var root = NavTree.Item.root();
-        root.getChildren().setAll(debug, general, spaceTime, sections, db);
+        root.getChildren().setAll(debug, student, general, spaceTime, sections, db);
 
         return root;
     }

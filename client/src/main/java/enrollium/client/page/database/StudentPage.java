@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,14 +17,18 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class StudentPage extends OutlinePage {
-    public static final TranslationKey              NAME            = TranslationKey.STUDENT;
-    private final       TableView<StudentData>      tableView       = new TableView<>();
-    private final       ObservableList<StudentData> studentDataList = FXCollections.observableArrayList();
-    private final       Faker                       faker           = new Faker();
-    private             TextField                   universityIdField;
-    private             TextField                   nameField;
-    private             TextField                   emailField;
+public class StudentPage extends BasePage {
+    public static final TranslationKey                   NAME               = TranslationKey.STUDENT;
+    private final       TableView<StudentData>           tableView          = new TableView<>();
+    private final       ObservableList<StudentData>      studentDataList    = FXCollections.observableArrayList();
+    private final       Faker                            faker              = new Faker();
+    private final       TableColumn<StudentData, String> idColumn           = new TableColumn<>("ID");
+    private final       TableColumn<StudentData, String> universityIdColumn = new TableColumn<>("University ID");
+    private final       TableColumn<StudentData, String> nameColumn         = new TableColumn<>("Name");
+    private final       TableColumn<StudentData, String> emailColumn        = new TableColumn<>("Email");
+    private             TextField                        universityIdField;
+    private             TextField                        nameField;
+    private             TextField                        emailField;
 
     public StudentPage() {
         super();
@@ -36,6 +41,7 @@ public class StudentPage extends OutlinePage {
 
     @Override
     protected void updateTexts() {
+        super.updateTexts();
     }
 
     @Override
@@ -44,8 +50,11 @@ public class StudentPage extends OutlinePage {
     }
 
     private VBox createStudentTable() {
-        TableColumn<StudentData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        universityIdColumn.setCellValueFactory(data -> data.getValue().universityIdProperty());
+        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
+        emailColumn.setCellValueFactory(data -> data.getValue().emailProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<StudentData, String> cell = new TableCell<>() {
                 @Override
@@ -64,15 +73,6 @@ public class StudentPage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<StudentData, String> universityIdColumn = new TableColumn<>("University ID");
-        universityIdColumn.setCellValueFactory(data -> data.getValue().universityIdProperty());
-
-        TableColumn<StudentData, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
-
-        TableColumn<StudentData, String> emailColumn = new TableColumn<>("Email");
-        emailColumn.setCellValueFactory(data -> data.getValue().emailProperty());
-
         tableView.getColumns().addAll(idColumn, universityIdColumn, nameColumn, emailColumn);
         tableView.setItems(studentDataList);
         tableView.setRowFactory(tv -> {
@@ -87,6 +87,9 @@ public class StudentPage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        studentDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

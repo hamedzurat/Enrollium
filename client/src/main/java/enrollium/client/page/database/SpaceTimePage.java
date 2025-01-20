@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -17,15 +18,20 @@ import java.time.DayOfWeek;
 import java.util.UUID;
 
 
-public class SpaceTimePage extends OutlinePage {
-    public static final TranslationKey                NAME              = TranslationKey.SPACE_TIME;
-    private final       TableView<SpaceTimeData>      tableView         = new TableView<>();
-    private final       ObservableList<SpaceTimeData> spaceTimeDataList = FXCollections.observableArrayList();
-    private final       Faker                         faker             = new Faker();
-    private             TextField                     roomNameField;
-    private             TextField                     roomNumberField;
-    private             ComboBox<String>              dayOfWeekDropdown;
-    private             TextField                     timeSlotField;
+public class SpaceTimePage extends BasePage {
+    public static final TranslationKey                     NAME              = TranslationKey.SPACE_TIME;
+    private final       TableView<SpaceTimeData>           tableView         = new TableView<>();
+    private final       ObservableList<SpaceTimeData>      spaceTimeDataList = FXCollections.observableArrayList();
+    private final       Faker                              faker             = new Faker();
+    private final       TableColumn<SpaceTimeData, String> idColumn          = new TableColumn<>("ID");
+    private final       TableColumn<SpaceTimeData, String> roomNameColumn    = new TableColumn<>("Room Name");
+    private final       TableColumn<SpaceTimeData, String> roomNumberColumn  = new TableColumn<>("Room Number");
+    private final       TableColumn<SpaceTimeData, String> dayOfWeekColumn   = new TableColumn<>("Day of Week");
+    private final       TableColumn<SpaceTimeData, String> timeSlotColumn    = new TableColumn<>("Time Slot");
+    private             TextField                          roomNameField;
+    private             TextField                          roomNumberField;
+    private             ComboBox<String>                   dayOfWeekDropdown;
+    private             TextField                          timeSlotField;
 
     public SpaceTimePage() {
         super();
@@ -37,7 +43,9 @@ public class SpaceTimePage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -45,8 +53,12 @@ public class SpaceTimePage extends OutlinePage {
     }
 
     private VBox createSpaceTimeTable() {
-        TableColumn<SpaceTimeData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        roomNameColumn.setCellValueFactory(data -> data.getValue().roomNameProperty());
+        roomNumberColumn.setCellValueFactory(data -> data.getValue().roomNumberProperty());
+        dayOfWeekColumn.setCellValueFactory(data -> data.getValue().dayOfWeekProperty());
+        timeSlotColumn.setCellValueFactory(data -> data.getValue().timeSlotProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<SpaceTimeData, String> cell = new TableCell<>() {
                 @Override
@@ -65,18 +77,6 @@ public class SpaceTimePage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<SpaceTimeData, String> roomNameColumn = new TableColumn<>("Room Name");
-        roomNameColumn.setCellValueFactory(data -> data.getValue().roomNameProperty());
-
-        TableColumn<SpaceTimeData, String> roomNumberColumn = new TableColumn<>("Room Number");
-        roomNumberColumn.setCellValueFactory(data -> data.getValue().roomNumberProperty());
-
-        TableColumn<SpaceTimeData, String> dayOfWeekColumn = new TableColumn<>("Day of Week");
-        dayOfWeekColumn.setCellValueFactory(data -> data.getValue().dayOfWeekProperty());
-
-        TableColumn<SpaceTimeData, String> timeSlotColumn = new TableColumn<>("Time Slot");
-        timeSlotColumn.setCellValueFactory(data -> data.getValue().timeSlotProperty());
-
         tableView.getColumns().addAll(idColumn, roomNameColumn, roomNumberColumn, dayOfWeekColumn, timeSlotColumn);
         tableView.setItems(spaceTimeDataList);
         tableView.setRowFactory(tv -> {
@@ -92,6 +92,9 @@ public class SpaceTimePage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        spaceTimeDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

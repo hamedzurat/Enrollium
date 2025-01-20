@@ -1,7 +1,8 @@
 package enrollium.client.page.database;
 
-import enrollium.client.page.OutlinePage;
+import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,15 +17,19 @@ import net.datafaker.Faker;
 import java.util.UUID;
 
 
-public class PrerequisitePage extends OutlinePage {
-    public static final TranslationKey                   NAME                 = TranslationKey.PREREQUISITE;
-    private final       TableView<PrerequisiteData>      tableView            = new TableView<>();
-    private final       ObservableList<PrerequisiteData> prerequisiteDataList = FXCollections.observableArrayList();
-    private final       ObservableList<String>           subjectList          = FXCollections.observableArrayList("Math", "Physics", "Chemistry", "Biology", "Computer Science");
-    private final       Faker                            faker                = new Faker();
-    private             ComboBox<String>                 subjectDropdown;
-    private             ComboBox<String>                 prerequisiteDropdown;
-    private             TextField                        minGradeField;
+public class PrerequisitePage extends BasePage {
+    public static final TranslationKey                        NAME                 = TranslationKey.PREREQUISITE;
+    private final       TableView<PrerequisiteData>           tableView            = new TableView<>();
+    private final       ObservableList<PrerequisiteData>      prerequisiteDataList = FXCollections.observableArrayList();
+    private final       ObservableList<String>                subjectList          = FXCollections.observableArrayList("Math", "Physics", "Chemistry", "Biology", "Computer Science");
+    private final       Faker                                 faker                = new Faker();
+    private final       TableColumn<PrerequisiteData, String> idColumn             = new TableColumn<>("ID");
+    private final       TableColumn<PrerequisiteData, String> subjectColumn        = new TableColumn<>("Subject");
+    private final       TableColumn<PrerequisiteData, String> prerequisiteColumn   = new TableColumn<>("Prerequisite");
+    private final       TableColumn<PrerequisiteData, String> minGradeColumn       = new TableColumn<>("Minimum Grade");
+    private             ComboBox<String>                      subjectDropdown;
+    private             ComboBox<String>                      prerequisiteDropdown;
+    private             TextField                             minGradeField;
 
     public PrerequisitePage() {
         super();
@@ -36,7 +41,9 @@ public class PrerequisitePage extends OutlinePage {
     }
 
     @Override
-    protected void updateTexts() {}
+    protected void updateTexts() {
+        super.updateTexts();
+    }
 
     @Override
     public TranslationKey getName() {
@@ -44,8 +51,11 @@ public class PrerequisitePage extends OutlinePage {
     }
 
     private VBox createPrerequisiteTable() {
-        TableColumn<PrerequisiteData, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        subjectColumn.setCellValueFactory(data -> data.getValue().subjectProperty());
+        prerequisiteColumn.setCellValueFactory(data -> data.getValue().prerequisiteProperty());
+        minGradeColumn.setCellValueFactory(data -> data.getValue().minimumGradeProperty());
+
         idColumn.setCellFactory(tc -> {
             TableCell<PrerequisiteData, String> cell = new TableCell<>() {
                 @Override
@@ -64,15 +74,6 @@ public class PrerequisitePage extends OutlinePage {
             return cell;
         });
 
-        TableColumn<PrerequisiteData, String> subjectColumn = new TableColumn<>("Subject");
-        subjectColumn.setCellValueFactory(data -> data.getValue().subjectProperty());
-
-        TableColumn<PrerequisiteData, String> prerequisiteColumn = new TableColumn<>("Prerequisite");
-        prerequisiteColumn.setCellValueFactory(data -> data.getValue().prerequisiteProperty());
-
-        TableColumn<PrerequisiteData, String> minGradeColumn = new TableColumn<>("Minimum Grade");
-        minGradeColumn.setCellValueFactory(data -> data.getValue().minimumGradeProperty());
-
         tableView.getColumns().addAll(idColumn, subjectColumn, prerequisiteColumn, minGradeColumn);
         tableView.setItems(prerequisiteDataList);
         tableView.setRowFactory(tv -> {
@@ -87,6 +88,9 @@ public class PrerequisitePage extends OutlinePage {
             });
             return row;
         });
+
+        Utils.styleCourseTableView(tableView);
+        prerequisiteDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

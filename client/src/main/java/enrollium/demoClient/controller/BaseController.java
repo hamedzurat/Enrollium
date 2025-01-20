@@ -1,9 +1,9 @@
 package enrollium.demoClient.controller;
 
 import enrollium.design.system.i18n.I18nManager;
-import javafx.application.Platform;
 import enrollium.design.system.settings.Setting;
 import enrollium.design.system.settings.SettingsManager;
+import javafx.application.Platform;
 
 
 public abstract class BaseController {

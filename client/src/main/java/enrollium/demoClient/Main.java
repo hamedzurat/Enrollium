@@ -1,8 +1,10 @@
 package enrollium.demoClient;
 
 import atlantafx.base.theme.PrimerDark;
-import enrollium.lib.banner.Issue;
 import enrollium.design.system.i18n.I18nManager;
+import enrollium.design.system.settings.SettingsManager;
+import enrollium.lib.banner.Issue;
+import enrollium.lib.version.Version;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -10,8 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import enrollium.design.system.settings.SettingsManager;
-import enrollium.lib.version.Version;
 
 
 @Slf4j
