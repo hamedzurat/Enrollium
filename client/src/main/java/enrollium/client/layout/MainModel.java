@@ -21,7 +21,7 @@ import java.util.*;
 
 
 public class MainModel {
-    public static final  Class<? extends Page>                        DEFAULT_PAGE = LogIn.class;
+    public static final  Class<? extends Page>                        DEFAULT_PAGE = About.class;
     public static final  Set<Class<? extends Page>>                   TAGGED_PAGES = Set.of(LogIn.class);
     private static final Map<Class<? extends Page>, NavTree.Item>     NAV_TREE     = createNavItems();
     private final        ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
