@@ -3,24 +3,25 @@ package enrollium.client.layout;
 import enrollium.client.event.DefaultEventBus;
 import enrollium.client.event.NavEvent;
 import enrollium.client.page.Page;
+import enrollium.client.page.admin.RegistrationStatus;
+import enrollium.client.page.admin.SendNotification;
+import enrollium.client.page.admin.ServerStats;
+import enrollium.client.page.admin.WithdrawRequests;
 import enrollium.client.page.database.*;
-import enrollium.client.page.debug.Button;
-import enrollium.client.page.general.*;
-import enrollium.client.page.students.CourseSchedulePage;
-import enrollium.client.page.students.OfferedCoursePage;
+import enrollium.client.page.home.*;
+import enrollium.client.page.students.*;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2OutlinedAL;
 import org.kordamp.ikonli.material2.Material2OutlinedMZ;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 public class MainModel {
-    public static final  Class<? extends Page>                        DEFAULT_PAGE = Login.class;
+    public static final  Class<? extends Page>                        DEFAULT_PAGE = LogIn.class;
+    public static final  Set<Class<? extends Page>>                   TAGGED_PAGES = Set.of(LogIn.class);
     private static final Map<Class<? extends Page>, NavTree.Item>     NAV_TREE     = createNavItems();
     private final        ReadOnlyObjectWrapper<Class<? extends Page>> selectedPage = new ReadOnlyObjectWrapper<>();
     private final        ReadOnlyObjectWrapper<NavTree.Item>          navTree      = new ReadOnlyObjectWrapper<>(createTree());
@@ -34,21 +35,26 @@ public class MainModel {
     public static Map<Class<? extends Page>, NavTree.Item> createNavItems() {
         var map = new HashMap<Class<? extends Page>, NavTree.Item>();
 
-        // debug
-        map.put(Button.class, NavTree.Item.page(Button.NAME, Button.class));
-
-        // general
-        map.put(Login.class, NavTree.Item.page(Login.NAME, Login.class));
+        // Home
+        map.put(LogIn.class, NavTree.Item.page(LogIn.NAME, LogIn.class));
+        map.put(About.class, NavTree.Item.page(About.NAME, About.class));
+        map.put(UserInfo.class, NavTree.Item.page(UserInfo.NAME, UserInfo.class));
+        map.put(SignUp.class, NavTree.Item.page(SignUp.NAME, SignUp.class));
+        map.put(ForgotPassword.class, NavTree.Item.page(ForgotPassword.NAME, ForgotPassword.class));
 
         // Student
         map.put(OfferedCoursePage.class, NavTree.Item.page(OfferedCoursePage.NAME, OfferedCoursePage.class));
         map.put(CourseSchedulePage.class, NavTree.Item.page(CourseSchedulePage.NAME, CourseSchedulePage.class));
+        map.put(TradeSection.class, NavTree.Item.page(TradeSection.NAME, TradeSection.class));
+        map.put(RequestWithdraw.class, NavTree.Item.page(RequestWithdraw.NAME, RequestWithdraw.class));
+        map.put(History.class, NavTree.Item.page(History.NAME, History.class));
+        map.put(Routine.class, NavTree.Item.page(Routine.NAME, Routine.class));
 
-        // new pages
-        map.put(SpaceTimeFormView.class, NavTree.Item.page(SpaceTimeFormView.NAME, SpaceTimeFormView.class));
-        map.put(SpaceTimeTableView.class, NavTree.Item.page(SpaceTimeTableView.NAME, SpaceTimeTableView.class));
-        map.put(SectionFormView.class, NavTree.Item.page(SectionFormView.NAME, SectionFormView.class));
-        map.put(SectionTableView.class, NavTree.Item.page(SectionTableView.NAME, SectionTableView.class));
+        // Admin
+        map.put(ServerStats.class, NavTree.Item.page(ServerStats.NAME, ServerStats.class));
+        map.put(SendNotification.class, NavTree.Item.page(SendNotification.NAME, SendNotification.class));
+        map.put(RegistrationStatus.class, NavTree.Item.page(RegistrationStatus.NAME, RegistrationStatus.class));
+        map.put(WithdrawRequests.class, NavTree.Item.page(WithdrawRequests.NAME, WithdrawRequests.class));
 
         // DB
         map.put(CoursePage.class, NavTree.Item.page(CoursePage.NAME, CoursePage.class));
@@ -67,31 +73,52 @@ public class MainModel {
 
     // Constructing the Sidebar Tree
     private NavTree.Item createTree() {
-        var general = NavTree.Item.group("General", new FontIcon(Material2OutlinedMZ.SPEED));
-        general.getChildren().setAll(NAV_TREE.get(Login.class));
-        general.setExpanded(true);
+        var home = NavTree.Item.group("Home", new FontIcon(Material2OutlinedAL.HOME));
+        home.getChildren().setAll( //
+                NAV_TREE.get(About.class), //
+                NAV_TREE.get(LogIn.class), //
+                NAV_TREE.get(UserInfo.class), //
+                NAV_TREE.get(SignUp.class), //
+                NAV_TREE.get(ForgotPassword.class) //
+        );
+        home.setExpanded(true);
 
-        var student = NavTree.Item.group("Student", new FontIcon(Material2OutlinedMZ.PEOPLE));
-        student.getChildren().setAll(NAV_TREE.get(OfferedCoursePage.class),NAV_TREE.get(CourseSchedulePage.class));
+        var student = NavTree.Item.group("Student", new FontIcon(Material2OutlinedMZ.PERM_IDENTITY));
+        student.getChildren().setAll( //
+                NAV_TREE.get(Routine.class), //
+                NAV_TREE.get(History.class), //
+                NAV_TREE.get(OfferedCoursePage.class), //
+                NAV_TREE.get(RequestWithdraw.class), //
+                NAV_TREE.get(CourseSchedulePage.class), //
+                NAV_TREE.get(TradeSection.class) //
+        );
         student.setExpanded(true);
 
-        var spaceTime = NavTree.Item.group("SpaceTime", new FontIcon(Material2OutlinedMZ.PUBLIC));
-        spaceTime.getChildren().setAll(NAV_TREE.get(SpaceTimeFormView.class), NAV_TREE.get(SpaceTimeTableView.class));
-        spaceTime.setExpanded(true);
+        var admin = NavTree.Item.group("Admin", new FontIcon(Material2OutlinedMZ.SECURITY));
+        admin.getChildren().setAll( //
+                NAV_TREE.get(ServerStats.class), //
+                NAV_TREE.get(SendNotification.class), //
+                NAV_TREE.get(WithdrawRequests.class), //
+                NAV_TREE.get(RegistrationStatus.class) //
+        );
+        admin.setExpanded(true);
 
-        var sections = NavTree.Item.group("Sections", new FontIcon(Material2OutlinedMZ.UPGRADE));
-        sections.getChildren().setAll(NAV_TREE.get(SectionFormView.class), NAV_TREE.get(SectionTableView.class));
-        sections.setExpanded(true);
-
-        var debug = NavTree.Item.group("DEBUG", new FontIcon(Material2OutlinedMZ.SETTINGS));
-        debug.getChildren().setAll(NAV_TREE.get(Button.class));
-
-        var db = NavTree.Item.group("Database", new FontIcon(Material2OutlinedMZ.SETTINGS));
-        db.getChildren()
-          .setAll(NAV_TREE.get(CoursePage.class), NAV_TREE.get(FacultyPage.class), NAV_TREE.get(NotificationPage.class), NAV_TREE.get(PrerequisitePage.class), NAV_TREE.get(SectionPage.class), NAV_TREE.get(SpaceTimePage.class), NAV_TREE.get(StudentPage.class), NAV_TREE.get(SubjectPage.class), NAV_TREE.get(UserPage.class), NAV_TREE.get(TrimesterPage.class));
+        var db = NavTree.Item.group("Database", new FontIcon(Material2OutlinedAL.FOLDER));
+        db.getChildren().setAll( //
+                NAV_TREE.get(CoursePage.class), //
+                NAV_TREE.get(FacultyPage.class), //
+                NAV_TREE.get(NotificationPage.class), //
+                NAV_TREE.get(PrerequisitePage.class), //
+                NAV_TREE.get(SectionPage.class), //
+                NAV_TREE.get(SpaceTimePage.class), //
+                NAV_TREE.get(StudentPage.class), //
+                NAV_TREE.get(SubjectPage.class), //
+                NAV_TREE.get(UserPage.class), //
+                NAV_TREE.get(TrimesterPage.class) //
+        );
 
         var root = NavTree.Item.root();
-        root.getChildren().setAll(debug, student, general, spaceTime, sections, db);
+        root.getChildren().setAll(home, student, admin, db);
 
         return root;
     }

@@ -3,7 +3,6 @@ package enrollium.client.page;
 import atlantafx.base.controls.Notification;
 import atlantafx.base.theme.Styles;
 import atlantafx.base.util.Animations;
-import enrollium.client.page.general.NotificationType;
 import enrollium.design.system.i18n.I18nManager;
 import enrollium.design.system.i18n.TranslationKey;
 import enrollium.design.system.settings.Setting;

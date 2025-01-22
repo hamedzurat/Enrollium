@@ -21,6 +21,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import org.jetbrains.annotations.Nullable;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class NavTree extends TreeView<Nav> {
         private final        HBox        root;
         private final        Label       titleLabel;
         private final        Node        arrowIcon;
-        private final        Label       tagLabel;
+        private final        FontIcon    tag;
 
         public NavTreeCell() {
             super();
@@ -62,12 +63,12 @@ public final class NavTree extends TreeView<Nav> {
             arrowIcon = new FontIcon();
             arrowIcon.getStyleClass().add("arrow");
 
-            tagLabel = new Label("new");
-            tagLabel.getStyleClass().add("tag");
+            tag = new FontIcon(Material2MZ.STAR);
+            tag.getStyleClass().add("tag");
 
             root = new HBox();
             root.setAlignment(Pos.CENTER_LEFT);
-            root.getChildren().setAll(titleLabel, new Spacer(), arrowIcon, tagLabel);
+            root.getChildren().setAll(titleLabel, new Spacer(), arrowIcon, tag);
             root.setCursor(Cursor.HAND);
             root.getStyleClass().add("container");
             root.setMaxWidth(ApplicationWindow.SIDEBAR_WIDTH - 10);
@@ -106,7 +107,7 @@ public final class NavTree extends TreeView<Nav> {
 
                 pseudoClassStateChanged(GROUP, nav.isGroup()); // Dynamically applies or removes the CSS pseudo-class GROUP.
                 NodeUtils.toggleVisibility(arrowIcon, nav.isGroup()); // Shows the arrow icon for groups and hides it for pages.
-                NodeUtils.toggleVisibility(tagLabel, nav.isTagged()); // Displays a tag for pages that are marked.
+                NodeUtils.toggleVisibility(tag, nav.isTagged()); // Displays a tag for pages that are marked.
             }
         }
     }
@@ -136,7 +137,8 @@ public final class NavTree extends TreeView<Nav> {
             Item   item           = new Item(new Nav(localizedTitle, null, pageClass, Collections.emptyList()));
 
             // Observe language changes and update the title dynamically
-            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+            SettingsManager.getInstance()
+                           .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
                            .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
 
@@ -149,7 +151,8 @@ public final class NavTree extends TreeView<Nav> {
             Item   item           = new Item(new Nav(localizedTitle, graphic, pageClass, Collections.emptyList()));
 
             // Observe language changes and update the title dynamically
-            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+            SettingsManager.getInstance()
+                           .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
                            .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
 
@@ -162,7 +165,8 @@ public final class NavTree extends TreeView<Nav> {
             Item   item           = new Item(new Nav(localizedTitle, null, pageClass, List.of(searchKeywords)));
 
             // Observe language changes and update the title dynamically
-            SettingsManager.getInstance().observe(Setting.LANGUAGE)
+            SettingsManager.getInstance()
+                           .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
                            .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
 

@@ -88,8 +88,8 @@ public class UserPage extends BasePage {
             return row;
         });
 
-        Utils.styleCourseTableView(tableView);
-        userDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
+        DatabaseUiUtils.styleCourseTableView(tableView);
+        userDataList.addListener((InvalidationListener) change -> DatabaseUiUtils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

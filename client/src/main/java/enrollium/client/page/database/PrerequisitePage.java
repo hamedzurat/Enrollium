@@ -89,8 +89,8 @@ public class PrerequisitePage extends BasePage {
             return row;
         });
 
-        Utils.styleCourseTableView(tableView);
-        prerequisiteDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
+        DatabaseUiUtils.styleCourseTableView(tableView);
+        prerequisiteDataList.addListener((InvalidationListener) change -> DatabaseUiUtils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

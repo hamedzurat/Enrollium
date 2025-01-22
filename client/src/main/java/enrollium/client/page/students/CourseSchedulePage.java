@@ -2,7 +2,7 @@ package enrollium.client.page.students;
 
 import atlantafx.base.theme.Styles;
 import enrollium.client.page.BasePage;
-import enrollium.client.page.general.NotificationType;
+import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -17,7 +17,7 @@ import java.util.*;
 
 
 public class CourseSchedulePage extends BasePage {
-    public static final  TranslationKey        NAME                     = TranslationKey.HELLO;
+    public static final  TranslationKey        NAME                     = TranslationKey.SectionSelection;
     private static final String[]              THEORY_TIMESLOTS         = {"8:30\n -\n9:50", "9:51\n -\n11:10", "11:11\n  -\n12:30", "12:31\n  -\n13:50", "13:51\n  -\n15:10", "15:11\n  -\n16:30"};
     private static final String[]              LAB_TIMESLOTS            = {"8:30\n -\n11:10", "11:11\n -\n13:50", "13:51\n -\n16:30"};
     private static final Map<Integer, Integer> LAB_TO_THEORY_SLOTS      = Map.of(0, 0,  // First lab slot starts at first theory slot
@@ -52,11 +52,6 @@ public class CourseSchedulePage extends BasePage {
             timetableGrid.requestLayout();
             timetableGrid.applyCss();
         });
-    }
-
-    @Override
-    public TranslationKey getName() {
-        return NAME;
     }
 
     private ScrollPane setupTimetable() {
@@ -342,6 +337,16 @@ public class CourseSchedulePage extends BasePage {
 
     private String toRgbaString(Color color) {
         return String.format("rgba(%d, %d, %d, %.2f)", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255), color.getOpacity());
+    }
+
+    @Override
+    protected void updateTexts() {
+        super.updateTexts();
+    }
+
+    @Override
+    public TranslationKey getName() {
+        return NAME;
     }
 
     private static class Section {

@@ -26,7 +26,7 @@ import java.util.Random;
 
 
 public class OfferedCoursePage extends BasePage {
-    public static final  TranslationKey NAME       = TranslationKey.COURSE;
+    public static final  TranslationKey NAME       = TranslationKey.OfferedCoursePage;
     private static final String         IMAGE_PATH = "images/courses/";
     private static final Random         RANDOM     = new Random();
 
@@ -224,10 +224,7 @@ public class OfferedCoursePage extends BasePage {
         // Footer with randomized status and action button
         HBox footer = new HBox(15);
         footer.setAlignment(Pos.CENTER_LEFT);
-        footer.getChildren().addAll(
-                new Circle(8, Color.web(randomColor())),
-                new Label(randomStatus())
-        );
+        footer.getChildren().addAll(new Circle(8, Color.web(randomColor())), new Label(randomStatus()));
 
         Button actionButton = new Button(determineActionButtonText(randomStatus()));
         actionButton.setPrefWidth(120);
@@ -254,6 +251,11 @@ public class OfferedCoursePage extends BasePage {
     private String randomColor() {
         String[] colors = {"#FF5733", "#33FF57", "#3357FF", "#FF33A1"};
         return colors[RANDOM.nextInt(colors.length)];
+    }
+
+    @Override
+    protected void updateTexts() {
+        super.updateTexts();
     }
 
     @Override
