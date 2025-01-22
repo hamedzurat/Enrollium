@@ -6,6 +6,7 @@ import enrollium.client.page.Page;
 import enrollium.client.page.database.*;
 import enrollium.client.page.debug.Button;
 import enrollium.client.page.general.*;
+import enrollium.client.page.students.CourseSchedulePage;
 import enrollium.client.page.students.OfferedCoursePage;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -41,6 +42,7 @@ public class MainModel {
 
         // Student
         map.put(OfferedCoursePage.class, NavTree.Item.page(OfferedCoursePage.NAME, OfferedCoursePage.class));
+        map.put(CourseSchedulePage.class, NavTree.Item.page(CourseSchedulePage.NAME, CourseSchedulePage.class));
 
         // new pages
         map.put(SpaceTimeFormView.class, NavTree.Item.page(SpaceTimeFormView.NAME, SpaceTimeFormView.class));
@@ -70,7 +72,7 @@ public class MainModel {
         general.setExpanded(true);
 
         var student = NavTree.Item.group("Student", new FontIcon(Material2OutlinedMZ.PEOPLE));
-        student.getChildren().setAll(NAV_TREE.get(OfferedCoursePage.class));
+        student.getChildren().setAll(NAV_TREE.get(OfferedCoursePage.class),NAV_TREE.get(CourseSchedulePage.class));
         student.setExpanded(true);
 
         var spaceTime = NavTree.Item.group("SpaceTime", new FontIcon(Material2OutlinedMZ.PUBLIC));
