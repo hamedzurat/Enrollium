@@ -10,6 +10,7 @@ import enrollium.client.page.admin.WithdrawRequests;
 import enrollium.client.page.database.*;
 import enrollium.client.page.home.*;
 import enrollium.client.page.students.*;
+import enrollium.design.system.i18n.TranslationKey;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -35,38 +36,29 @@ public class MainModel {
     public static Map<Class<? extends Page>, NavTree.Item> createNavItems() {
         var map = new HashMap<Class<? extends Page>, NavTree.Item>();
 
-        // Home
-        map.put(LogIn.class, NavTree.Item.page(LogIn.NAME, LogIn.class));
-        map.put(About.class, NavTree.Item.page(About.NAME, About.class));
-        map.put(UserInfo.class, NavTree.Item.page(UserInfo.NAME, UserInfo.class));
-        map.put(SignUp.class, NavTree.Item.page(SignUp.NAME, SignUp.class));
-        map.put(ForgotPassword.class, NavTree.Item.page(ForgotPassword.NAME, ForgotPassword.class));
+        List<Class<? extends Page>> pages = List.of(
+                // Home
+                LogIn.class, About.class, UserInfo.class, SignUp.class, ForgotPassword.class,
 
-        // Student
-        map.put(OfferedCoursePage.class, NavTree.Item.page(OfferedCoursePage.NAME, OfferedCoursePage.class));
-        map.put(CourseSchedulePage.class, NavTree.Item.page(CourseSchedulePage.NAME, CourseSchedulePage.class));
-        map.put(TradeSection.class, NavTree.Item.page(TradeSection.NAME, TradeSection.class));
-        map.put(RequestWithdraw.class, NavTree.Item.page(RequestWithdraw.NAME, RequestWithdraw.class));
-        map.put(History.class, NavTree.Item.page(History.NAME, History.class));
-        map.put(Routine.class, NavTree.Item.page(Routine.NAME, Routine.class));
+                // Student
+                OfferedCoursePage.class, CourseSchedulePage.class, TradeSection.class, RequestWithdraw.class, History.class, Routine.class,
 
-        // Admin
-        map.put(ServerStats.class, NavTree.Item.page(ServerStats.NAME, ServerStats.class));
-        map.put(SendNotification.class, NavTree.Item.page(SendNotification.NAME, SendNotification.class));
-        map.put(RegistrationStatus.class, NavTree.Item.page(RegistrationStatus.NAME, RegistrationStatus.class));
-        map.put(WithdrawRequests.class, NavTree.Item.page(WithdrawRequests.NAME, WithdrawRequests.class));
+                // Admin
+                ServerStats.class, SendNotification.class, RegistrationStatus.class, WithdrawRequests.class,
 
-        // DB
-        map.put(CoursePage.class, NavTree.Item.page(CoursePage.NAME, CoursePage.class));
-        map.put(FacultyPage.class, NavTree.Item.page(FacultyPage.NAME, FacultyPage.class));
-        map.put(NotificationPage.class, NavTree.Item.page(NotificationPage.NAME, NotificationPage.class));
-        map.put(PrerequisitePage.class, NavTree.Item.page(PrerequisitePage.NAME, PrerequisitePage.class));
-        map.put(SectionPage.class, NavTree.Item.page(SectionPage.NAME, SectionPage.class));
-        map.put(SpaceTimePage.class, NavTree.Item.page(SpaceTimePage.NAME, SpaceTimePage.class));
-        map.put(StudentPage.class, NavTree.Item.page(StudentPage.NAME, StudentPage.class));
-        map.put(SubjectPage.class, NavTree.Item.page(SubjectPage.NAME, SubjectPage.class));
-        map.put(UserPage.class, NavTree.Item.page(UserPage.NAME, UserPage.class));
-        map.put(TrimesterPage.class, NavTree.Item.page(TrimesterPage.NAME, TrimesterPage.class));
+                // DB
+                CoursePage.class, FacultyPage.class, NotificationPage.class, PrerequisitePage.class, SectionPage.class, SpaceTimePage.class, StudentPage.class, SubjectPage.class, UserPage.class, TrimesterPage.class //
+        );
+
+        // Populate map using reflection
+        for (Class<? extends Page> page : pages) {
+            try {
+                TranslationKey name = (TranslationKey) page.getField("NAME").get(null);
+                map.put(page, NavTree.Item.page(name, page));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Error accessing NAME field of " + page.getSimpleName(), e);
+            }
+        }
 
         return map;
     }
