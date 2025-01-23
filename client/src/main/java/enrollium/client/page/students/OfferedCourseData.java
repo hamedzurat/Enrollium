@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 import lombok.ToString;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @ToString
 public class OfferedCourseData {
     private final String       imgFile;
-    private final String       trimester;
+    private final Integer       trimester;
     private final String       courseCode;
     private final String       titleEn;
     private final String       titleBn;
@@ -22,5 +23,6 @@ public class OfferedCourseData {
     private final String       type;  // "theory" or "lab"
     private final int          credits;
     @Singular
+    @Nullable
     private final List<String> prerequisites;
 }
