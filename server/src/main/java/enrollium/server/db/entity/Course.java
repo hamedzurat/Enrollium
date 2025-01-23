@@ -10,7 +10,7 @@ import lombok.Setter;
 
 
 @Entity
-@Table(name = "courses")
+@Table(name = "courses", uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "subject_id", "trimester_id", "section_id"}))
 @Getter
 @Setter
 public class Course extends BaseEntity {
@@ -41,6 +41,8 @@ public class Course extends BaseEntity {
     @DecimalMin(value = "0.0", inclusive = true, message = "Grade must be at least 0.0")
     @DecimalMax(value = "4.0", inclusive = true, message = "Grade must not exceed 4.0")
     private Double       grade;
+
+    // TODO: write setter  that checks for section
 
     @PrePersist
     @PreUpdate
