@@ -52,8 +52,13 @@ public final class LogIn extends BasePage {
                 0.2 * Screen.getPrimary().getBounds().getWidth()) //
         );
 
-        statusMessage = new Message("Welcome", "Please enter your credentials.", new FontIcon(Material2OutlinedAL.HELP_OUTLINE));
-        statusMessage.getStyleClass().add(Styles.ACCENT);
+        if (memory.get("auth_user_id") == null || memory.get("auth_user_type") == null) {
+            statusMessage = new Message("Welcome", "Please enter your credentials.", new FontIcon(Material2OutlinedAL.INFO));
+            statusMessage.getStyleClass().add(Styles.ACCENT);
+        } else {
+            statusMessage = new Message("Welcome", "You are already logged in.", new FontIcon(Material2OutlinedAL.INFO));
+            statusMessage.getStyleClass().add(Styles.SUCCESS);
+        }
 
         Label emailLabel = new Label("Email");
         emailLabel.getStyleClass().add(Styles.TITLE_2);
@@ -88,11 +93,21 @@ public final class LogIn extends BasePage {
         logoutButton = new Button("Logout", new FontIcon(Feather.LOG_OUT));
         logoutButton.getStyleClass().addAll(Styles.LARGE, Styles.DANGER);
         logoutButton.setMnemonicParsing(true);
-        logoutButton.setOnAction(_ -> {
-            ClientRPC.getInstance().logout();
-            replaceStatusMessage(new Message("Success", "Logout Successful!", new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE)), Styles.SUCCESS);
-            toggleButton();
-        });
+        logoutButton.setOnAction(_ -> Platform.runLater(() -> {
+            replaceStatusMessage(new Message("Loading", "logging out ...", new FontIcon(Feather.LOADER)), Styles.WARNING);
+
+            // Process events to ensure UI updates
+            Platform.requestNextPulse();
+
+            // Now execute logout
+            Thread.ofPlatform().start(() -> {
+                ClientRPC.getInstance().logout();
+                Platform.runLater(() -> {
+                    replaceStatusMessage(new Message("Success", "Logout Successful!", new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE)), Styles.SUCCESS);
+                    toggleButton();
+                });
+            });
+        }));
         logoutButton.setDisable(true);
 
         Button fillStudentButton = new Button("Fill demo Student");
