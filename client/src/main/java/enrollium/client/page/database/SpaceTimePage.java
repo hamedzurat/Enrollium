@@ -93,8 +93,8 @@ public class SpaceTimePage extends BasePage {
             return row;
         });
 
-        Utils.styleCourseTableView(tableView);
-        spaceTimeDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
+        DatabaseUiUtils.styleCourseTableView(tableView);
+        spaceTimeDataList.addListener((InvalidationListener) change -> DatabaseUiUtils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

@@ -3,7 +3,7 @@ package enrollium.client.page.database;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import enrollium.client.page.BasePage;
-import enrollium.client.page.general.NotificationType;
+import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
 import enrollium.rpc.client.ClientRPC;
 import enrollium.rpc.core.JsonUtils;
@@ -130,7 +130,7 @@ public class CoursePage extends BasePage {
             }
         });
 
-        Utils.styleCourseTableView(tableView);
+        DatabaseUiUtils.styleCourseTableView(tableView);
 
         VBox container = new VBox(10, tableView);
         VBox.setVgrow(tableView, Priority.ALWAYS);
@@ -169,7 +169,7 @@ public class CoursePage extends BasePage {
 
         VBox form = new VBox(10, selectionControls, new Label("Status:"), statusDropdown, new Label("Student:"), studentDropdown, new Label("Subject:"), subjectDropdown, new Label("Trimester:"), trimesterDropdown, new Label("Section:"), sectionDropdown, new Label("Grade:"), gradeField);
 
-        VBox actions = Utils.createActionButtons(this::createCourse, this::updateCourse, this::deleteCourse, this::fillDemoData);
+        VBox actions = DatabaseUiUtils.createActionButtons(this::createCourse, this::updateCourse, this::deleteCourse, this::fillDemoData);
 
         VBox container = new VBox(20, form, actions);
         container.setPadding(new Insets(20));

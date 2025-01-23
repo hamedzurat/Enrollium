@@ -26,7 +26,7 @@ import java.util.Random;
 
 
 public class OfferedCoursePage extends BasePage {
-    public static final  TranslationKey NAME       = TranslationKey.COURSE;
+    public static final  TranslationKey NAME       = TranslationKey.OfferedCoursePage;
     private static final String         IMAGE_PATH = "images/courses/";
     private static final Random         RANDOM     = new Random();
 
@@ -1346,6 +1346,11 @@ public class OfferedCoursePage extends BasePage {
     private String randomColor() {
         String[] colors = {"#FF5733", "#33FF57", "#3357FF", "#FF33A1"};
         return colors[RANDOM.nextInt(colors.length)];
+    }
+
+    @Override
+    protected void updateTexts() {
+        super.updateTexts();
     }
 
     @Override

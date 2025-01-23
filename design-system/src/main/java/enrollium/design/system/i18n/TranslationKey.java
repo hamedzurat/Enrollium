@@ -5,7 +5,9 @@ import lombok.Getter;
 
 @Getter
 public enum TranslationKey {
-    HELLO("hello"), //
+    DEV("dev_notice"), //
+    // ---
+    HELLO("hello"), //,
     INCREMENT("increment"),
     DECREMENT("decrement"),
     RESET("reset"),
@@ -31,6 +33,20 @@ public enum TranslationKey {
     USER("USER"),
     ID("ID"),
     Status("Status"),
+    ABOUT("ABOUT"),
+    ForgotPassword("ForgotPassword"),
+    SignUp("SignUp"),
+    UserInfo("UserInfo"),
+    ServerStats("ServerStats"),
+    OfferedCoursePage("OfferedCoursePage"),
+    SectionSelection("SectionSelection"),
+    SendNotification("SendNotification"),
+    RegistrationStatus("RegistrationStatus"),
+    TradeSection("TradeSection"),
+    WithdrawRequests("WithdrawRequests"),
+    RequestWithdraw("RequestWithdraw"),
+    History("History"),
+    Routine("Routine")
     ;
     /*
      *

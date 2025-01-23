@@ -1,4 +1,4 @@
-package enrollium.client.page.general;
+package enrollium.client.page;
 
 import atlantafx.base.theme.Styles;
 import lombok.Getter;

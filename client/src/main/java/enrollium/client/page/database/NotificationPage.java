@@ -90,8 +90,8 @@ public class NotificationPage extends BasePage {
             return row;
         });
 
-        Utils.styleCourseTableView(tableView);
-        notificationDataList.addListener((InvalidationListener) change -> Utils.adjustTableHeight(tableView));
+        DatabaseUiUtils.styleCourseTableView(tableView);
+        notificationDataList.addListener((InvalidationListener) change -> DatabaseUiUtils.adjustTableHeight(tableView));
 
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));

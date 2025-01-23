@@ -1,19 +1,16 @@
 package enrollium.client.layout;
 
 import enrollium.client.page.Page;
-import enrollium.client.page.debug.Button;
 import javafx.scene.Node;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 
 record Nav(String title, @Nullable Node graphic, @Nullable Class<? extends Page> pageClass, @Nullable List<String> searchKeywords) {
-    public static final  Nav                        ROOT         = new Nav("ROOT", null, null, null);
-    private static final Set<Class<? extends Page>> TAGGED_PAGES = Set.of(Button.class);
+    public static final Nav ROOT = new Nav("ROOT", null, null, null);
 
     // Validation: Ensures that every Nav item has a title.
     // Default Handling: If no searchKeywords are provided, it defaults to an empty list.
@@ -41,6 +38,6 @@ record Nav(String title, @Nullable Node graphic, @Nullable Class<? extends Page>
     }
 
     public boolean isTagged() {
-        return pageClass != null && TAGGED_PAGES.contains(pageClass);
+        return pageClass != null && MainModel.TAGGED_PAGES.contains(pageClass);
     }
 }

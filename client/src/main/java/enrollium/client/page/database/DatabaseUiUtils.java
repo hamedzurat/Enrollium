@@ -18,7 +18,7 @@ import org.kordamp.ikonli.feather.Feather;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 
-public class Utils {
+public class DatabaseUiUtils {
     public static VBox createActionButtons(Runnable onCreate, Runnable onUpdate, Runnable onDelete, Runnable onFill) {
         Button createBtn = new Button("Create", new FontIcon(Feather.PLUS));
         createBtn.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.SUCCESS);
