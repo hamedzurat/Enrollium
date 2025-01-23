@@ -65,7 +65,7 @@ public class MainModel {
 
     // Constructing the Sidebar Tree
     private NavTree.Item createTree() {
-        var home = NavTree.Item.group("Home", new FontIcon(Material2OutlinedAL.HOME));
+        var home = NavTree.Item.group(TranslationKey.Home, new FontIcon(Material2OutlinedAL.HOME));
         home.getChildren().setAll( //
                 NAV_TREE.get(About.class), //
                 NAV_TREE.get(LogIn.class), //
@@ -75,7 +75,7 @@ public class MainModel {
         );
         home.setExpanded(true);
 
-        var student = NavTree.Item.group("Student", new FontIcon(Material2OutlinedMZ.PERM_IDENTITY));
+        var student = NavTree.Item.group(TranslationKey.Student, new FontIcon(Material2OutlinedMZ.PERM_IDENTITY));
         student.getChildren().setAll( //
                 NAV_TREE.get(Routine.class), //
                 NAV_TREE.get(History.class), //
@@ -86,7 +86,7 @@ public class MainModel {
         );
         student.setExpanded(true);
 
-        var admin = NavTree.Item.group("Admin", new FontIcon(Material2OutlinedMZ.SECURITY));
+        var admin = NavTree.Item.group(TranslationKey.Admin, new FontIcon(Material2OutlinedMZ.SECURITY));
         admin.getChildren().setAll( //
                 NAV_TREE.get(ServerStats.class), //
                 NAV_TREE.get(SendNotification.class), //
@@ -95,7 +95,7 @@ public class MainModel {
         );
         admin.setExpanded(true);
 
-        var db = NavTree.Item.group("Database", new FontIcon(Material2OutlinedAL.FOLDER));
+        var db = NavTree.Item.group(TranslationKey.Database, new FontIcon(Material2OutlinedAL.FOLDER));
         db.getChildren().setAll( //
                 NAV_TREE.get(CoursePage.class), //
                 NAV_TREE.get(FacultyPage.class), //
@@ -108,6 +108,7 @@ public class MainModel {
                 NAV_TREE.get(UserPage.class), //
                 NAV_TREE.get(TrimesterPage.class) //
         );
+        db.setExpanded(false);
 
         var root = NavTree.Item.root();
         root.getChildren().setAll(home, student, admin, db);

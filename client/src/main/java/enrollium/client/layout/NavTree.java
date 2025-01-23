@@ -114,7 +114,8 @@ public final class NavTree extends TreeView<Nav> {
 
 
     public static final class Item extends TreeItem<Nav> {
-        private final Nav nav;
+        private static final I18nManager i18nManager = I18nManager.getInstance();
+        private final        Nav         nav;
 
         private Item(Nav nav) {
             this.nav = Objects.requireNonNull(nav, "nav");
@@ -127,57 +128,62 @@ public final class NavTree extends TreeView<Nav> {
         }
 
         // Group Item: Creates a non-clickable category.
-        public static Item group(String title, Node graphic) {
-            return new Item(new Nav(title, graphic, null, null));
+        public static Item group(TranslationKey name, Node graphic) {
+            String localizedTitle = i18nManager.get(name);
+            Item item = new Item(new Nav(localizedTitle, graphic, null, null));
+
+            // Observe language changes and update the title dynamically
+            SettingsManager.getInstance()
+                           .observe(Setting.LANGUAGE)
+                           .distinctUntilChanged()
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(i18nManager.get(name))));
+
+            return item;
         }
 
         public static Item page(TranslationKey name, @Nullable Class<? extends Page> pageClass) {
             Objects.requireNonNull(pageClass, "pageClass");
-            String localizedTitle = I18nManager.getInstance().get(name);
+            String localizedTitle = i18nManager.get(name);
             Item   item           = new Item(new Nav(localizedTitle, null, pageClass, Collections.emptyList()));
 
             // Observe language changes and update the title dynamically
             SettingsManager.getInstance()
                            .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
-                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(i18nManager.get(name))));
 
             return item;
         }
 
         public static Item page(TranslationKey name, Node graphic, @Nullable Class<? extends Page> pageClass) {
             Objects.requireNonNull(pageClass, "pageClass");
-            String localizedTitle = I18nManager.getInstance().get(name);
+            String localizedTitle = i18nManager.get(name);
             Item   item           = new Item(new Nav(localizedTitle, graphic, pageClass, Collections.emptyList()));
 
             // Observe language changes and update the title dynamically
             SettingsManager.getInstance()
                            .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
-                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(i18nManager.get(name))));
 
             return item;
         }
 
         public static Item page(TranslationKey name, @Nullable Class<? extends Page> pageClass, String... searchKeywords) {
             Objects.requireNonNull(pageClass, "pageClass");
-            String localizedTitle = I18nManager.getInstance().get(name);
+            String localizedTitle = i18nManager.get(name);
             Item   item           = new Item(new Nav(localizedTitle, null, pageClass, List.of(searchKeywords)));
 
             // Observe language changes and update the title dynamically
             SettingsManager.getInstance()
                            .observe(Setting.LANGUAGE)
                            .distinctUntilChanged()
-                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(I18nManager.getInstance().get(name))));
+                           .subscribe(_ -> Platform.runLater(() -> item.setTitle(i18nManager.get(name))));
 
             return item;
         }
 
         public void setTitle(String newTitle) {
-            if (isGroup()) {
-                throw new UnsupportedOperationException("Cannot set title on a group item.");
-            }
-            // Replace the current Nav with a new one that has the updated title
             setValue(new Nav(newTitle, getValue().graphic(), getValue().pageClass(), getValue().searchKeywords()));
         }
 

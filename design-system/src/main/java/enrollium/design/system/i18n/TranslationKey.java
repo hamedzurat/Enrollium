@@ -46,7 +46,11 @@ public enum TranslationKey {
     WithdrawRequests("WithdrawRequests"),
     RequestWithdraw("RequestWithdraw"),
     History("History"),
-    Routine("Routine")
+    Routine("Routine"),
+    Home("Home"),
+    Student("Student"),
+    Admin("Admin"),
+    Database("Database"),
     ;
     /*
      *
