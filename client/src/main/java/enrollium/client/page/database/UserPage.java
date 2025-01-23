@@ -18,7 +18,7 @@ import java.util.UUID;
 
 
 public class UserPage extends BasePage {
-    public static final TranslationKey                NAME         = TranslationKey.USER;
+    public static final TranslationKey                NAME         = TranslationKey.User_Page_Title;
     private final       TableView<UserData>           tableView    = new TableView<>();
     private final       ObservableList<UserData>      userDataList = FXCollections.observableArrayList();
     private final       Faker                         faker        = new Faker();
