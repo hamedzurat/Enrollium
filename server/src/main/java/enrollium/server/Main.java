@@ -1626,6 +1626,37 @@ public class Main {
                      });
         }));
 
+        server.registerMethod("Section.getByTeacher", (params, _) -> Single.defer(() -> {
+            try {
+                String teacherId = JsonUtils.getString(params, "teacherId");
+                int    limit     = JsonUtils.getInt(params, "limit");
+                int    offset    = JsonUtils.getInt(params, "offset");
+
+                return DB.read(Section.class, limit, offset)
+                         .filter(section -> section.getTeachers()
+                                                   .stream()
+                                                   .anyMatch(teacher -> teacher.getId().toString().equals(teacherId)))
+                         .map(section -> JsonUtils.createObject()
+                                                  .put("id", section.getId().toString())
+                                                  .put("name", section.getName())
+                                                  .put("section", section.getSection())
+                                                  .put("subjectName", section.getSubject().getName())
+                                                  .put("maxCapacity", section.getMaxCapacity())
+                                                  .put("currentCapacity", section.getCurrentCapacity()))
+                         .collect(ArrayList::new, (list, item) -> list.add(item))
+                         .map(list -> {
+                             ObjectNode response = JsonUtils.createObject();
+                             ArrayNode  items    = JsonUtils.createArray();
+                             list.forEach(item -> items.add((JsonNode) item));
+                             response.set("items", items);
+                             return response;
+                         })
+                         .onErrorResumeNext(error -> Single.error(new RuntimeException("Failed to fetch teacher's sections: " + error.getMessage())));
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Invalid parameters: " + e.getMessage()));
+            }
+        }));
+
         // SpaceTime methods
         server.registerMethod("SpaceTime.create", (params, _) -> Single.defer(() -> {
             try {
