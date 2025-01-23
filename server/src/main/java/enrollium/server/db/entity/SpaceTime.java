@@ -29,6 +29,8 @@ public class SpaceTime extends BaseEntity {
     @NotNull(message = "Room type cannot be null")
     private SubjectType roomType;
     //
+     // TODO: make it string
+//    @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false)
     @NotNull(message = "Day of the week cannot be null")
     private DayOfWeek   dayOfWeek;
