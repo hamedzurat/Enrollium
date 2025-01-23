@@ -51,6 +51,8 @@ public enum TranslationKey {
     Student("Student"),
     Admin("Admin"),
     Database("Database"),
+    SignUp_title("SignUp_title"),
+    SignUp_desc("SignUp_desc"),
     ;
     /*
      *
