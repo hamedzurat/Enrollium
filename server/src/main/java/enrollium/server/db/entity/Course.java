@@ -77,11 +77,11 @@ public class Course extends BaseEntity {
     }
 
     private void validateSectionMatch() {
-//        if (section != null) {
-//            if (!section.getSubject().getId().equals(subject.getId()))
-//                throw new IllegalArgumentException("Section's subject must match course's subject");
-//            if (!section.getTrimester().getId().equals(trimester.getId()))
-//                throw new IllegalArgumentException("Section's trimester must match course's trimester");
-//        }
+        if (section != null) {
+            if (!section.getSubject().getId().equals(subject.getId()))
+                throw new IllegalArgumentException("Section's subject must match course's subject");
+            if (!section.getTrimester().getId().equals(trimester.getId()))
+                throw new IllegalArgumentException("Section's trimester must match course's trimester");
+        }
     }
 }
