@@ -344,10 +344,17 @@ public class DB {
                     record SubjectInfo(String code, String name, int credits) {}
                     record PrerequisiteChain(String subjectCode, String prerequisiteCode) {}
                     record RoomInfo(String roomNumber, String name) {}
-                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status, LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd, LocalDateTime sectionRegistrationStart, LocalDateTime sectionRegistrationEnd) {}
-                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope, Trimester trimester, Section section, User targetUser, String title, String content) {}
-                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
-                    record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
+                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status,
+                                         LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd,
+                                         LocalDateTime sectionRegistrationStart,
+                                         LocalDateTime sectionRegistrationEnd) {}
+                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope,
+                                            Trimester trimester, Section section, User targetUser, String title,
+                                            String content) {}
+                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section,
+                                      CourseStatus status, Double grade) {}
+                    record SectionInfo(String section, Subject subject, Trimester trimester,
+                                       Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
 
                     Faculty demoAdmin = new Faculty();
                     demoAdmin.setEmail("admin@uiu.ac.bd");
@@ -514,7 +521,7 @@ public class DB {
 
                     List<SubjectInfo> theoryCourses = List.of( //
                             new SubjectInfo("ENG1011", "English–I", 3), //
-                            new SubjectInfo("BDS1201", "History of the Emergence of Bangladesh", 3), //
+                            new SubjectInfo("BDS1201", "History of the Emergence of Bangladesh", 2), //
                             new SubjectInfo("CSE2213", "Discrete Mathematics", 3), //
                             new SubjectInfo("ENG1013", "English–II", 3), //
                             new SubjectInfo("CSE1111", "Structured Programming Language", 3), //
@@ -525,15 +532,23 @@ public class DB {
                             new SubjectInfo("MATH2201", "Coordinate Geometry and Vector Analysis", 3), //
                             new SubjectInfo("PHY2105", "Physics", 3), //
                             new SubjectInfo("EEE2113", "Electrical Circuits", 3), //
-                            new SubjectInfo("E23t13", "Electrical Circuits", 3), //
-                            new SubjectInfo("EEadE21", "Electrical Circuits", 3), //
-                            new SubjectInfo("E214513", "Electrical Circuits", 3), //
-                            new SubjectInfo("EEE6823", "Electrical Circuits", 3), //
-                            new SubjectInfo("E2azb13", "Electrical Circuits", 3), //
-                            new SubjectInfo("E21jy13", "Electrical Circuits", 3), //
-                            new SubjectInfo("EEE2153", "Electrical Circuits", 3), //
-                            new SubjectInfo("E2qwe1", "Electrical Circuits", 3), //
-                            new SubjectInfo("E1sdwe3", "Electrical Circuits", 3));
+                            new SubjectInfo("MATH2205", "Probability and Statistics", 3), //
+                            new SubjectInfo("SOC2101", "Society, Environment and Engineering Ethics", 3), //
+                            new SubjectInfo("CSE2215", "Data Structure and Algorithms – I", 3), //
+                            new SubjectInfo("CSE2233", "Theory of Computation", 3), //
+                            new SubjectInfo("CSE3313", "Computer Architecture", 3), //
+                            new SubjectInfo("CSE2217", "Data Structure and Algorithms – II", 3), //
+                            new SubjectInfo("EEE2123", "Electronics", 3), //
+                            new SubjectInfo("CSE3521", "Database Management Systems", 3), //
+                            new SubjectInfo("CSE3411", "System Analysis and Design", 3), //
+                            new SubjectInfo("CSE3811", "Artificial Intelligence", 3), //
+                            new SubjectInfo("CSE4325", "Microprocessors and Microcontrollers", 3), //
+                            new SubjectInfo("CSE3421", "Software Engineering", 3), //
+                            new SubjectInfo("CSE3711", "Computer Networks", 3), //
+                            new SubjectInfo("CSE3313", "Computer Architecture", 3), //
+                            new SubjectInfo("CSE2217", "Data Structure and Algorithms – II", 3), //
+                            new SubjectInfo("EEE2123", "Electronics", 3), //
+                            new SubjectInfo("CSE3521", "Database Management Systems", 3));
 
                     for (SubjectInfo subjectInfo : theoryCourses) {
                         Subject subject = new Subject();
@@ -553,7 +568,11 @@ public class DB {
                             new SubjectInfo("CSE1326", "Digital Logic Design Laboratory", 1), //
                             new SubjectInfo("CSE1116", "Object Oriented Programming Laboratory", 1), //
                             new SubjectInfo("PHY2106", "Physics Laboratory", 1), //
-                            new SubjectInfo("CSE2118", "Advanced Object Oriented Programming Laboratory", 1));
+                            new SubjectInfo("CSE2118", "Advanced Object Oriented Programming Laboratory", 1), //
+                            new SubjectInfo("CSE2216", "Data Structure and Algorithms – I Laboratory", 1), //
+                            new SubjectInfo("CSE2218", "Data Structure and Algorithms – II Laboratory", 1), //
+                            new SubjectInfo("EEE2124", "Electronics Laboratory", 1), //
+                            new SubjectInfo("CSE3522", "Database Management Systems Laboratory", 1));
 
                     for (SubjectInfo subjectInfo : labCourses) {
                         Subject labSubject = new Subject();
@@ -613,15 +632,101 @@ public class DB {
                             new RoomInfo("204", "Class room 204"), //
                             new RoomInfo("205", "Class room 205"), //
                             new RoomInfo("206", "Class room 206"), //
-                            new RoomInfo("207", "Class room 207"));
+                            new RoomInfo("207", "Class room 207"), //
+                            new RoomInfo("208", "Class room 208"), //
+                            new RoomInfo("209", "Class room 209"), //
+                            new RoomInfo("210", "Class room 210"), //
+                            new RoomInfo("211", "Class room 211"), //
+                            new RoomInfo("212", "Class room 212"), //
+                            new RoomInfo("213", "Class room 213"), //
+                            new RoomInfo("214", "Class room 214"), //
+                            new RoomInfo("215", "Class room 215"), //
+
+                            // Rooms 301 to 315
+                            new RoomInfo("301", "Class room 301"), //
+                            new RoomInfo("302", "Class room 302"), //
+                            new RoomInfo("303", "Class room 303"), //
+                            new RoomInfo("304", "Class room 304"), //
+                            new RoomInfo("305", "Class room 305"), //
+                            new RoomInfo("306", "Class room 306"), //
+                            new RoomInfo("307", "Class room 307"), //
+                            new RoomInfo("308", "Class room 308"), //
+                            new RoomInfo("309", "Class room 309"), //
+                            new RoomInfo("310", "Class room 310"), //
+                            new RoomInfo("311", "Class room 311"), //
+                            new RoomInfo("312", "Class room 312"), //
+                            new RoomInfo("313", "Class room 313"), //
+                            new RoomInfo("314", "Class room 314"), //
+                            new RoomInfo("315", "Class room 315"), //
+
+                            // Rooms 401 to 415
+                            new RoomInfo("401", "Class room 401"), //
+                            new RoomInfo("402", "Class room 402"), //
+                            new RoomInfo("403", "Class room 403"), //
+                            new RoomInfo("404", "Class room 404"), //
+                            new RoomInfo("405", "Class room 405"), //
+                            new RoomInfo("406", "Class room 406"), //
+                            new RoomInfo("407", "Class room 407"), //
+                            new RoomInfo("408", "Class room 408"), //
+                            new RoomInfo("409", "Class room 409"), //
+                            new RoomInfo("410", "Class room 410"), //
+                            new RoomInfo("411", "Class room 411"), //
+                            new RoomInfo("412", "Class room 412"), //
+                            new RoomInfo("413", "Class room 413"), //
+                            new RoomInfo("414", "Class room 414"), //
+                            new RoomInfo("415", "Class room 415"), //
+
+                            // Rooms 501 to 515
+                            new RoomInfo("501", "Class room 501"), //
+                            new RoomInfo("502", "Class room 502"), //
+                            new RoomInfo("503", "Class room 503"), //
+                            new RoomInfo("504", "Class room 504"), //
+                            new RoomInfo("505", "Class room 505"), //
+                            new RoomInfo("506", "Class room 506"), //
+                            new RoomInfo("507", "Class room 507"), //
+                            new RoomInfo("508", "Class room 508"), //
+                            new RoomInfo("509", "Class room 509"), //
+                            new RoomInfo("510", "Class room 510"), //
+                            new RoomInfo("511", "Class room 511"), //
+                            new RoomInfo("512", "Class room 512"), //
+                            new RoomInfo("513", "Class room 513"), //
+                            new RoomInfo("514", "Class room 514"), //
+                            new RoomInfo("515", "Class room 515"));
 
                     List<RoomInfo> labRooms = List.of( //
-                            new RoomInfo("Lab1", "Lab 1"), //
-                            new RoomInfo("Lab2", "Lab 2"), //
-                            new RoomInfo("Lab3", "Lab 3"), //
-                            new RoomInfo("Lab4", "Lab 4"), //
-                            new RoomInfo("Lab5", "Lab 5"), //
-                            new RoomInfo("Lab6", "Lab 6"));
+                            new RoomInfo("216 Lab1", "Computer Lab 216"), //
+                            new RoomInfo("217 Lab2", "Computer Lab 217"), //
+                            new RoomInfo("218 Lab3", "Computer Lab 218"), //
+                            new RoomInfo("219 Lab4", "Physics Lab 219"), //
+                            new RoomInfo("220 Lab5", "Physics Lab 220"), //
+                            new RoomInfo("221 Lab6", "Electrical Lab 221"), //
+                            new RoomInfo("222 Lab6", "Electrical Lab 222"), //
+                            // Labs on Floor 3
+                            new RoomInfo("316 Lab1", "Computer Lab 316"), //
+                            new RoomInfo("317 Lab2", "Computer Lab 317"), //
+                            new RoomInfo("318 Lab3", "Computer Lab 318"), //
+                            new RoomInfo("319 Lab4", "Physics Lab 319"), //
+                            new RoomInfo("320 Lab5", "Physics Lab 320"), //
+                            new RoomInfo("321 Lab6", "Electrical Lab 321"), //
+                            new RoomInfo("322 Lab7", "Electrical Lab 322"), //
+
+                            // Labs on Floor 4
+                            new RoomInfo("416 Lab1", "Computer Lab 416"), //
+                            new RoomInfo("417 Lab2", "Computer Lab 417"), //
+                            new RoomInfo("418 Lab3", "Computer Lab 418"), //
+                            new RoomInfo("419 Lab4", "Physics Lab 419"), //
+                            new RoomInfo("420 Lab5", "Physics Lab 420"), //
+                            new RoomInfo("421 Lab6", "Electrical Lab 421"), //
+                            new RoomInfo("422 Lab7", "Electrical Lab 422"), //
+
+                            // Labs on Floor 5
+                            new RoomInfo("516 Lab1", "Computer Lab 516"), //
+                            new RoomInfo("517 Lab2", "Computer Lab 517"), //
+                            new RoomInfo("518 Lab3", "Computer Lab 518"), //
+                            new RoomInfo("519 Lab4", "Physics Lab 519"), //
+                            new RoomInfo("520 Lab5", "Physics Lab 520"), //
+                            new RoomInfo("521 Lab6", "Electrical Lab 521"), //
+                            new RoomInfo("522 Lab7", "Electrical Lab 522"));
 
                     List<List<SpaceTime>> theoryPairs = new ArrayList<>();
                     List<SpaceTime>       labSlots    = new ArrayList<>();
@@ -789,28 +894,184 @@ public class DB {
 
                     List<SectionInfo> sectionInfos = List.of(
                             // Theory Sections
-                            new SectionInfo("A", theorySubjects.get(0), trimesters.get(0), new HashSet<>(theoryPairs.get(0)), new HashSet<>(List.of(teachers.get(0)))), //
-                            new SectionInfo("B", theorySubjects.get(0), trimesters.get(0), new HashSet<>(theoryPairs.get(1)), new HashSet<>(List.of(teachers.get(1)))), //
-                            new SectionInfo("A", theorySubjects.get(1), trimesters.get(0), new HashSet<>(theoryPairs.get(2)), new HashSet<>(List.of(teachers.get(2)))), //
-                            new SectionInfo("B", theorySubjects.get(1), trimesters.get(0), new HashSet<>(theoryPairs.get(3)), new HashSet<>(List.of(teachers.get(3)))), //
-                            new SectionInfo("A", theorySubjects.get(2), trimesters.get(0), new HashSet<>(theoryPairs.get(4)), new HashSet<>(List.of(teachers.get(4)))), //
-                            new SectionInfo("B", theorySubjects.get(2), trimesters.get(0), new HashSet<>(theoryPairs.get(5)), new HashSet<>(List.of(teachers.get(5)))), //
-                            new SectionInfo("A", theorySubjects.get(3), trimesters.get(0), new HashSet<>(theoryPairs.get(6)), new HashSet<>(List.of(teachers.get(6)))), //
-                            new SectionInfo("B", theorySubjects.get(3), trimesters.get(0), new HashSet<>(theoryPairs.get(7)), new HashSet<>(List.of(teachers.get(7)))), //
-                            new SectionInfo("A", theorySubjects.get(4), trimesters.get(0), new HashSet<>(theoryPairs.get(8)), new HashSet<>(List.of(teachers.get(8)))), //
-                            new SectionInfo("B", theorySubjects.get(4), trimesters.get(0), new HashSet<>(theoryPairs.get(9)), new HashSet<>(List.of(teachers.get(9)))),
+                            // eng1 - 251
+                            new SectionInfo("A", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(1)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(2)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(3)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(4)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(5)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(6)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(7)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(0), trimesters.get(9), new HashSet<>(theoryPairs.get(8)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            // BDS-251
+                            new SectionInfo("A", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(9)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(10)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(11)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(12)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(13)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(14)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(15)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(16)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", theorySubjects.get(1), trimesters.get(9), new HashSet<>(theoryPairs.get(17)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            // DM-251
+                            new SectionInfo("A", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(18)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(19)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(20)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(21)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(22)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(2), trimesters.get(9), new HashSet<>(theoryPairs.get(23)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // ENG-2-251
+                            new SectionInfo("A", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(24)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(25)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(26)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(27)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(28)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(29)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(3), trimesters.get(9), new HashSet<>(theoryPairs.get(30)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // SPL-251
+                            new SectionInfo("A", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(31)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(32)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(33)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(34)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(35)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(36)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(37)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(38)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", theorySubjects.get(4), trimesters.get(9), new HashSet<>(theoryPairs.get(39)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // CALCULUS-251
+                            new SectionInfo("A", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(40)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(41)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(42)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(43)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(44)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(5), trimesters.get(9), new HashSet<>(theoryPairs.get(45)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // LINEAR
+                            new SectionInfo("A", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(46)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(47)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(48)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(49)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(50)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(51)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(52)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(6), trimesters.get(9), new HashSet<>(theoryPairs.get(53)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // DLD-251
+                            new SectionInfo("A", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(54)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(55)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(56)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(57)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(58)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(59)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(7), trimesters.get(9), new HashSet<>(theoryPairs.get(60)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // OOP-251
+                            new SectionInfo("A", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(61)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(62)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(63)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(64)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(65)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(66)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(67)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(8), trimesters.get(9), new HashSet<>(theoryPairs.get(68)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // VECTOR-251
+                            new SectionInfo("A", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(69)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(70)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(71)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(72)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(73)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(9), trimesters.get(9), new HashSet<>(theoryPairs.get(74)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // PHYSICS-251
+                            new SectionInfo("A", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(75)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(76)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(77)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(78)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(79)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(80)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(81)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(82)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", theorySubjects.get(10), trimesters.get(9), new HashSet<>(theoryPairs.get(83)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // EC-251
+                            new SectionInfo("A", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(84)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(85)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(86)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(87)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(88)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(89)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", theorySubjects.get(11), trimesters.get(9), new HashSet<>(theoryPairs.get(90)), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
 
                             // Lab Sections
-                            new SectionInfo("A", labSubjects.get(0), trimesters.get(0), new HashSet<>(List.of(labSlots.get(0))), new HashSet<>(List.of(teachers.get(10)))), //
-                            new SectionInfo("B", labSubjects.get(0), trimesters.get(0), new HashSet<>(List.of(labSlots.get(1))), new HashSet<>(List.of(teachers.get(11)))), //
-                            new SectionInfo("A", labSubjects.get(1), trimesters.get(0), new HashSet<>(List.of(labSlots.get(2))), new HashSet<>(List.of(teachers.get(12)))), //
-                            new SectionInfo("B", labSubjects.get(1), trimesters.get(0), new HashSet<>(List.of(labSlots.get(3))), new HashSet<>(List.of(teachers.get(13)))), //
-                            new SectionInfo("A", labSubjects.get(2), trimesters.get(0), new HashSet<>(List.of(labSlots.get(4))), new HashSet<>(List.of(teachers.get(14)))), //
-                            new SectionInfo("B", labSubjects.get(2), trimesters.get(0), new HashSet<>(List.of(labSlots.get(5))), new HashSet<>(List.of(teachers.get(15)))), //
-                            new SectionInfo("A", labSubjects.get(3), trimesters.get(0), new HashSet<>(List.of(labSlots.get(6))), new HashSet<>(List.of(teachers.get(16)))), //
-                            new SectionInfo("B", labSubjects.get(3), trimesters.get(0), new HashSet<>(List.of(labSlots.get(7))), new HashSet<>(List.of(teachers.get(17)))), //
-                            new SectionInfo("A", labSubjects.get(4), trimesters.get(0), new HashSet<>(List.of(labSlots.get(8))), new HashSet<>(List.of(teachers.get(18)))), //
-                            new SectionInfo("B", labSubjects.get(4), trimesters.get(0), new HashSet<>(List.of(labSlots.get(9))), new HashSet<>(List.of(teachers.get(19)))));
+
+                            // ICS-251
+                            new SectionInfo("A", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(1))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(2))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(3))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(4))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(5))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(6))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(7))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(8))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(9))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("J", labSubjects.get(0), trimesters.get(9), new HashSet<>(List.of(labSlots.get(10))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // SPL-251
+                            new SectionInfo("A", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(11))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(12))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(13))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(14))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(15))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(16))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(17))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", labSubjects.get(1), trimesters.get(9), new HashSet<>(List.of(labSlots.get(18))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // DLD-251
+                            new SectionInfo("A", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(19))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(20))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(21))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(22))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(23))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(24))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(25))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(26))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", labSubjects.get(2), trimesters.get(9), new HashSet<>(List.of(labSlots.get(27))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // OOP-251
+                            new SectionInfo("A", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(28))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(29))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(30))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(31))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(32))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(33))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(34))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", labSubjects.get(3), trimesters.get(9), new HashSet<>(List.of(labSlots.get(35))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // PHYSICS LAB-251
+                            new SectionInfo("A", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(36))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(37))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(38))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(39))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(40))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(41))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(42))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("H", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(43))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("I", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(44))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("J", labSubjects.get(4), trimesters.get(9), new HashSet<>(List.of(labSlots.get(45))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+
+                            // AOOP-251
+                            new SectionInfo("A", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(46))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("B", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(47))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("C", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(48))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("D", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(49))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("E", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(50))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("F", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(51))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))), //
+                            new SectionInfo("G", labSubjects.get(5), trimesters.get(9), new HashSet<>(List.of(labSlots.get(52))), new HashSet<>(List.of(teachers.get(random.nextInt(teachers.size()))))) //
+                    );
 
                     for (SectionInfo sectionInfo : sectionInfos) {
                         Section section = new Section();
