@@ -98,10 +98,7 @@ public class UserInfo extends BasePage {
                                                            .put("limit", 100)
                                                            .put("offset", 0)), //
                 ClientRPC.getInstance()
-                         .call("Section.getByTeacher", JsonUtils.createObject()
-                                                                .put("teacherId", userId)
-                                                                .put("limit", 100)
-                                                                .put("offset", 0)), //
+                         .call("Section.getByTeacher", JsonUtils.createObject().put("teacherId", userId)), //
                 (facultyData, sectionData) -> {
                     Platform.runLater(() -> displayFacultyInfo(facultyData.getParams(), sectionData.getParams()));
                     return true;
@@ -171,13 +168,12 @@ public class UserInfo extends BasePage {
 
         // Basic Info Section
         VBox basicInfo = new VBox(10);
-        basicInfo.getChildren().addAll( //
-                createInfoHeader("Basic Information", Feather.USER), //
-                createInfoRow("Name", facultyData.get("name").asText()), //
-                createInfoRow("Email", facultyData.get("email").asText()), //
-                createInfoRow("Shortcode", facultyData.get("shortcode").asText()), //
-                createInfoRow("User Type", facultyData.get("type").asText()) //
-        );
+        basicInfo.getChildren()
+                 .addAll(createInfoHeader("Basic Information", Feather.USER), createInfoRow("Name", facultyData.get("name")
+                                                                                                               .asText()), createInfoRow("Email", facultyData.get("email")
+                                                                                                                                                             .asText()), createInfoRow("Shortcode", facultyData.get("shortcode")
+                                                                                                                                                                                                               .asText()), createInfoRow("User Type", facultyData.get("type")
+                                                                                                                                                                                                                                                                 .asText()));
 
         // Sections Section
         VBox sectionsInfo = new VBox(10);
@@ -190,12 +186,29 @@ public class UserInfo extends BasePage {
             sectionsInfo.getChildren().add(msg);
         } else {
             for (var section : sections) {
-                String sectionDetails = String.format("%s (%s) - %d/%d students", //
-                        section.get("subjectName").asText(), //
-                        section.get("section").asText(), //
-                        section.get("currentCapacity").asInt(), //
-                        section.get("maxCapacity").asInt());
-                sectionsInfo.getChildren().add(createInfoRow("Section", sectionDetails));
+                VBox sectionBox = new VBox(5);
+                String sectionDetails = String.format("[%s] %s (%s) - %d/%d students", section.get("trimesterCode")
+                                                                                              .asText(), section.get("subjectName")
+                                                                                                                .asText(), section.get("section")
+                                                                                                                                  .asText(), section.get("currentCapacity")
+                                                                                                                                                    .asInt(), section.get("maxCapacity")
+                                                                                                                                                                     .asInt());
+                sectionBox.getChildren().add(createInfoRow("Section", sectionDetails));
+
+                // Add space-time information
+                JsonNode spaceTimes = section.get("spaceTimes");
+                if (spaceTimes != null && spaceTimes.isArray()) {
+                    for (JsonNode spaceTime : spaceTimes) {
+                        String spaceTimeDetails = String.format("%s - Room: %s, (Timeslot: %d)", spaceTime.get("dayOfWeek")
+                                                                                                          .asText()
+                                                                                                          .toLowerCase(), spaceTime.get("roomNumber")
+                                                                                                                                   .asText(), spaceTime.get("timeSlot")
+                                                                                                                                                       .asInt());
+                        sectionBox.getChildren().add(createInfoRow("             -", spaceTimeDetails));
+                    }
+                }
+
+                sectionsInfo.getChildren().add(sectionBox);
             }
         }
 

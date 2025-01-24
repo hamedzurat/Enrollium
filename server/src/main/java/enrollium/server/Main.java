@@ -1629,20 +1629,31 @@ public class Main {
         server.registerMethod("Section.getByTeacher", (params, _) -> Single.defer(() -> {
             try {
                 String teacherId = JsonUtils.getString(params, "teacherId");
-                int    limit     = JsonUtils.getInt(params, "limit");
-                int    offset    = JsonUtils.getInt(params, "offset");
 
-                return DB.read(Section.class, limit, offset)
+                return DB.read(Section.class, Integer.MAX_VALUE, 0)
                          .filter(section -> section.getTeachers()
                                                    .stream()
                                                    .anyMatch(teacher -> teacher.getId().toString().equals(teacherId)))
-                         .map(section -> JsonUtils.createObject()
-                                                  .put("id", section.getId().toString())
-                                                  .put("name", section.getName())
-                                                  .put("section", section.getSection())
-                                                  .put("subjectName", section.getSubject().getName())
-                                                  .put("maxCapacity", section.getMaxCapacity())
-                                                  .put("currentCapacity", section.getCurrentCapacity()))
+                         .map(section -> {
+                             ObjectNode sectionObj = JsonUtils.createObject()
+                                                              .put("id", section.getId().toString())
+                                                              .put("name", section.getName())
+                                                              .put("section", section.getSection())
+                                                              .put("subjectName", section.getSubject().getName())
+                                                              .put("trimesterCode", section.getTrimester().getCode())
+                                                              .put("maxCapacity", section.getMaxCapacity())
+                                                              .put("currentCapacity", section.getCurrentCapacity());
+                             ArrayNode spaceTimesArray = JsonUtils.createArray();
+                             for (SpaceTime spaceTime : section.getSpaceTimeSlots()) {
+                                 spaceTimesArray.add(JsonUtils.createObject()
+                                                              .put("roomNumber", spaceTime.getRoomNumber())
+                                                              .put("timeSlot", spaceTime.getTimeSlot())
+                                                              .put("dayOfWeek", spaceTime.getDayOfWeek().toString()));
+                             }
+                             sectionObj.set("spaceTimes", spaceTimesArray);
+
+                             return sectionObj;
+                         })
                          .collect(ArrayList::new, (list, item) -> list.add(item))
                          .map(list -> {
                              ObjectNode response = JsonUtils.createObject();
