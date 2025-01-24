@@ -10,7 +10,9 @@ import java.util.Set;
 
 
 @Entity
-@Table(name = "sections", uniqueConstraints = @UniqueConstraint(columnNames = {"trimester_id", "space_time_id"}))
+@Table(name = "sections"
+//        , uniqueConstraints = @UniqueConstraint(columnNames = {"trimester_id", "space_time_id"})
+)
 @Getter
 @Setter
 public class Section extends BaseEntity {
@@ -34,7 +36,7 @@ public class Section extends BaseEntity {
     @NotNull(message = "Trimester cannot be null")
     private Trimester      trimester;
     //
-    @OneToMany
+    @ManyToMany
     @JoinTable(name = "section_space_times", //
                joinColumns = @JoinColumn(name = "section_id"), //
                inverseJoinColumns = @JoinColumn(name = "space_time_id"))
