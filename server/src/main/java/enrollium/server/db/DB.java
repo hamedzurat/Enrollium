@@ -347,6 +347,7 @@ public class DB {
                     record TrimesterInfo(Integer year, Season season, TrimesterStatus status, LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd, LocalDateTime sectionRegistrationStart, LocalDateTime sectionRegistrationEnd) {}
                     record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope, Trimester trimester, Section section, User targetUser, String title, String content) {}
                     record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
+                    record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
 
                     Faculty demoAdmin = new Faculty();
                     demoAdmin.setEmail("admin@uiu.ac.bd");
@@ -687,60 +688,62 @@ public class DB {
                         }
                     }
 
-                    List<TrimesterInfo> trimesterInfos = List.of(new TrimesterInfo(2022, Season.SPRING, TrimesterStatus.COMPLETED, //
+                    List<TrimesterInfo> trimesterInfos = List.of( //
+                            // 0
+                            new TrimesterInfo(2022, Season.SPRING, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2021, 12, 5, 9, 0), //
                                     LocalDateTime.of(2021, 12, 15, 9, 0), //
                                     LocalDateTime.of(2021, 12, 22, 9, 0), //
                                     LocalDateTime.of(2021, 12, 25, 9, 0)), //
-
+                            // 1
                             new TrimesterInfo(2022, Season.SUMMER, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2022, 4, 5, 9, 0), //
                                     LocalDateTime.of(2022, 4, 15, 9, 0), //
                                     LocalDateTime.of(2022, 4, 22, 9, 0), //
                                     LocalDateTime.of(2022, 4, 25, 9, 0)), //
-
+                            // 2
                             new TrimesterInfo(2022, Season.FALL, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2022, 8, 5, 9, 0), //
                                     LocalDateTime.of(2022, 8, 15, 9, 0), //
                                     LocalDateTime.of(2022, 8, 22, 9, 0), //
                                     LocalDateTime.of(2022, 8, 25, 9, 0)), //
-
+                            // 3
                             new TrimesterInfo(2023, Season.SPRING, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2022, 12, 5, 9, 0), //
                                     LocalDateTime.of(2022, 12, 15, 9, 0), //
                                     LocalDateTime.of(2022, 12, 22, 9, 0), //
                                     LocalDateTime.of(2022, 12, 25, 9, 0)), //
-
+                            // 4
                             new TrimesterInfo(2023, Season.SUMMER, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2023, 4, 5, 9, 0), //
                                     LocalDateTime.of(2023, 4, 15, 9, 0), //
                                     LocalDateTime.of(2023, 4, 22, 9, 0), //
                                     LocalDateTime.of(2023, 4, 25, 9, 0)), //
-
+                            // 5
                             new TrimesterInfo(2023, Season.FALL, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2023, 8, 5, 9, 0), //
                                     LocalDateTime.of(2023, 8, 15, 9, 0), //
                                     LocalDateTime.of(2023, 8, 22, 9, 0), //
                                     LocalDateTime.of(2023, 8, 25, 9, 0)), //
-
+                            // 6
                             new TrimesterInfo(2024, Season.SPRING, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2023, 12, 5, 9, 0), //
                                     LocalDateTime.of(2023, 12, 15, 9, 0), //
                                     LocalDateTime.of(2023, 12, 22, 9, 0), //
                                     LocalDateTime.of(2023, 12, 25, 9, 0)), //
-
+                            // 7
                             new TrimesterInfo(2024, Season.SUMMER, TrimesterStatus.COMPLETED, //
                                     LocalDateTime.of(2024, 4, 5, 9, 0), //
                                     LocalDateTime.of(2024, 4, 15, 9, 0), //
                                     LocalDateTime.of(2024, 4, 22, 9, 0), //
                                     LocalDateTime.of(2024, 4, 25, 9, 0)), //
-
+                            // 8
                             new TrimesterInfo(2024, Season.FALL, TrimesterStatus.ONGOING, //
                                     LocalDateTime.of(2024, 8, 5, 9, 0), //
                                     LocalDateTime.of(2024, 8, 15, 9, 0), //
                                     LocalDateTime.of(2024, 8, 22, 9, 0), //
                                     LocalDateTime.of(2024, 8, 25, 9, 0)), //
-
+                            // 9
                             new TrimesterInfo(2025, Season.SPRING, TrimesterStatus.SECTION_SELECTION, //
                                     LocalDateTime.of(2024, 12, 5, 9, 0), //
                                     LocalDateTime.of(2024, 12, 15, 9, 0), //
@@ -781,7 +784,8 @@ public class DB {
                         trimesters.add(trimester);
                     }
 
-                    record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
+                    Collections.shuffle(theoryPairs);
+                    Collections.shuffle(labSlots);
 
                     List<SectionInfo> sectionInfos = List.of(
                             // Theory Sections
