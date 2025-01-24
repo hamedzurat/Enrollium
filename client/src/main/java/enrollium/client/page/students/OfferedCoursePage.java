@@ -1,39 +1,138 @@
 package enrollium.client.page.students;
 
 import atlantafx.base.controls.Card;
+import atlantafx.base.controls.CustomTextField;
 import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
 import enrollium.client.Resources;
 import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextFlow;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
 
 import java.util.List;
 import java.util.Random;
-
+import java.util.stream.Collectors;
 
 public class OfferedCoursePage extends BasePage {
-    public static final  TranslationKey NAME       = TranslationKey.OfferedCoursePage;
-    private static final String         IMAGE_PATH = "images/courses/";
-    private static final Random         RANDOM     = new Random();
+    public static final TranslationKey NAME = TranslationKey.OfferedCoursePage;
+    private static final String IMAGE_PATH = "images/courses/";
+    private static final Random RANDOM = new Random();
+
+    private final FlowPane courseContainer;
+    private final List<OfferedCourseData> offeredCourses;
 
     public OfferedCoursePage() {
         super();
 
-        List<OfferedCourseData> offeredCourses = List.of( //
+        // Add the page header with the name
+        addPageHeader(); // This adds a header to the page
+
+// Set the title of the main header directly (if applicable)
+        setHeaderTitle("Offered Course"); // Set the desired title
+
+
+        // Toolbar setup for filtering, type filtering, and searching
+        ComboBox<String> typeFilter = new ComboBox<>(FXCollections.observableArrayList("Theory + Lab", "Lab", "Theory"));
+        typeFilter.setPromptText("Type");
+        typeFilter.getSelectionModel().selectFirst(); // Default is "Theory + Lab"
+
+        ComboBox<String> trimesterFilter = new ComboBox<>(FXCollections.observableArrayList("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12","GED"));
+        trimesterFilter.setValue("All"); // Set default value to "All"
+        trimesterFilter.setPromptText("Trimester");
+        trimesterFilter.getSelectionModel().selectFirst(); // Default is "All"
+
+        // Inside the OfferedCoursePage constructor or initialization method
+        CustomTextField searchField = new CustomTextField();
+        searchField.setPromptText("Search courses...");
+        searchField.setLeft(new FontIcon(Material2MZ.SEARCH)); // Add the search icon
+        searchField.getStyleClass().add("search-box");
+
+        // Create the Reset Button
+        Button resetButton = new Button("Reset", new FontIcon(Feather.REFRESH_CCW));
+
+// Apply Atlantafx DANGER style
+        resetButton.getStyleClass().add(Styles.DANGER);
+        resetButton.hoverProperty().addListener((obs, oldVal, isHovered) -> {
+            // Reset any changes in appearance on hover
+            resetButton.setStyle(""); // Removes any additional styles applied by hover
+            resetButton.getStyleClass().add(Styles.DANGER); // Reapplies the DANGER style
+        });
+// Ensure the button is always visible
+//        resetButton.setManaged(true);
+        resetButton.setVisible(true);
+
+// Button Action: Resets filters and search field
+        resetButton.setOnAction(e -> {
+            typeFilter.getSelectionModel().selectFirst(); // Reset type filter
+            trimesterFilter.getSelectionModel().selectFirst(); // Reset trimester filter
+            searchField.clear(); // Clear the search field
+            reloadCourses(); // Reload all courses
+        });
+
+// Ensure the button is always visible and added to the UI
+        ToolBar toolbar = new ToolBar(
+                new Label("Trimester: "),
+                trimesterFilter,
+                new Label("Type: "),
+                typeFilter,
+                new Separator(Orientation.VERTICAL),
+                searchField,
+                resetButton
+        );
+
+        // Course container setup
+        courseContainer = new FlowPane(30, 20);
+        courseContainer.setAlignment(Pos.CENTER);
+        courseContainer.setPrefWrapLength(700);
+        courseContainer.setPadding(new Insets(40, 0, 0, 0)); // 20px top padding
+
+        // Scroll pane for courses
+        ScrollPane scrollPane = new ScrollPane(courseContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setPannable(true);
+
+        VBox container = new VBox(50); // Use VBox with spacing of 10 between children
+        container.getChildren().addAll(toolbar, scrollPane);
+        container.setPadding(new Insets(40)); // Add padding around the entire layout
+        // Layout
+        BorderPane rootPane = new BorderPane();
+        rootPane.setTop(toolbar);
+        rootPane.setCenter(scrollPane);
+
+        // Add to scene
+        addNode(rootPane);
+
+        // Initialize courses and display
+        offeredCourses = initializeOfferedCourses();
+        reloadCourses();
+
+        // Add filter and search behavior
+        trimesterFilter.valueProperty()
+                       .addListener((obs, oldVal, newVal) -> applyFilters(typeFilter.getValue(), newVal, searchField.getText()));
+        typeFilter.valueProperty()
+                  .addListener((obs, oldVal, newVal) -> applyFilters(newVal, trimesterFilter.getValue(), searchField.getText()));
+        searchField.textProperty()
+                   .addListener((obs, oldVal, newVal) -> applyFilters(typeFilter.getValue(), trimesterFilter.getValue(), newVal));
+    }
+
+    private void setHeaderTitle(String offeredCourse) {}
+
+    private List<OfferedCourseData> initializeOfferedCourses() {
+        return List.of(
                 OfferedCourseData.builder()
                                  .imgFile("zach-graves-wtpTL_SzmhM-unsplash.jpg")
                                  .trimester(1)
@@ -759,7 +858,7 @@ public class OfferedCoursePage extends BasePage {
                                  .descriptionBn("এই কোর্সে, শিক্ষার্থীরা সিএসই 4000 বি কোর্সে গৃহীত প্রস্তাবটি বাস্তবায়ন করবে।")
                                  .type("Theory")
                                  .credits(2)
-                                 .prerequisite("CSE4000B")
+                                 .prerequisite("CSE4000 B")
                                  .build(),
 
                 OfferedCourseData.builder()
@@ -785,7 +884,7 @@ public class OfferedCoursePage extends BasePage {
                                  .descriptionBn("ওয়েব আর্কিটেকচার এবং এইচটিটিপি: ওয়ার্ল্ড ওয়াইড ওয়েবের ইতিহাস এবং আর্কিটেকচার, হাইপার টেক্সট ট্রান্সফার প্রোটোকলের ওভারভিউ, অন্যান্য সম্পর্কিত প্রোটোকল; হাইপার টেক্সট মার্কআপ ল্যাঙ্গুয়েজ: মার্কআপের ধারণা, এইচটিএমএল এর ওভারভিউ (টেবিল, ফর্ম, ফ্রেম, উইন্ডো, লিঙ্ক ইত্যাদি); ক্যাসকেডিং স্টাইল শীট: সিএসএস (নির্বাচক, বিভিন্ন সিএসএস বৈশিষ্ট্য এবং মান) এর ওভারভিউ; ক্লায়েন্ট সাইড স্ক্রিপ্টিং: ভেরিয়েবল, ডেটা টাইপ, কন্ট্রোল স্ট্রাকচার, ফাংশন, ডকুমেন্ট অবজেক্ট মডেল (ডিওএম), ইভেন্ট হ্যান্ডলার, বৈশিষ্ট্য, পদ্ধতি, কুকিজ; সার্ভার সাইড স্ক্রিপ্টিং: ধারণা, ভেরিয়েবল, ডেটা টাইপ, কন্ট্রোল স্ট্রাকচার, ফাংশন, অবজেক্ট, নিয়মিত এক্সপ্রেশন, মেইল, কুকিজ, সেশন এবং একটি সম্পর্কিত ওয়েব ফ্রেমওয়ার্ক; ডাটাবেস: কনটেন্ট জেনারেশন, ডাটা এক্সচেঞ্জ; ওয়েব অ্যাপ্লিকেশনের জন্য স্তরযুক্ত বা মাল্টি-টায়ার আর্কিটেকচার; এমভিসি; কন্টেন্ট ম্যানেজমেন্ট সিস্টেম।")
                                  .type("Theory")
                                  .credits(3)
-                                 .prerequisite("CSE2118")
+                                 .prerequisite("CSE 2118")
                                  .build(),
 
                 OfferedCourseData.builder()
@@ -798,7 +897,7 @@ public class OfferedCoursePage extends BasePage {
                                  .descriptionBn("ওয়েব আর্কিটেকচার এবং এইচটিটিপি: ওয়ার্ল্ড ওয়াইড ওয়েবের ইতিহাস এবং আর্কিটেকচার, হাইপার টেক্সট ট্রান্সফার প্রোটোকলের ওভারভিউ, অন্যান্য সম্পর্কিত প্রোটোকল; হাইপার টেক্সট মার্কআপ ল্যাঙ্গুয়েজ: মার্কআপের ধারণা, এইচটিএমএল এর ওভারভিউ (টেবিল, ফর্ম, ফ্রেম, উইন্ডো, লিঙ্ক ইত্যাদি); ক্যাসকেডিং স্টাইল শীট: সিএসএস (নির্বাচক, বিভিন্ন সিএসএস বৈশিষ্ট্য এবং মান) এর ওভারভিউ; ক্লায়েন্ট সাইড স্ক্রিপ্টিং: ভেরিয়েবল, ডেটা টাইপ, কন্ট্রোল স্ট্রাকচার, ফাংশন, ডকুমেন্ট অবজেক্ট মডেল (ডিওএম), ইভেন্ট হ্যান্ডলার, বৈশিষ্ট্য, পদ্ধতি, কুকিজ; সার্ভার সাইড স্ক্রিপ্টিং: ধারণা, ভেরিয়েবল, ডেটা টাইপ, কন্ট্রোল স্ট্রাকচার, ফাংশন, অবজেক্ট, নিয়মিত এক্সপ্রেশন, মেইল, কুকিজ, সেশন এবং একটি সম্পর্কিত ওয়েব ফ্রেমওয়ার্ক; ডাটাবেস: কনটেন্ট জেনারেশন, ডাটা এক্সচেঞ্জ; ওয়েব অ্যাপ্লিকেশনের জন্য স্তরযুক্ত বা মাল্টি-টায়ার আর্কিটেকচার; এমভিসি; কন্টেন্ট ম্যানেজমেন্ট সিস্টেম।")
                                  .type("Theory")
                                  .credits(3)
-                                 .prerequisite("CSE2118")
+                                 .prerequisite("CSE 2118")
                                  .build(),
 
                 OfferedCourseData.builder()
@@ -1256,25 +1355,35 @@ public class OfferedCoursePage extends BasePage {
                                  .prerequisite("")
                                  .build() //
         );
+    }
 
-        addPageHeader();
-        addFormattedText("Course Offerings");
+    private void applyFilters(String type, String trimester, String searchText) {
+        courseContainer.getChildren().clear();
 
-        FlowPane courseContainer = new FlowPane(30, 20);
-        courseContainer.setAlignment(Pos.CENTER);
-        courseContainer.setPrefWrapLength(700); // Adjust based on available space
+        List<OfferedCourseData> filteredCourses = offeredCourses.stream()
+                                                                .filter(course -> {
+                                                                    if ("GED".equalsIgnoreCase(trimester)) {
+                                                                        // Filter only GED courses
+                                                                        return course.getType().equalsIgnoreCase("GED");
+                                                                    }
+                                                                    // Filter for other trimesters
+                                                                    return "All".equals(trimester) || String.valueOf(course.getTrimester()).equals(trimester);
+                                                                })
+                                                                .filter(course -> "Theory + Lab".equals(type) || course.getType().equalsIgnoreCase(type))
+                                                                .filter(course -> searchText.isEmpty() || course.getTitleEn().toLowerCase().contains(searchText.toLowerCase()))
+                                                                .collect(Collectors.toList());
 
+        filteredCourses.forEach(course -> courseContainer.getChildren().add(createCourseCard(course)));
+
+        if (filteredCourses.isEmpty()) {
+            courseContainer.getChildren().add(new Label("No courses available for the selected filters."));
+        }
+    }
+
+
+    private void reloadCourses() {
+        courseContainer.getChildren().clear();
         offeredCourses.forEach(course -> courseContainer.getChildren().add(createCourseCard(course)));
-
-        // Wrap the FlowPane inside a ScrollPane to enable scrolling
-        ScrollPane scrollPane = new ScrollPane(courseContainer);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setPannable(true); // Allow dragging with mouse
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // Vertical scrollbar as needed
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); // No horizontal scrollbar
-
-        addNode(scrollPane);
     }
 
     private Card createCourseCard(OfferedCourseData course) {
@@ -1283,64 +1392,109 @@ public class OfferedCoursePage extends BasePage {
         card.setMinWidth(350);
         card.setMaxWidth(500);
 
-        // Load course image with cropping
+        // Add course image (adjusted to match card size)
         var courseImage = new ImageView(new Image(Resources.getResourceAsStream(IMAGE_PATH + course.getImgFile())));
-        courseImage.setFitHeight(300);
-        courseImage.setPreserveRatio(true);
+        courseImage.setFitWidth(card.getMaxWidth()); // Set width to match card size
+        courseImage.setFitHeight(350); // Adjust height proportionally
+        courseImage.setPreserveRatio(false); // Disable aspect ratio to fill card size
         courseImage.setSmooth(true);
-        courseImage.setClip(new Rectangle(500, 300)); // Crops the image to center
-
-        // Center crop by adjusting viewport
-        Image  img         = courseImage.getImage();
-        double imageWidth  = img.getWidth();
-        double imageHeight = img.getHeight();
-        double cropWidth   = 500;  // Target width
-        double cropHeight  = 300; // Target height
-
-        if (imageWidth > cropWidth || imageHeight > cropHeight) {
-            double x = (imageWidth - cropWidth) / 2;
-            double y = (imageHeight - cropHeight) / 2;
-            courseImage.setViewport(new Rectangle2D(x, y, cropWidth, cropHeight));
-        }
-
         card.setSubHeader(courseImage);
 
-        // Header with title, course code, type, and credit
-        var subHeaderText = String.format("%s (%s) - %d Credits", course.getCourseCode(), course.getType(), course.getCredits());
-        var header        = new Tile(course.getTitleEn(), subHeaderText);
+        // Add header
+        var header = new Tile(course.getTitleEn(), String.format("%s (%s) - %d Credits",
+                course.getCourseCode(), course.getType(), course.getCredits()));
         card.setHeader(header);
 
-        // Body with expandable description text
-        TextFlow description = createFormattedText(course.getDescriptionEn(), true);
-        description.setMaxWidth(470);
-        description.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        // Add description
+        var descriptionLabel = new Label(course.getDescriptionEn());
+        descriptionLabel.setWrapText(true); // Ensure text wraps properly
+        descriptionLabel.setMaxWidth(450); // Restrict width for consistent layout
+        descriptionLabel.setStyle("-fx-padding: 10; -fx-font-size: 14px;"); // Padding and font size
+        TextFlow description = new TextFlow(descriptionLabel);
+        description.setStyle("-fx-padding: 10;"); // Add padding to the description area
         card.setBody(description);
 
-        // Footer with randomized status and action button
+        // Add footer
         HBox footer = new HBox(15);
         footer.setAlignment(Pos.CENTER_LEFT);
-        footer.getChildren().addAll(new Circle(8, Color.web(randomColor())), new Label(randomStatus()));
 
-        Button actionButton = new Button(determineActionButtonText(randomStatus()));
+        // Status indicator
+        Circle statusCircle = new Circle(8, Color.web(randomColor()));
+        Label statusLabel = new Label(randomStatus());
+        footer.getChildren().addAll(statusCircle, statusLabel);
+
+        // Action button
+        Button actionButton = new Button(determineActionButtonText(statusLabel.getText()));
         actionButton.setPrefWidth(120);
         footer.getChildren().add(actionButton);
+
         card.setFooter(footer);
+        actionButton.setOnAction(e -> handleActionButtonClick(course, statusLabel, actionButton));
 
         return card;
     }
 
-    private String randomStatus() {
-        String[] statuses = {"SELECTED", "REGISTERED", "COMPLETED", "DROPPED"};
-        return statuses[RANDOM.nextInt(statuses.length)];
+    private void handleActionButtonClick(OfferedCourseData course, Label statusLabel, Button actionButton) {
+        String currentStatus = statusLabel.getText();
+
+        switch (currentStatus) {
+            case "SELECTED" -> {
+                // Change status to "UNSELECTED"
+                statusLabel.setText("UNSELECTED");
+                actionButton.setText("Select");
+                System.out.printf("Course %s unselected.%n", course.getTitleEn());
+            }
+            case "REGISTERED" -> {
+                // Change status to "WITHDRAWN"
+                statusLabel.setText("WITHDRAWN");
+                actionButton.setText("Register");
+                System.out.printf("Course %s withdrawn from registration.%n", course.getTitleEn());
+            }
+            case "COMPLETED" -> {
+                // Change status to "RETAKE"
+                statusLabel.setText("RETAKE");
+                actionButton.setText("Retake");
+                System.out.printf("Course %s marked for retake.%n", course.getTitleEn());
+            }
+            case "DROPPED" -> {
+                // Change status to "RETAKE"
+                statusLabel.setText("RETAKE");
+                actionButton.setText("Retake");
+                System.out.printf("Course %s dropped and marked for retake.%n", course.getTitleEn());
+            }
+            default -> {
+                // Default behavior for "Select"
+                statusLabel.setText("SELECTED");
+                actionButton.setText("Unselect");
+                System.out.printf("Course %s selected.%n", course.getTitleEn());
+            }
+        }
     }
 
     private String determineActionButtonText(String status) {
         return switch (status) {
             case "SELECTED" -> "Unselect";
             case "REGISTERED" -> "Withdraw";
-            case "COMPLETED", "DROPPED" -> "Retake";
+            case "COMPLETED" -> "Retake";
+            case "DROPPED" -> "Retake";
             default -> "Select";
         };
+    }
+
+
+    private Button createActionButton(String status) {
+        Button button = new Button(switch (status) {
+            case "REGISTERED" -> "Withdraw";
+            case "DROPPED" -> "Retake";
+            default -> "Select";
+        });
+        button.setPrefWidth(120);
+        return button;
+    }
+
+    private String randomStatus() {
+        String[] statuses = {"SELECTED", "REGISTERED", "COMPLETED", "DROPPED"};
+        return statuses[RANDOM.nextInt(statuses.length)];
     }
 
     private String randomColor() {
