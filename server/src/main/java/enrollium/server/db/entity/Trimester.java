@@ -23,7 +23,7 @@ public class Trimester extends BaseEntity {
     //
     @Column(nullable = false)
     @NotNull(message = "Year cannot be null")
-    @Min(value = 2003, message = "Year must be 1900 or later")
+    @Min(value = 2003, message = "Year must be 2003 or later")
     private Integer         year;
     //
     @Enumerated(EnumType.STRING)
@@ -58,25 +58,19 @@ public class Trimester extends BaseEntity {
 
     private void validateDateRanges() {
         // Validate course selection dates
-        if (courseSelectionStart != null && courseSelectionEnd != null) {
-            if (courseSelectionStart.isAfter(courseSelectionEnd)) {
+        if (courseSelectionStart != null && courseSelectionEnd != null)
+            if (courseSelectionStart.isAfter(courseSelectionEnd))
                 throw new IllegalArgumentException("Course selection start date must be before or equal to end date");
-            }
-        }
 
         // Validate section registration dates
-        if (sectionRegistrationStart != null && sectionRegistrationEnd != null) {
-            if (sectionRegistrationStart.isAfter(sectionRegistrationEnd)) {
+        if (sectionRegistrationStart != null && sectionRegistrationEnd != null)
+            if (sectionRegistrationStart.isAfter(sectionRegistrationEnd))
                 throw new IllegalArgumentException("Section registration start date must be before or equal to end date");
-            }
-        }
 
         // Validate sequence of date ranges
-        if (courseSelectionEnd != null && sectionRegistrationStart != null) {
-            if (courseSelectionEnd.isAfter(sectionRegistrationStart)) {
+        if (courseSelectionEnd != null && sectionRegistrationStart != null)
+            if (courseSelectionEnd.isAfter(sectionRegistrationStart))
                 throw new IllegalArgumentException("Course selection must end before section registration begins");
-            }
-        }
     }
 
     private void validateCode() {
@@ -84,15 +78,13 @@ public class Trimester extends BaseEntity {
 
         // Extract last digit (must be 1, 2, or 3)
         int lastDigit = code % 10;
-        if (lastDigit < 1 || lastDigit > 3) {
+        if (lastDigit < 1 || lastDigit > 3)
             throw new IllegalArgumentException("Trimester code must end with 1, 2, or 3 (format: YY[1|2|3])");
-        }
 
         // Extract year from code (first two digits)
         int codeYear = code / 10;
-        if (codeYear != year % 100) {
+        if (codeYear != year % 100)
             throw new IllegalArgumentException("Trimester code must match the last two digits of the year");
-        }
 
         // Validate season matches trimester number
         Season expectedSeason = switch (lastDigit) {
@@ -102,9 +94,8 @@ public class Trimester extends BaseEntity {
             default -> throw new IllegalStateException("Unexpected trimester number: " + lastDigit);
         };
 
-        if (season != expectedSeason) {
+        if (season != expectedSeason)
             throw new IllegalArgumentException("Season must match trimester number (1=SPRING, 2=SUMMER, 3=FALL)");
-        }
     }
 
     private void validateStatusDates() {

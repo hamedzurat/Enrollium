@@ -29,8 +29,7 @@ public class SpaceTime extends BaseEntity {
     @NotNull(message = "Room type cannot be null")
     private SubjectType roomType;
     //
-     // TODO: make it string
-//    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false)
     @NotNull(message = "Day of the week cannot be null")
     private DayOfWeek   dayOfWeek;
@@ -43,14 +42,10 @@ public class SpaceTime extends BaseEntity {
     @PrePersist
     @PreUpdate
     private void validateTimeSlot() {
-        if (timeSlot == null) {
-            throw new IllegalArgumentException("Time slot cannot be null");
-        }
-        if (roomType == SubjectType.LAB && (timeSlot < 1 || timeSlot > 3)) {
+        if (timeSlot == null) throw new IllegalArgumentException("Time slot cannot be null");
+        if (roomType == SubjectType.LAB && (timeSlot < 1 || timeSlot > 3))
             throw new IllegalArgumentException("Lab room time slot must be between 1 and 3");
-        }
-        if (roomType == SubjectType.THEORY && (timeSlot < 1 || timeSlot > 6)) {
+        if (roomType == SubjectType.THEORY && (timeSlot < 1 || timeSlot > 6))
             throw new IllegalArgumentException("Theory room time slot must be between 1 and 6");
-        }
     }
 }

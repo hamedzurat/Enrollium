@@ -35,13 +35,9 @@ public class Section extends BaseEntity {
     private Trimester      trimester;
     //
     @OneToMany
-    @JoinTable(name = "section_space_times",//
-               joinColumns = @JoinColumn(name = "section_id"),//
-               inverseJoinColumns = @JoinColumn(name = "space_time_id"),//
-               uniqueConstraints = @UniqueConstraint(//
-                       columnNames = {"section_id", "space_time_id"}//
-                                                     )//
-               )
+    @JoinTable(name = "section_space_times", //
+               joinColumns = @JoinColumn(name = "section_id"), //
+               inverseJoinColumns = @JoinColumn(name = "space_time_id"))
     @NotEmpty(message = "Space time slots must not be empty")
     private Set<SpaceTime> spaceTimeSlots = new HashSet<>();
     //

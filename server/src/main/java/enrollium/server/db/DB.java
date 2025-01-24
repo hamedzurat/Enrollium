@@ -20,8 +20,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /* DOCS:
@@ -46,10 +46,12 @@ import java.util.stream.Stream;
 
 // Singleton - only one instance of this will exist
 public class DB {
+    public static final     String         DEMOPASS = "demopass";
     // volatile to make it only run once across all the threads
     // https://www.geeksforgeeks.org/volatile-keyword-in-java/
-    private static final    Faker          faker = new Faker();
-    private static final    Logger         log   = LoggerFactory.getLogger(DB.class);
+    private static final    Faker          faker    = new Faker();
+    private static final    Logger         log      = LoggerFactory.getLogger(DB.class);
+    private static final    Random         random   = new Random();
     private static volatile SessionFactory sessionFactory;
 
     // setup db connection or return existing connection
@@ -312,7 +314,7 @@ public class DB {
                         log.info("Starting to clear all tables...");
 
                         // List of tables in reverse dependency order
-                        String[] tables = {"Course", "Notification", "Section", "Prerequisite", "SpaceTime", "Subject", "Trimester", "Student", "Faculty", "User"};
+                        String[] tables = {"Course", "Notification", "Section", "Prerequisite", "SpaceTime", "Faculty", "Subject", "Trimester", "Student", "User"};
 
                         // Loop through tables and clear them
                         for (String table : tables) {
@@ -326,375 +328,595 @@ public class DB {
 
                     // Create all objects first
                     List<Faculty>      admins         = new ArrayList<>();
-                    List<Faculty>      teachers       = new ArrayList<>(); // TODO: add some sub
+                    List<Faculty>      teachers       = new ArrayList<>();
                     List<Student>      students       = new ArrayList<>();
                     List<Subject>      theorySubjects = new ArrayList<>();
                     List<Subject>      labSubjects    = new ArrayList<>();
                     List<Prerequisite> prerequisites  = new ArrayList<>();
                     List<SpaceTime>    spaceTimeSlots = new ArrayList<>();
                     List<Trimester>    trimesters     = new ArrayList<>();
-                    List<Section>      sections       = new ArrayList<>(); // TODO: write more sections
-                    List<Course>       courses        = new ArrayList<>(); // TODO: jst do it
-                    List<Notification> notifications  = new ArrayList<>(); // TODO: generate some msg
+                    List<Section>      sections       = new ArrayList<>();
+                    List<Course>       courses        = new ArrayList<>();
+                    List<Notification> notifications  = new ArrayList<>();
 
-                    // Create admins
-                    Set<String>  usedEmails = new HashSet<>();
-                    List<String> adminNames = Arrays.asList("Mir Mohammad Monir", "Fahad Rahman");
-                    List<String> adminSC    = Arrays.asList("MMM", "FR");
+                    record FacultyInfo(String name, String email, String shortcode) {}
+                    record StudentInfo(String name, int universityId, String email) {}
+                    record SubjectInfo(String code, String name, int credits) {}
+                    record PrerequisiteChain(String subjectCode, String prerequisiteCode) {}
+                    record RoomInfo(String roomNumber, String name) {}
+                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status, LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd, LocalDateTime sectionRegistrationStart, LocalDateTime sectionRegistrationEnd) {}
+                    record NotificationInfo(User sender, String title, String content, NotificationCategory category, NotificationScope scope, Trimester trimester, Section section, User targetUser) {}
+                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
 
-                    for (int i = 0; i < adminSC.size(); i++) {
+                    Faculty demoAdmin = new Faculty();
+                    demoAdmin.setEmail("admin@uiu.ac.bd");
+                    demoAdmin.setName("Demo Admin");
+                    demoAdmin.setPassword("demoAdm1nPa$$");
+                    demoAdmin.setType(UserType.ADMIN);
+                    demoAdmin.setShortcode("ADMIN");
+                    demoAdmin.setInfo("demoAdm1nPa$$");
+                    admins.add(demoAdmin);
+
+                    Student demoStudent = new Student();
+                    demoStudent.setEmail("demo.student@uiu.ac.bd");
+                    demoStudent.setName("Demo Student");
+                    demoStudent.setPassword("demo$tudentP4ss");
+                    demoStudent.setUniversityId(111111111);
+                    demoStudent.setType(UserType.STUDENT);
+                    demoStudent.setInfo("demo$tudentP4ss");
+                    students.add(demoStudent);
+
+                    List<FacultyInfo> adminInfos = List.of(new FacultyInfo("Mir Mohammad Monir", "mir.mohammad.monir@uiu.ac.bd", "MMM"), new FacultyInfo("Fahad Rahman", "fahad.rahman@uiu.ac.bd", "FR"));
+
+                    for (FacultyInfo adminInfo : adminInfos) {
                         Faculty admin = new Faculty();
                         admin.setCreatedBy("demo");
 
-                        // Use the predefined names and shortcodes for admins
-                        String name      = adminNames.get(i);
-                        String shortcode = adminSC.get(i);
-                        String email     = String.format("%s@admin.uiu.ac.bd", shortcode.toLowerCase());
-
-                        // Generate a valid password
-                        String pass = "admin" + (i + 1) + "pass";
-
-                        admin.setName(name);
-                        admin.setShortcode(shortcode);
-                        admin.setEmail(email);
-                        admin.setPassword(pass);
-                        admin.setInfo(pass);
+                        admin.setName(adminInfo.name);
+                        admin.setShortcode(adminInfo.shortcode);
+                        admin.setEmail(adminInfo.email);
+                        admin.setPassword(DEMOPASS);
+                        admin.setInfo(DEMOPASS);
                         admin.setType(UserType.ADMIN);
+
                         admins.add(admin);
                     }
 
-                    //Faculty
-//                    Set<String> usedFacultyEmails = new HashSet<>();
-                    List<String> names = Arrays.asList("Dr. Md. Abul Kashem Mia", "Dr. Hasan Sarwar", "Dr. Mohammad Nurul Huda", "Dr. Khondaker Abdullah-Al-Mamun", "Dr. A.K.M. Muzahidul Islam", "Dr. Md. Motaharul Islam", "Dr. Dewan Md. Farid", "Dr. Al-Sakib Khan Pathan", "Dr. Mohammad Shahriar Rahman", "Dr. Md. Shohrab Hossain", "Dr. Muhammad Nomani Kabir", "Dr. Suman Ahmmed", "Dr. Jannatun Noor Mukta", "Dr. Riasat Azim", "Dr. Ohidujjaman", "Mohammad Mamun Elahi", "Rubaiya Rahtin Khan", "Md. Benzir Ahmed", "Nahid Hossain", "Sadia Islam", "Mir Moynuddin Ahmed Shibly", "Khushnur Binte Jahangir", "Minhajul Bashir", "Shoib Ahmed Shourav", "Nabila Sabrin Sworna", "Farhan Anan Himu", "Anika Tasnim Rodela", "Md. Mohaiminul Islam", "Fahim Hafiz", "Md. Romizul Islam", "Md. Tarek Hasan", "Samin Sharaf Somik", "Farhan Tanvir Utshaw", "Rahad Khan", "Iftekharul Abedeen", "Kazi Abdun Noor", "Md. Muhyminul Haque", "Md. Shadman Aadeeb", "Nusrat Jahan Tithi", "Umama Rahman", "Abdullah Al Jobair", "Raiyan Rahman", "Fahmid Al Rifat", "Sk. Md. Tauseef Tajwar", "Charles Aunkan Gomes", "Md. Shafqat Talukder", "Md. Tamzid Hossain", "Asif Ahmed Utsa", "Md. Tanvir Raihan", "Sidratul Muntaha", "Taki Yashir", "Md. Nafis Tahmid Akhand", "Md. Abid Hossain", "Asnuva Tanvin", "Tahmid Mosaddeque", "Tasmin Sanjida", "Rabeya Hossain", "Azizur Rahman Anik", "A.H.M. Osama Haque", "Abu Humayed Azim Fahmid", "Khandokar Md. Rahat Hossain", "Noman Asif Aditya", "Nabila Tasfiha Rahman", "Md. Mushfiqul Haque Omi", "Tanmoy Bipro Das", "Humaira Anzum Neha", "M. Fahmin Rahman", "Redwanul Mahbub Talukder", "Md. Irfanur Rahman Rafio", "Shekh Md. Saifur Rahman", "Shihab Ahmed", "Sidratul Tanzila Tasmi", "Sherajul Arifin", "Mobaswirul Islam", "Abdullah Ibne Masud Mahi", "Mahmudul Hasan");
+                    List<FacultyInfo> teacherInfos = List.of(new FacultyInfo("Dr. Md. Abul Kashem Mia", "kashem@uiu.ac.bd", "AKM"), new FacultyInfo("Dr. Hasan Sarwar", "hsarwar@cse.uiu.ac.bd", "HS"), new FacultyInfo("Dr. Mohammad Nurul Huda", "mnh@cse.uiu.ac.bd", "MNH"), new FacultyInfo("Dr. Khondaker Abdullah-Al-Mamun", "mamun@cse.uiu.ac.bd", "KAM"), new FacultyInfo("Dr. A.K.M. Muzahidul Islam", "muzahid@cse.uiu.ac.bd", "AMI"), new FacultyInfo("Dr. Md. Motaharul Islam", "motaharul@cse.uiu.ac.bd", "MMI"), new FacultyInfo("Dr. Dewan Md. Farid", "dewanfarid@cse.uiu.ac.bd", "DMF"), new FacultyInfo("Dr. Al-Sakib Khan Pathan", "sakib@cse.uiu.ac.bd", "AKP"), new FacultyInfo("Dr. Mohammad Shahriar Rahman", "mshahriar@cse.uiu.ac.bd", "MSR"), new FacultyInfo("Dr. Md. Shohrab Hossain", "shohrab@cse.uiu.ac.bd", "MSH"), new FacultyInfo("Dr. Muhammad Nomani Kabir", "kabir@cse.uiu.ac.bd", "MNK"), new FacultyInfo("Dr. Suman Ahmmed", "suman@cse.uiu.ac.bd", "SAA"), new FacultyInfo("Dr. Jannatun Noor Mukta", "jannatun@cse.uiu.ac.bd", "JNM"), new FacultyInfo("Dr. Riasat Azim", "riasat@cse.uiu.ac.bd", "RA"), new FacultyInfo("Dr. Ohidujjaman", "ohidujjaman@cse.uiu.ac.bd", "OJ"), new FacultyInfo("Mohammad Mamun Elahi", "mmelahi@cse.uiu.ac.bd", "MME"), new FacultyInfo("Rubaiya Rahtin Khan", "rubaiya@cse.uiu.ac.bd", "RRK"), new FacultyInfo("Md. Benzir Ahmed", "benzir@cse.uiu.ac.bd", "MBA"), new FacultyInfo("Nahid Hossain", "nahid@cse.uiu.ac.bd", "NH"), new FacultyInfo("Sadia Islam", "sadia@cse.uiu.ac.bd", "SI"), new FacultyInfo("Mir Moynuddin Ahmed Shibly", "moynuddin@cse.uiu.ac.bd", "MMAS"), new FacultyInfo("Khushnur Binte Jahangir", "khushnur@cse.uiu.ac.bd", "KBJ"), new FacultyInfo("Minhajul Bashir", "minhajul@cse.uiu.ac.bd", "MB"), new FacultyInfo("Shoib Ahmed Shourav", "shoib@cse.uiu.ac.bd", "SAS"), new FacultyInfo("Nabila Sabrin Sworna", "nabila@cse.uiu.ac.bd", "NSS"), new FacultyInfo("Farhan Anan Himu", "himu@cse.uiu.ac.bd", "FAH"), new FacultyInfo("Anika Tasnim Rodela", "anika@cse.uiu.ac.bd", "ATR"), new FacultyInfo("Md. Mohaiminul Islam", "mohaiminul@cse.uiu.ac.bd", "MMI2"), new FacultyInfo("Fahim Hafiz", "fahimhafiz@cse.uiu.ac.bd", "FH"), new FacultyInfo("Md. Romizul Islam", "romizul@cse.uiu.ac.bd", "MRI"), new FacultyInfo("Md. Tarek Hasan", "tarek@cse.uiu.ac.bd", "TH"), new FacultyInfo("Samin Sharaf Somik", "samin@cse.uiu.ac.bd", "SSS"), new FacultyInfo("Farhan Tanvir Utshaw", "farhan@cse.uiu.ac.bd", "FTU"), new FacultyInfo("Rahad Khan", "rahad@cse.uiu.ac.bd", "RK"), new FacultyInfo("Iftekharul Abedeen", "iftekharul@cse.uiu.ac.bd", "IA"), new FacultyInfo("Kazi Abdun Noor", "abdunnoor@cse.uiu.ac.bd", "KAN"), new FacultyInfo("Md. Muhyminul Haque", "muhyminul@cse.uiu.ac.bd", "MMH"), new FacultyInfo("Md. Shadman Aadeeb", "shadman@cse.uiu.ac.bd", "MSA"), new FacultyInfo("Nusrat Jahan Tithi", "nusrat@cse.uiu.ac.bd", "NJT"), new FacultyInfo("Umama Rahman", "umama@cse.uiu.ac.bd", "UR"), new FacultyInfo("Abdullah Al Jobair", "jobair@cse.uiu.ac.bd", "AAJ"), new FacultyInfo("Raiyan Rahman", "raiyan@cse.uiu.ac.bd", "RR"), new FacultyInfo("Fahmid Al Rifat", "fahmid@cse.uiu.ac.bd", "FAR"), new FacultyInfo("Sk. Md. Tauseef Tajwar", "tauseef@cse.uiu.ac.bd", "SMT"), new FacultyInfo("Charles Aunkan Gomes", "charles@cse.uiu.ac.bd", "CAG"), new FacultyInfo("Md. Shafqat Talukder", "shafqat@cse.uiu.ac.bd", "MST"), new FacultyInfo("Md. Tamzid Hossain", "tamzid@cse.uiu.ac.bd", "MTH"), new FacultyInfo("Asif Ahmed Utsa", "asif@cse.uiu.ac.bd", "AAU"), new FacultyInfo("Md. Tanvir Raihan", "tanvir@cse.uiu.ac.bd", "MTR"), new FacultyInfo("Sidratul Muntaha", "sidratul@cse.uiu.ac.bd", "SM"), new FacultyInfo("Taki Yashir", "taki@cse.uiu.ac.bd", "TY"), new FacultyInfo("Md. Nafis Tahmid Akhand", "tahmid@cse.uiu.ac.bd", "MNT"), new FacultyInfo("Md. Abid Hossain", "abid@cse.uiu.ac.bd", "MAH"), new FacultyInfo("Asnuva Tanvin", "tanvin@cse.uiu.ac.bd", "AT"), new FacultyInfo("Tahmid Mosaddeque", "mosaddeque@cse.uiu.ac.bd", "TM"), new FacultyInfo("Tasmin Sanjida", "sanjida@cse.uiu.ac.bd", "TS"), new FacultyInfo("Rabeya Hossain", "rabeya@cse.uiu.ac.bd", "RH"), new FacultyInfo("Azizur Rahman Anik", "azizur@cse.uiu.ac.bd", "ARA"), new FacultyInfo("A.H.M. Osama Haque", "osama@cse.uiu.ac.bd", "AHM"), new FacultyInfo("Abu Humayed Azim Fahmid", "humayed@cse.uiu.ac.bd", "AHAF"), new FacultyInfo("Khandokar Md. Rahat Hossain", "rahat@cse.uiu.ac.bd", "KRH"), new FacultyInfo("Noman Asif Aditya", "aditya@cse.uiu.ac.bd", "NAA"), new FacultyInfo("Nabila Tasfiha Rahman", "tasfiha@cse.uiu.ac.bd", "NTR"), new FacultyInfo("Md. Mushfiqul Haque Omi", "mushfiqul@cse.uiu.ac.bd", "MMO"), new FacultyInfo("Tanmoy Bipro Das", "tanmoy@cse.uiu.ac.bd", "TBD"), new FacultyInfo("Humaira Anzum Neha", "humaira@cse.uiu.ac.bd", "HAN"), new FacultyInfo("M. Fahmin Rahman", "fahmin@cse.uiu.ac.bd", "MFR"), new FacultyInfo("Redwanul Mahbub Talukder", "redwanul@cse.uiu.ac.bd", "RMT"), new FacultyInfo("Md. Irfanur Rahman Rafio", "irfanur@cse.uiu.ac.bd", "IRR"), new FacultyInfo("Shekh Md. Saifur Rahman", "saifur@cse.uiu.ac.bd", "SMSR"), new FacultyInfo("Shihab Ahmed", "shihab@cse.uiu.ac.bd", "SA"), new FacultyInfo("Sidratul Tanzila Tasmi", "tanzila@cse.uiu.ac.bd", "STT"), new FacultyInfo("Sherajul Arifin", "sherajul@cse.uiu.ac.bd", "SA2"), new FacultyInfo("Mobaswirul Islam", "mobaswirul@cse.uiu.ac.bd", "MI"), new FacultyInfo("Abdullah Ibne Masud Mahi", "ibnemasud@cse.uiu.ac.bd", "AIM"), new FacultyInfo("Mahmudul Hasan", "mahmudul@cse.uiu.ac.bd", "MH"));
 
-                    List<String> emails = Arrays.asList("kashem@uiu.ac.bd", "hsarwar@cse.uiu.ac.bd", "mnh@cse.uiu.ac.bd", "mamun@cse.uiu.ac.bd", "muzahid@cse.uiu.ac.bd", "motaharul@cse.uiu.ac.bd", "dewanfarid@cse.uiu.ac.bd", "sakib@cse.uiu.ac.bd", "mshahriar@cse.uiu.ac.bd", "shohrab@cse.uiu.ac.bd", "kabir@cse.uiu.ac.bd", "suman@cse.uiu.ac.bd", "jannatun@cse.uiu.ac.bd", "riasat@cse.uiu.ac.bd", "ohidujjaman@cse.uiu.ac.bd", "mmelahi@cse.uiu.ac.bd", "rubaiya@cse.uiu.ac.bd", "benzir@cse.uiu.ac.bd", "nahid@cse.uiu.ac.bd", "sadia@cse.uiu.ac.bd", "moynuddin@cse.uiu.ac.bd", "khushnur@cse.uiu.ac.bd", "minhajul@cse.uiu.ac.bd", "shoib@cse.uiu.ac.bd", "nabila@cse.uiu.ac.bd", "himu@cse.uiu.ac.bd", "anika@cse.uiu.ac.bd", "mohaiminul@cse.uiu.ac.bd", "fahimhafiz@cse.uiu.ac.bd", "romizul@cse.uiu.ac.bd", "tarek@cse.uiu.ac.bd", "samin@cse.uiu.ac.bd", "farhan@cse.uiu.ac.bd", "rahad@cse.uiu.ac.bd", "iftekharul@cse.uiu.ac.bd", "abdunnoor@cse.uiu.ac.bd", "muhyminul@cse.uiu.ac.bd", "shadman@cse.uiu.ac.bd", "nusrat@cse.uiu.ac.bd", "umama@cse.uiu.ac.bd", "jobair@cse.uiu.ac.bd", "raiyan@cse.uiu.ac.bd", "fahmid@cse.uiu.ac.bd", "tauseef@cse.uiu.ac.bd", "charles@cse.uiu.ac.bd", "shafqat@cse.uiu.ac.bd", "tamzid@cse.uiu.ac.bd", "asif@cse.uiu.ac.bd", "tanvir@cse.uiu.ac.bd", "sidratul@cse.uiu.ac.bd", "taki@cse.uiu.ac.bd", "tahmid@cse.uiu.ac.bd", "abid@cse.uiu.ac.bd", "tanvin@cse.uiu.ac.bd", "mosaddeque@cse.uiu.ac.bd", "sanjida@cse.uiu.ac.bd", "rabeya@cse.uiu.ac.bd", "azizur@cse.uiu.ac.bd", "osama@cse.uiu.ac.bd", "humayed@cse.uiu.ac.bd", "rahat@cse.uiu.ac.bd", "aditya@cse.uiu.ac.bd", "tasfiha@cse.uiu.ac.bd", "mushfiqul@cse.uiu.ac.bd", "tanmoy@cse.uiu.ac.bd", "humaira@cse.uiu.ac.bd", "fahmin@cse.uiu.ac.bd", "redwanul@cse.uiu.ac.bd", "irfanur@cse.uiu.ac.bd", "saifur@cse.uiu.ac.bd", "shihab@cse.uiu.ac.bd", "tanzila@cse.uiu.ac.bd", "sherajul@cse.uiu.ac.bd", "mobaswirul@cse.uiu.ac.bd", "ibnemasud@cse.uiu.ac.bd", "mahmudul@cse.uiu.ac.bd");
-
-                    List<String> shortCode = Arrays.asList("AKM", "HS", "MNH", "KAM", "AMI", "MMI", "DMF", "AKP", "MSR", "MSH", "MNK", "SAA", "JNM", "RA", "OJ", "MME", "RRK", "MBA", "NH", "SI", "MMAS", "KBJ", "MB", "SAS", "NSS", "FAH", "ATR", "MMI2", "FH", "MRI", "TH", "SSS", "FTU", "RK", "IA", "KAN", "MMH", "MSA", "NJT", "UR", "AAJ", "RR", "FAR", "SMT", "CAG", "MST", "MTH", "AAU", "MTR", "SM", "TY", "MNT", "MAH", "AT", "TM", "TS", "RH", "ARA", "AHM", "AHAF", "KRH", "NAA", "NTR", "MMO", "TBD", "HAN", "MFR", "RMT", "IRR", "SMSR", "SA", "STT", "SA2", "MI", "AIM", "MH");
-
-                    for (int i = 0; i < shortCode.size(); i++) {
+                    for (FacultyInfo teacherInfo : teacherInfos) {
                         Faculty teacher = new Faculty();
                         teacher.setCreatedBy("demo");
 
-                        // Generate the name and email
-                        String name      = names.get(i);
-                        String shortcode = shortCode.get(i);
-                        String email     = emails.get(i);
-
-                        String pass = "teacher" + (i + 1) + "pass";
-
-                        teacher.setName(name);
-                        teacher.setShortcode(shortcode);
-                        teacher.setEmail(email);
-                        teacher.setPassword(pass);
-                        teacher.setInfo(pass);
+                        teacher.setName(teacherInfo.name);
+                        teacher.setShortcode(teacherInfo.shortcode);
+                        teacher.setEmail(teacherInfo.email);
+                        teacher.setPassword(DEMOPASS);
+                        teacher.setInfo(DEMOPASS);
                         teacher.setType(UserType.TEACHER);
+
                         teachers.add(teacher);
                     }
-                    //Faculty Subject
 
-                    //Student
-                    for (int i = 0; i < 12; i++) {
+                    AtomicInteger     uniId        = new AtomicInteger(112330000);
+                    List<StudentInfo> studentInfos = new ArrayList<>();
+
+                    for (int i = 0; i < 10; i++) {
+                        int    universityId = uniId.addAndGet(random.nextInt(1, 10));
+                        String firstName    = faker.name().firstName();
+                        String lastName     = faker.name().lastName();
+                        String name         = firstName + " " + lastName;
+                        String email        = String.format("%s.%d@bscse.uiu.ac.bd", (firstName.charAt(0) + lastName).toLowerCase(), universityId);
+                        studentInfos.add(new StudentInfo(name, universityId, email));
+                    }
+
+                    for (StudentInfo studentInfo : studentInfos) {
                         Student student = new Student();
                         student.setCreatedBy("demo");
 
-                        int universityId = 1234 + i;
+                        student.setName(studentInfo.name);
+                        student.setUniversityId(studentInfo.universityId);
+                        student.setEmail(studentInfo.email);
+                        student.setPassword(DEMOPASS);
+                        student.setInfo(DEMOPASS);
 
-                        String pass = "student" + universityId;
-
-                        student.setName(faker.name().fullName());
-                        student.setUniversityId(universityId);
-                        student.setEmail(String.format("%s%d@student.uiu.ac.bd", student.getName()
-                                                                                        .split(" ")[0].trim(), universityId));
-                        student.setPassword(pass);
-                        student.setInfo(pass);
                         students.add(student);
                     }
 
-                    //TheorySubjects
-                    List<String> theoryCourseCode = Arrays.asList("ENG1011", "BDS1201", "CSE2213", "ENG1013", "CSE1111", "MATH1151", "MATH2183", "CSE1325", "CSE1115", "MATH2201", "PHY2105", "EEE2113");
+                    List<SubjectInfo> theoryCourses = List.of(new SubjectInfo("ENG1011", "English–I", 3), new SubjectInfo("BDS1201", "History of the Emergence of Bangladesh", 3), new SubjectInfo("CSE2213", "Discrete Mathematics", 3), new SubjectInfo("ENG1013", "English–II", 3), new SubjectInfo("CSE1111", "Structured Programming Language", 3), new SubjectInfo("MATH1151", "Fundamental Calculus", 3), new SubjectInfo("MATH2183", "Calculus and Linear Algebra", 3), new SubjectInfo("CSE1325", "Digital Logic Design", 3), new SubjectInfo("CSE1115", "Object Oriented Programming", 3), new SubjectInfo("MATH2201", "Coordinate Geometry and Vector Analysis", 3), new SubjectInfo("PHY2105", "Physics", 3), new SubjectInfo("EEE2113", "Electrical Circuits", 3));
+                    List<SubjectInfo> labCourses    = List.of(new SubjectInfo("CSE1110", "Introduction to Computer Systems", 1), new SubjectInfo("CSE1112", "Structured Programming Language Laboratory", 1), new SubjectInfo("CSE1326", "Digital Logic Design Laboratory", 1), new SubjectInfo("CSE1116", "Object Oriented Programming Laboratory", 1), new SubjectInfo("PHY2106", "Physics Laboratory", 1), new SubjectInfo("CSE2118", "Advanced Object Oriented Programming Laboratory", 1));
 
-                    List<String> theoryCourseName = Arrays.asList("English–I", "History of the Emergence of Bangladesh", "Discrete Mathematics", "English–II", "Structured Programming Language", "Fundamental Calculus", "Calculus and Linear Algebra", "Digital Logic Design", "Object Oriented Programming", "Coordinate Geometry and Vector Analysis", "Physics", "Electrical Circuits");
-
-                    for (int i = 0; i < theoryCourseCode.size(); i++) {
+                    for (SubjectInfo subjectInfo : theoryCourses) {
                         Subject subject = new Subject();
                         subject.setCreatedBy("demo");
-                        subject.setName(theoryCourseName.get(i));  // Human-readable name
-                        subject.setCodeName(theoryCourseCode.get(i)); // Use predefined codeName
-                        subject.setCredits(3); // Example: Set 3 credits for theory courses
-                        subject.setType(SubjectType.THEORY); // Set type to THEORY
+
+                        subject.setName(subjectInfo.name);
+                        subject.setCodeName(subjectInfo.code);
+                        subject.setCredits(subjectInfo.credits);
+                        subject.setType(SubjectType.THEORY);
+
                         theorySubjects.add(subject);
                     }
 
-                    // LabSubjects
-                    List<String> labCourseCode = Arrays.asList("CSE1110", "CSE1112", "CSE1326", "CSE1116", "PHY2106", "CSE2118");
-
-                    List<String> labCourseName = Arrays.asList("Introduction to Computer Systems", "Structured Programming Language Laboratory", "Digital Logic Design Laboratory", "Object Oriented Programming Laboratory", "Physics Laboratory", "Advanced Object Oriented Programming Laboratory");
-
-                    for (int i = 0; i < labCourseCode.size(); i++) {
+                    for (SubjectInfo subjectInfo : labCourses) {
                         Subject labSubject = new Subject();
                         labSubject.setCreatedBy("demo");
-                        labSubject.setName(labCourseName.get(i));  // Human-readable name
-                        labSubject.setCodeName(labCourseCode.get(i)); // Use predefined codeName
-                        labSubject.setCredits(1); // Set credits for lab courses
-                        labSubject.setType(SubjectType.LAB); // Set subject type
+
+                        labSubject.setName(subjectInfo.name);
+                        labSubject.setCodeName(subjectInfo.code);
+                        labSubject.setCredits(subjectInfo.credits);
+                        labSubject.setType(SubjectType.LAB);
+
                         labSubjects.add(labSubject);
                     }
 
-                    //Prerequisite
-                    List<String[]> prerequisiteChains = Arrays.asList(new String[]{"ENG1013", "ENG1011"},       // ENG1013 prerequisite is ENG1011
-                            new String[]{"CSE1111", "CSE1110"},       // CSE1111 prerequisite is CSE1110
-                            new String[]{"CSE1112", "CSE1110"},       // CSE1112 prerequisite is CSE1110
-                            new String[]{"MATH2183", "MATH1151"},     // MATH2183 prerequisite is MATH1151
-                            new String[]{"CSE1115", "CSE1111"},       // CSE1115 prerequisite is CSE1111
-                            new String[]{"CSE1116", "CSE1112"},       // CSE1116 prerequisite is CSE1112
-                            new String[]{"MATH2201", "MATH1151"},     // MATH2201 prerequisite is MATH1151
-                            new String[]{"CSE2118", "CSE1116"}        // CSE2118 prerequisite is CSE1116
-                    );
+                    List<Subject> allSubjects = new ArrayList<>(Stream.concat(theorySubjects.stream(), labSubjects.stream())
+                                                                      .toList());
+                    List<PrerequisiteChain> prerequisiteChains = List.of(new PrerequisiteChain("ENG1013", "ENG1011"), new PrerequisiteChain("CSE1111", "CSE1110"), new PrerequisiteChain("CSE1112", "CSE1110"), new PrerequisiteChain("MATH2183", "MATH1151"), new PrerequisiteChain("CSE1115", "CSE1111"), new PrerequisiteChain("CSE1116", "CSE1112"), new PrerequisiteChain("MATH2201", "MATH1151"), new PrerequisiteChain("CSE2118", "CSE1116"));
 
-                    List<Subject> allSubjects = Stream.concat(theorySubjects.stream(), labSubjects.stream()).toList();
-
-                    for (String[] chain : prerequisiteChains) {
-                        String subjectCode = chain[0]; // Main subject code
-                        String prereqCode  = chain[1];  // Prerequisite subject code
-
+                    for (PrerequisiteChain chain : prerequisiteChains) {
                         Subject subject = allSubjects.stream()
-                                                     .filter(s -> s.getCodeName().equals(subjectCode))
+                                                     .filter(s -> s.getCodeName().equals(chain.subjectCode))
                                                      .findFirst()
-                                                     .orElseThrow(() -> new IllegalArgumentException("Subject not found: " + subjectCode));
+                                                     .orElseThrow(() -> new IllegalArgumentException("Subject not found: " + chain.subjectCode));
 
-                        Subject prereqSubject = allSubjects.stream()
-                                                           .filter(s -> s.getCodeName().equals(prereqCode))
-                                                           .findFirst()
-                                                           .orElseThrow(() -> new IllegalArgumentException("Prerequisite not found: " + prereqCode));
+                        Subject prerequisiteSubject = allSubjects.stream()
+                                                                 .filter(s -> s.getCodeName()
+                                                                               .equals(chain.prerequisiteCode))
+                                                                 .findFirst()
+                                                                 .orElseThrow(() -> new IllegalArgumentException("Prerequisite not found: " + chain.prerequisiteCode));
 
                         Prerequisite prerequisite = new Prerequisite();
                         prerequisite.setCreatedBy("demo");
+
                         prerequisite.setSubject(subject);
-                        prerequisite.setPrerequisite(prereqSubject);
-                        prerequisite.setMinimumGrade(0.0); // Example minimum grade
+                        prerequisite.setPrerequisite(prerequisiteSubject);
+                        prerequisite.setMinimumGrade(1.0);
+
                         prerequisites.add(prerequisite);
                     }
 
-                    // Create SpaceTime slots
+                    Collections.shuffle(allSubjects);
+                    for (Faculty teacher : teachers) {
+                        teacher.setTeachableSubjects(new HashSet<Subject>(allSubjects.subList(0, random.nextInt(3) + 1)));
+                    }
 
-                    // Create theory room slots
-                    String[]        theoryRooms = {"201", "202", "203", "204", "205", "206", "207"};
-                    List<DayOfWeek> allowedDays = Arrays.asList(DayOfWeek.FRIDAY, DayOfWeek.MONDAY, DayOfWeek.THURSDAY);
+                    List<RoomInfo> theoryRooms = List.of(new RoomInfo("201", "Class room 201"), new RoomInfo("202", "Class room 202"), new RoomInfo("203", "Class room 203"), new RoomInfo("204", "Class room 204"), new RoomInfo("205", "Class room 205"), new RoomInfo("206", "Class room 206"), new RoomInfo("207", "Class room 207"));
 
-                    int theoryCourseCounter = 1; // Counter for theory courses
-                    for (String roomNumber : theoryRooms) {
-                        for (DayOfWeek day : allowedDays) {
-                            for (int slot = 1; slot <= 6; slot++) { // Theory courses have 6 slots per day
-                                if (theoryCourseCounter <= 10) { // Ensure only 10 theory courses
-                                    SpaceTime spaceTime = new SpaceTime();
-                                    spaceTime.setCreatedBy("demo");
+                    List<RoomInfo> labRooms = List.of(new RoomInfo("Lab1", "Lab 1"), new RoomInfo("Lab2", "Lab 2"), new RoomInfo("Lab3", "Lab 3"), new RoomInfo("Lab4", "Lab 4"), new RoomInfo("Lab5", "Lab 5"), new RoomInfo("Lab6", "Lab 6"));
 
-                                    spaceTime.setName("Theory Course " + theoryCourseCounter); // Dynamically name courses
-                                    spaceTime.setRoomNumber(roomNumber); // Room number from the loop
-                                    spaceTime.setRoomType(SubjectType.THEORY); // Mark as THEORY type
-                                    spaceTime.setDayOfWeek(day);
-                                    spaceTime.setTimeSlot(slot);
+                    List<List<SpaceTime>> theoryPairs = new ArrayList<>();
+                    List<SpaceTime>       labSlots    = new ArrayList<>();
 
-                                    spaceTimeSlots.add(spaceTime);
+                    for (int i = 0; i < theoryRooms.size(); i++) {
+                        for (int slot = 1; slot <= 6; slot++) {
+                            // Create SAT-TUE pairs
+                            SpaceTime satSlot = new SpaceTime();
+                            satSlot.setCreatedBy("demo");
+                            satSlot.setName(theoryRooms.get(i).name);
+                            satSlot.setRoomNumber(theoryRooms.get(i).roomNumber);
+                            satSlot.setRoomType(SubjectType.THEORY);
+                            satSlot.setDayOfWeek(DayOfWeek.SATURDAY);
+                            satSlot.setTimeSlot(slot);
 
-                                    theoryCourseCounter++; // Increment the course counter
-                                }
+                            SpaceTime tueSlot = new SpaceTime();
+                            tueSlot.setCreatedBy("demo");
+                            tueSlot.setName(theoryRooms.get(i).name);
+                            tueSlot.setRoomNumber(theoryRooms.get(i).roomNumber);
+                            tueSlot.setRoomType(SubjectType.THEORY);
+                            tueSlot.setDayOfWeek(DayOfWeek.TUESDAY);
+                            tueSlot.setTimeSlot(slot);
+
+                            theoryPairs.add(List.of(satSlot, tueSlot));
+
+                            // Create SUN-WED pairs
+                            SpaceTime sunSlot = new SpaceTime();
+                            sunSlot.setCreatedBy("demo");
+                            sunSlot.setName(theoryRooms.get(i).name);
+                            sunSlot.setRoomNumber(theoryRooms.get(i).roomNumber);
+                            sunSlot.setRoomType(SubjectType.THEORY);
+                            sunSlot.setDayOfWeek(DayOfWeek.SUNDAY);
+                            sunSlot.setTimeSlot(slot);
+
+                            SpaceTime wedSlot = new SpaceTime();
+                            wedSlot.setCreatedBy("demo");
+                            wedSlot.setName(theoryRooms.get(i).name);
+                            wedSlot.setRoomNumber(theoryRooms.get(i).roomNumber);
+                            wedSlot.setRoomType(SubjectType.THEORY);
+                            wedSlot.setDayOfWeek(DayOfWeek.WEDNESDAY);
+                            wedSlot.setTimeSlot(slot);
+
+                            theoryPairs.add(List.of(sunSlot, wedSlot));
+
+                            spaceTimeSlots.addAll(List.of(satSlot, sunSlot, tueSlot, wedSlot));
+                        }
+                    }
+
+                    for (RoomInfo roomInfo : labRooms) {
+                        for (int slot = 1; slot <= 3; slot++) {
+                            for (DayOfWeek day : List.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY)) {
+                                SpaceTime spaceTime = new SpaceTime();
+                                spaceTime.setCreatedBy("demo");
+                                spaceTime.setName(roomInfo.name);
+                                spaceTime.setRoomNumber(roomInfo.roomNumber);
+                                spaceTime.setRoomType(SubjectType.LAB);
+                                spaceTime.setDayOfWeek(day);
+                                spaceTime.setTimeSlot(slot);
+
+                                labSlots.add(spaceTime);
+                                spaceTimeSlots.add(spaceTime);
                             }
                         }
                     }
 
-                    // Create lab room slots
-                    String[] labRooms         = {"Lab1", "Lab2", "Lab3", "Lab4", "Lab5", "Lab6"};
-                    int      labCourseCounter = 1; // Counter for lab courses
-                    for (String roomNumber : labRooms) {
-                        for (DayOfWeek day : allowedDays) {
-                            for (int slot = 1; slot <= 3; slot++) { // Lab courses have 3 slots per day
-                                if (labCourseCounter <= 6) { // Ensure only 6 lab courses
-                                    SpaceTime spaceTime = new SpaceTime();
-                                    spaceTime.setCreatedBy("demo");
+                    List<TrimesterInfo> trimesterInfos = List.of( //
 
-                                    spaceTime.setName("Lab Course " + labCourseCounter); // Dynamically name courses
-                                    spaceTime.setRoomNumber(roomNumber); // Room number from the loop
-                                    spaceTime.setRoomType(SubjectType.LAB); // Mark as LAB type
-                                    spaceTime.setDayOfWeek(day);
-                                    spaceTime.setTimeSlot(slot);
+                            // Completed Trimesters
+                            new TrimesterInfo(2022, Season.SPRING, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2021, 12, 5, 9, 0), //
+                                    LocalDateTime.of(2021, 12, 15, 9, 0), //
+                                    LocalDateTime.of(2021, 12, 22, 9, 0), //
+                                    LocalDateTime.of(2021, 12, 25, 9, 0)), //
 
-                                    spaceTimeSlots.add(spaceTime);
+                            new TrimesterInfo(2022, Season.SUMMER, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2022, 4, 5, 9, 0), //
+                                    LocalDateTime.of(2022, 4, 15, 9, 0), //
+                                    LocalDateTime.of(2022, 4, 22, 9, 0), //
+                                    LocalDateTime.of(2022, 4, 25, 9, 0)), //
 
-                                    labCourseCounter++; // Increment the lab course counter
-                                }
-                            }
-                        }
-                    }
+                            new TrimesterInfo(2022, Season.FALL, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2022, 8, 5, 9, 0), //
+                                    LocalDateTime.of(2022, 8, 15, 9, 0), //
+                                    LocalDateTime.of(2022, 8, 22, 9, 0), //
+                                    LocalDateTime.of(2022, 8, 25, 9, 0)), //
 
-                    LocalDateTime now = LocalDateTime.now();
-                    for (int i = 0; i < 13; i++) { // Loop through 13 trimesters
+                            new TrimesterInfo(2023, Season.SPRING, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2022, 12, 5, 9, 0), //
+                                    LocalDateTime.of(2022, 12, 15, 9, 0), //
+                                    LocalDateTime.of(2022, 12, 22, 9, 0), //
+                                    LocalDateTime.of(2022, 12, 25, 9, 0)), //
+
+                            new TrimesterInfo(2023, Season.SUMMER, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2023, 4, 5, 9, 0), //
+                                    LocalDateTime.of(2023, 4, 15, 9, 0), //
+                                    LocalDateTime.of(2023, 4, 22, 9, 0), //
+                                    LocalDateTime.of(2023, 4, 25, 9, 0)), //
+
+                            new TrimesterInfo(2023, Season.FALL, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2023, 8, 5, 9, 0), //
+                                    LocalDateTime.of(2023, 8, 15, 9, 0), //
+                                    LocalDateTime.of(2023, 8, 22, 9, 0), //
+                                    LocalDateTime.of(2023, 8, 25, 9, 0)), //
+
+                            new TrimesterInfo(2024, Season.SPRING, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2023, 12, 5, 9, 0), //
+                                    LocalDateTime.of(2023, 12, 15, 9, 0), //
+                                    LocalDateTime.of(2023, 12, 22, 9, 0), //
+                                    LocalDateTime.of(2023, 12, 25, 9, 0)), //
+
+                            new TrimesterInfo(2024, Season.SUMMER, TrimesterStatus.COMPLETED, //
+                                    LocalDateTime.of(2024, 4, 5, 9, 0), //
+                                    LocalDateTime.of(2024, 4, 15, 9, 0), //
+                                    LocalDateTime.of(2024, 4, 22, 9, 0), //
+                                    LocalDateTime.of(2024, 4, 25, 9, 0)), //
+
+                            // Ongoing trimester
+                            new TrimesterInfo(2024, Season.FALL, TrimesterStatus.ONGOING, //
+                                    LocalDateTime.of(2024, 8, 5, 9, 0), //
+                                    LocalDateTime.of(2024, 8, 15, 9, 0), //
+                                    LocalDateTime.of(2024, 8, 22, 9, 0), //
+                                    LocalDateTime.of(2024, 8, 25, 9, 0)), //
+
+                            // Section Selection trimester
+                            new TrimesterInfo(2025, Season.SPRING, TrimesterStatus.SECTION_SELECTION, //
+                                    LocalDateTime.of(2024, 12, 5, 9, 0), //
+                                    LocalDateTime.of(2024, 12, 15, 9, 0), //
+                                    LocalDateTime.of(2024, 12, 22, 9, 0), //
+                                    LocalDateTime.of(2024, 12, 25, 9, 0)), //
+
+                            // Upcoming Trimesters
+                            new TrimesterInfo(2025, Season.SUMMER, TrimesterStatus.UPCOMING, //
+                                    LocalDateTime.of(2025, 4, 1, 9, 0), null, null, null),
+
+                            new TrimesterInfo(2025, Season.FALL, TrimesterStatus.UPCOMING, //
+                                    LocalDateTime.of(2025, 8, 1, 9, 0), null, null, null),
+
+                            new TrimesterInfo(2026, Season.SPRING, TrimesterStatus.UPCOMING, //
+                                    LocalDateTime.of(2025, 12, 1, 9, 0), null, null, null) //
+                    );
+
+                    for (TrimesterInfo trimesterInfo : trimesterInfos) {
                         Trimester trimester = new Trimester();
                         trimester.setCreatedBy("demo");
 
-                        int    yearOffset = i / 3;
-                        int    yearNum    = now.getYear() - 2 + yearOffset;
-                        Season season     = Season.values()[i % 3];
+                        int lastTwoDigitsOfYear = trimesterInfo.year % 100;
+                        int trimesterNumber = switch (trimesterInfo.season) {
+                            case SPRING -> 1;
+                            case SUMMER -> 2;
+                            case FALL -> 3;
+                        };
+                        Integer code = lastTwoDigitsOfYear * 10 + trimesterNumber;
 
-                        trimester.setYear(yearNum);
-                        trimester.setSeason(season);
-                        trimester.setCode(Integer.parseInt((yearNum % 100) + "" + (season.ordinal() + 1)));
-
-                        LocalDateTime baseDate = now.minusMonths((12 - i) * 4L); // Ensure chronological order
-                        trimester.setCourseSelectionStart(baseDate.minusDays(14));
-                        trimester.setCourseSelectionEnd(baseDate.minusDays(7));
-                        trimester.setSectionRegistrationStart(baseDate.minusDays(6));
-                        trimester.setSectionRegistrationEnd(baseDate.minusDays(1));
-
-                        // Distribute statuses
-                        if (i < 5) {
-                            trimester.setStatus(TrimesterStatus.COMPLETED); // First 5 are COMPLETED
-                        } else if (i == 5) {
-                            trimester.setStatus(TrimesterStatus.ONGOING); // 6th is ONGOING
-                        } else if (i < 9) {
-                            trimester.setStatus(TrimesterStatus.SECTION_SELECTION); // 7th to 9th are SECTION_SELECTION
-                        } else if (i < 11) {
-                            trimester.setStatus(TrimesterStatus.COURSE_SELECTION); // 10th and 11th are COURSE_SELECTION
-                        } else {
-                            trimester.setStatus(TrimesterStatus.UPCOMING); // Last 2 are UPCOMING
-                        }
+                        trimester.setCode(code);
+                        trimester.setYear(trimesterInfo.year);
+                        trimester.setSeason(trimesterInfo.season);
+                        trimester.setStatus(trimesterInfo.status);
+                        trimester.setCourseSelectionStart(trimesterInfo.courseSelectionStart);
+                        trimester.setCourseSelectionEnd(trimesterInfo.courseSelectionEnd);
+                        trimester.setSectionRegistrationStart(trimesterInfo.sectionRegistrationStart);
+                        trimester.setSectionRegistrationEnd(trimesterInfo.sectionRegistrationEnd);
 
                         trimesters.add(trimester);
                     }
 
+                    AtomicInteger theoryIndex = new AtomicInteger(0);
+                    AtomicInteger labIndex    = new AtomicInteger(0);
+
+                    Collections.shuffle(theoryPairs);
+                    Collections.shuffle(labSlots);
 
                     for (Trimester trimester : trimesters) {
-                        for (String courseCode : theoryCourseCode) {
-                            Section section = new Section();
+                        if (trimester.getStatus() == TrimesterStatus.ONGOING || trimester.getStatus() == TrimesterStatus.SECTION_SELECTION) {
 
-                            // Set section attributes
-                            section.setName("Section for " + courseCode + " in " + trimester.getYear() + " " + trimester.getSeason());
-                            section.setSection(courseCode); // Use course code as section identifier
-                            section.setTrimester(trimester);
-                            section.setMaxCapacity(30); // Default max capacity
+                            for (Subject subject : theorySubjects) {
+                                char sectionName = 'A';
+                                for (int i = 0; i < random.nextInt(6, 11); i++) {
+                                    Section section = new Section();
+                                    section.setCreatedBy("demo");
 
-                            // Create or assign a subject (replace with database retrieval if needed)
-                            Subject subject = new Subject();
-                            subject.setCodeName(courseCode); // Set course code to subject
-                            section.setSubject(subject);
+                                    section.setSection(String.valueOf(sectionName++));
+                                    section.setName(subject.getName() + " - " + section.getSection() + " - " + trimester.getCode());
+                                    section.setSubject(subject);
+                                    section.setTrimester(trimester);
+                                    section.setMaxCapacity(10);
+                                    section.getTeachers().add(teachers.get(random.nextInt(teachers.size())));
 
-                            // Assign a faculty member based on the course code
-                            Faculty assignedFaculty = teachers.get(Math.abs(courseCode.hashCode()) % teachers.size()); // Ensure index is positive
-                            section.getTeachers().add(assignedFaculty);
+                                    if (theoryPairs.size() > theoryIndex.get()) {
+                                        section.getSpaceTimeSlots()
+                                               .addAll(theoryPairs.get(theoryIndex.getAndIncrement()));
+                                    } else {
+                                        log.warn("No more theory sections left for {} - {}", subject.getName(), trimester.getCode());
+                                        break;
+                                    }
 
-                            // Dynamically create space-time slots for the section
-//                            Set<SpaceTime> spaceTimeSlots = new HashSet<>();
-//                            for (int i = 0; i < 3; i++) { // Create 3 space-time slots per section
-//                                SpaceTime slot = new SpaceTime();
-//                                slot.setDayOfWeek(DayOfWeek.of((i % 7) + 1)); // Rotate through days of the week
-//                                slot.setStartTime(LocalDateTime.of(2025, 1, 1, 9 + i, 0)); // Example fixed date with dynamic times
-//                                slot.setEndTime(LocalDateTime.of(2025, 1, 1, 10 + i, 0)); // Add 1 hour for each slot
-//                                slot.setRoomNumber("Room " + (i + 101)); // Assign dynamic room numbers (e.g., Room 101, Room 102)
-//                                slot.setRoomType(SubjectType.THEORY); // Set as THEORY type
-//                                spaceTimeSlots.add(slot);
-//                            }
-//                            section.setSpaceTimeSlots(spaceTimeSlots);
+                                    sections.add(section);
+                                }
+                            }
 
-                            // Save or process the section (currently printing for demonstration)
-                            System.out.println("Created Section: " + section.getName());
-                            System.out.println("Assigned Faculty: " + assignedFaculty.getName());
-                            for (SpaceTime slot : spaceTimeSlots) {
-                                System.out.println("SpaceTime Slot: " + slot.getDayOfWeek() + ", Room " + slot.getRoomNumber());
+                            for (Subject subject : labSubjects) {
+                                char sectionName = 'A';
+                                for (int i = 0; i < random.nextInt(6, 11); i++) {
+                                    Section section = new Section();
+                                    section.setCreatedBy("demo");
+
+                                    section.setSection(String.valueOf(sectionName++));
+                                    section.setName(subject.getName() + " - " + section.getSection() + " - " + trimester.getCode());
+                                    section.setSubject(subject);
+                                    section.setTrimester(trimester);
+                                    section.setMaxCapacity(7);
+                                    section.getTeachers().add(teachers.get(random.nextInt(teachers.size())));
+
+                                    if (labSlots.size() > labIndex.get()) {
+                                        section.getSpaceTimeSlots().add(labSlots.get(labIndex.getAndIncrement()));
+                                    } else {
+                                        log.warn("No more lab sections left for {} - {}", subject.getName(), trimester.getCode());
+                                        break;
+                                    }
+
+                                    sections.add(section);
+                                }
                             }
                         }
                     }
 
+                    List<NotificationInfo> notificationInfos = List.of(new NotificationInfo(demoAdmin, "Global Announcement", "This is a global announcement.", NotificationCategory.GENERAL, NotificationScope.GLOBAL, null, null, null), new NotificationInfo(demoAdmin, "Trimester Update", "This is a trimester-specific update.", NotificationCategory.ACADEMIC, NotificationScope.TRIMESTER, trimesters.get(random.nextInt(trimesters.size())), null, null), new NotificationInfo(demoAdmin, "Section Notice", "This is a section-specific notice.", NotificationCategory.ADMINISTRATIVE, NotificationScope.SECTION, null, sections.get(random.nextInt(sections.size())), null), new NotificationInfo(demoAdmin, "User Alert", "This is a user-specific alert.", NotificationCategory.URGENT, NotificationScope.USER, null, null, demoStudent), new NotificationInfo(demoAdmin, "Global Reminder", "This is a global reminder.", NotificationCategory.GENERAL, NotificationScope.GLOBAL, null, null, null), new NotificationInfo(demoAdmin, "Trimester Reminder", "This is a trimester-specific reminder.", NotificationCategory.ACADEMIC, NotificationScope.TRIMESTER, trimesters.get(random.nextInt(trimesters.size())), null, null), new NotificationInfo(demoAdmin, "Section Reminder", "This is a section-specific reminder.", NotificationCategory.ADMINISTRATIVE, NotificationScope.SECTION, null, sections.get(random.nextInt(sections.size())), null), new NotificationInfo(demoAdmin, "User Reminder", "This is a user-specific reminder.", NotificationCategory.GENERAL, NotificationScope.USER, null, null, demoStudent), new NotificationInfo(demoAdmin, "Global Update", "This is a global update.", NotificationCategory.GENERAL, NotificationScope.GLOBAL, null, null, null), new NotificationInfo(demoAdmin, "Trimester Notice", "This is a trimester-specific notice.", NotificationCategory.ACADEMIC, NotificationScope.TRIMESTER, trimesters.get(random.nextInt(trimesters.size())), null, null), new NotificationInfo(demoAdmin, "Section Alert", "This is a section-specific alert.", NotificationCategory.URGENT, NotificationScope.SECTION, null, sections.get(random.nextInt(sections.size())), null), new NotificationInfo(demoAdmin, "User Notice", "This is a user-specific notice.", NotificationCategory.GENERAL, NotificationScope.USER, null, null, demoStudent));
 
+                    for (NotificationInfo notificationInfo : notificationInfos) {
+                        Notification notification = new Notification();
+                        notification.setCreatedBy("demo");
 
+                        notification.setSender(notificationInfo.sender);
+                        notification.setTitle(notificationInfo.title);
+                        notification.setContent(notificationInfo.content);
+                        notification.setCategory(notificationInfo.category);
+                        notification.setScope(notificationInfo.scope);
+                        notification.setTrimester(notificationInfo.trimester);
+                        notification.setSection(notificationInfo.section);
+                        notification.setTargetUser(notificationInfo.targetUser);
 
-                    // Create courses
-                    Map<UUID, Integer> sectionRegistrations = new HashMap<>();
+                        notifications.add(notification);
+                    }
 
-                    for (Student student : students) {
-                        for (Trimester trimester : trimesters) {
-                            int courseCount = faker.number().numberBetween(3, 5);
-                            List<Section> availableSections = new ArrayList<>(sections.stream()
-                                                                                      .filter(s -> s.getTrimester()
-                                                                                                    .equals(trimester)) // Match trimester
-                                                                                      .filter(s -> sectionRegistrations.getOrDefault(s.getId(), 0) < s.getMaxCapacity()) // Check capacity
-                                                                                      .toList());
+                    List<CourseInfo> courseInfos = new ArrayList<>();
+//
 
-                            Collections.shuffle(availableSections);
+                    // First create sections for each subject-trimester combination
+                    for (Trimester trimester : trimesters) {
+                        if (trimester.getStatus() == TrimesterStatus.COMPLETED ||
+                            trimester.getStatus() == TrimesterStatus.ONGOING) {
 
-                            for (int i = 0; i < Math.min(courseCount, availableSections.size()); i++) {
-                                Section section = availableSections.get(i);
+                            // Create one section per subject in this trimester
+                            for (Subject subject : theorySubjects) {
+                                // Create a section only if it doesn't exist
+                                boolean sectionExists = sections.stream()
+                                                                .anyMatch(s -> s.getSubject().equals(subject) && s.getTrimester().equals(trimester));
 
-                                Course course = new Course();
-                                course.setCreatedBy("demo");
-                                course.setStudent(student);
-                                course.setSubject(section.getSubject());
-                                course.setTrimester(trimester);
+                                if (!sectionExists) {
+                                    Section section = new Section();
+                                    section.setCreatedBy("demo");
+                                    section.setSection(String.valueOf((char) ('A' + sections.size() % 26)));
+                                    section.setName(subject.getName() + " - " + section.getSection() + " - " + trimester.getCode());
+                                    section.setSubject(subject);
+                                    section.setTrimester(trimester);
+                                    section.setMaxCapacity(40);
 
-                                switch (trimester.getStatus()) {
-                                    case COMPLETED -> {
-                                        course.setStatus(CourseStatus.COMPLETED);
-                                        course.setSection(section);
-                                        course.setGrade(faker.number().randomDouble(2, 2, 4));
-                                        if (course.getGrade() < 0.0 || course.getGrade() > 4.0) {
-                                            throw new IllegalArgumentException("Grade must be between 0.0 and 4.0 for COMPLETED courses");
-                                        }
-                                    }
-                                    case ONGOING -> {
-                                        course.setStatus(CourseStatus.REGISTERED);
-                                        course.setSection(section);
-                                    }
-                                    default -> {
-                                        if (faker.random().nextBoolean()) {
-                                            course.setStatus(CourseStatus.SELECTED);
-                                            course.setSection(null);
-                                            course.setGrade(null);
+                                    // Assign random teacher
+                                    section.getTeachers().add(teachers.get(random.nextInt(teachers.size())));
+
+                                    // Create two class slots per week
+                                    int slot = random.nextInt(1, 7);
+
+                                    // First class of the week
+                                    SpaceTime spt1 = new SpaceTime();
+                                    spt1.setCreatedBy("demo");
+                                    spt1.setRoomNumber(String.format("T%d%d", random.nextInt(1, 7), random.nextInt(1, 10)));
+                                    spt1.setName("Theory Room " + spt1.getRoomNumber());
+                                    spt1.setRoomType(SubjectType.THEORY);
+                                    spt1.setDayOfWeek(DayOfWeek.SATURDAY);
+                                    spt1.setTimeSlot(slot);
+
+                                    // Second class of the week
+                                    SpaceTime spt2 = new SpaceTime();
+                                    spt2.setCreatedBy("demo");
+                                    spt2.setRoomNumber(spt1.getRoomNumber());
+                                    spt2.setName(spt1.getName());
+                                    spt2.setRoomType(SubjectType.THEORY);
+                                    spt2.setDayOfWeek(DayOfWeek.TUESDAY);
+                                    spt2.setTimeSlot(slot);
+
+                                    spaceTimeSlots.add(spt1);
+                                    spaceTimeSlots.add(spt2);
+
+                                    section.getSpaceTimeSlots().addAll(List.of(spt1, spt2));
+                                    sections.add(section);
+                                }
+                            }
+                        }
+                    }
+
+// Now create the course registrations
+                    for (Trimester trimester : trimesters) {
+                        if (trimester.getStatus() == TrimesterStatus.COMPLETED ||
+                            trimester.getStatus() == TrimesterStatus.ONGOING ||
+                            trimester.getStatus() == TrimesterStatus.SECTION_SELECTION) {
+
+                            for (Student student : students) {
+                                for (Subject subject : theorySubjects) {
+                                    Section section = null;
+                                    CourseStatus status;
+                                    Double grade = null;
+
+                                    // Determine status and section based on trimester status
+                                    if (trimester.getStatus() == TrimesterStatus.COMPLETED) {
+                                        status = CourseStatus.COMPLETED;
+                                        // Find the section for this subject in this trimester
+                                        section = sections.stream()
+                                                          .filter(s -> s.getSubject().equals(subject) && s.getTrimester().equals(trimester))
+                                                          .findFirst()
+                                                          .orElse(null);
+
+                                        // Generate realistic grade
+                                        double randomValue = random.nextDouble();
+                                        if (randomValue < 0.1) {
+                                            grade = random.nextDouble(0.0, 2.0); // 10% fail/poor grades
+                                        } else if (randomValue < 0.7) {
+                                            grade = random.nextDouble(2.0, 3.5); // 60% average grades
                                         } else {
-                                            course.setStatus(CourseStatus.DROPPED);
-                                            course.setSection(section);
-                                            course.setGrade(null);
+                                            grade = random.nextDouble(3.5, 4.0); // 30% excellent grades
                                         }
+                                        grade = Math.round(grade * 2) / 2.0; // Round to nearest 0.5
+                                    }
+                                    else if (trimester.getStatus() == TrimesterStatus.ONGOING) {
+                                        status = CourseStatus.REGISTERED;
+                                        // Find the section for this subject in this trimester
+                                        section = sections.stream()
+                                                          .filter(s -> s.getSubject().equals(subject) && s.getTrimester().equals(trimester))
+                                                          .findFirst()
+                                                          .orElse(null);
+                                    }
+                                    else {
+                                        status = CourseStatus.SELECTED;
+                                        // No section for SELECTED status
+                                    }
+
+                                    // Only add course if we have a section (or it's in SELECTED status)
+                                    if (status == CourseStatus.SELECTED || section != null) {
+                                        courseInfos.add(new CourseInfo(student, subject, trimester, section, status, grade));
                                     }
                                 }
-
-                                // Update section registrations if the course is REGISTERED or COMPLETED
-                                if (course.getStatus() == CourseStatus.REGISTERED || course.getStatus() == CourseStatus.COMPLETED) {
-                                    sectionRegistrations.merge(section.getId(), 1, Integer::sum);
-                                }
-
-                                courses.add(course);
                             }
                         }
                     }
 
-                    // Create notifications
-                    Map<NotificationScope, String> scopeTitles = Map.of(NotificationScope.GLOBAL, "System Maintenance Scheduled", NotificationScope.TRIMESTER, "New Trimester Registration Open", NotificationScope.SECTION, "Section A Meeting Reminder", NotificationScope.USER, "Personal Reminder for Submission");
 
-                    Map<NotificationCategory, String> categoryContent = Map.of(NotificationCategory.URGENT, "Please note that immediate action is required regarding this notification.", NotificationCategory.ACADEMIC, "Important academic update. Please review the details provided.", NotificationCategory.ADMINISTRATIVE, "Administrative update: Please review and take necessary actions.", NotificationCategory.GENERAL, "This is a general notification. Please stay informed.");
+//                    for (Trimester trimester : trimesters) {
+//                        // Only generate data for relevant trimester statuses
+//                        if (trimester.getStatus() == TrimesterStatus.COMPLETED ||
+//                            trimester.getStatus() == TrimesterStatus.ONGOING ||
+//                            trimester.getStatus() == TrimesterStatus.SECTION_SELECTION) {
+//
+//                            // For each student-subject combination in this trimester
+//                            for (Student student : students) {
+//                                for (Subject subject : theorySubjects) {
+//                                    Section section = null;
+//                                    CourseStatus status;
+//                                    Double grade = null;
+//
+//                                    // Determine status based on trimester status
+//                                    if (trimester.getStatus() == TrimesterStatus.COMPLETED) {
+//                                        status = CourseStatus.COMPLETED;
+//
+//                                        // Find or create section for completed courses
+//                                        section = sections.stream()
+//                                                          .filter(s -> s.getSubject().equals(subject) && s.getTrimester().equals(trimester))
+//                                                          .findFirst()
+//                                                          .orElseGet(() -> {
+//                                                              Section newSection = createSection(subject, trimester, teachers, spaceTimeSlots, random);
+//                                                              sections.add(newSection);
+//                                                              return newSection;
+//                                                          });
+//
+//                                        // Generate realistic grade distribution
+//                                        double randomValue = random.nextDouble();
+//                                        if (randomValue < 0.1) {
+//                                            grade = random.nextDouble(0.0, 2.0); // 10% fail/poor grades
+//                                        } else if (randomValue < 0.7) {
+//                                            grade = random.nextDouble(2.0, 3.5); // 60% average grades
+//                                        } else {
+//                                            grade = random.nextDouble(3.5, 4.0); // 30% excellent grades
+//                                        }
+//                                        grade = Math.round(grade * 2) / 2.0; // Round to nearest 0.5
+//                                    }
+//                                    else if (trimester.getStatus() == TrimesterStatus.ONGOING) {
+//                                        status = CourseStatus.REGISTERED;
+//
+//                                        // Find or create section for ongoing courses
+//                                        section = sections.stream()
+//                                                          .filter(s -> s.getSubject().equals(subject) && s.getTrimester().equals(trimester))
+//                                                          .findFirst()
+//                                                          .orElseGet(() -> {
+//                                                              Section newSection = createSection(subject, trimester, teachers, spaceTimeSlots, random);
+//                                                              sections.add(newSection);
+//                                                              return newSection;
+//                                                          });
+//                                    }
+//                                    else {
+//                                        // For SECTION_SELECTION status, courses should be in SELECTED state with no section
+//                                        status = CourseStatus.SELECTED;
+//                                        section = null;  // Explicitly set to null for clarity
+//                                    }
+//
+//                                    // Add the course info
+//                                    courseInfos.add(new CourseInfo(student, subject, trimester, section, status, grade));
+//                                }
+//                            }
+//                        }
+//                    }
 
-                    for (NotificationCategory category : NotificationCategory.values()) {
-                        for (NotificationScope scope : NotificationScope.values()) {
-                            Notification notification = new Notification();
-                            notification.setCreatedBy("demo");
+// Helper method to create a new section
 
-                            notification.setSender(admins.get(faker.number().numberBetween(0, admins.size())));
-                            notification.setTitle(scopeTitles.get(scope)); // Use meaningful titles based on the scope
-                            notification.setContent(categoryContent.get(category)); // Assign meaningful content based on category
-                            notification.setCategory(category);
-                            notification.setScope(scope);
+                    for (CourseInfo courseInfo : courseInfos) {
+                        Course course = new Course();
+                        course.setCreatedBy("demo");
 
-                            // Assign scope-specific fields
-                            if (scope == NotificationScope.TRIMESTER) {
-                                notification.setTrimester(trimesters.get(faker.number()
-                                                                              .numberBetween(0, trimesters.size())));
-                            } else if (scope == NotificationScope.SECTION) {
-                                notification.setSection(sections.get(faker.number().numberBetween(0, sections.size())));
-                            } else if (scope == NotificationScope.USER) {
-                                notification.setTargetUser(students.get(faker.number()
-                                                                             .numberBetween(0, students.size())));
-                            }
+                        course.setStudent(courseInfo.student);
+                        course.setSubject(courseInfo.subject);
+                        course.setTrimester(courseInfo.trimester);
+                        course.setSection(courseInfo.section);
+                        course.setStatus(courseInfo.status);
+                        course.setGrade(courseInfo.grade);
 
-                            notifications.add(notification);
-                        }
+                        courses.add(course);
                     }
 
                     // Now persist everything in the correct order
@@ -742,5 +964,47 @@ public class DB {
                 return Completable.error(e);
             }
         }).subscribeOn(Schedulers.io());
+    }
+
+    private static Section createSection(Subject subject, Trimester trimester, List<Faculty> teachers,
+                                         List<SpaceTime> spaceTimeSlots, Random random) {
+        Section section = new Section();
+        section.setCreatedBy("demo");
+        section.setSection(String.valueOf((char) ('A' + random.nextInt(26))));
+        section.setName(subject.getName() + " - " + section.getSection() + " - " + trimester.getCode());
+        section.setSubject(subject);
+        section.setTrimester(trimester);
+        section.setMaxCapacity(40);
+
+        // Assign random teacher
+        section.getTeachers().add(teachers.get(random.nextInt(teachers.size())));
+
+        // Create two class slots per week
+        int slot = random.nextInt(1, 7);
+
+        // First class of the week
+        SpaceTime spt1 = new SpaceTime();
+        spt1.setCreatedBy("demo");
+        spt1.setRoomNumber(String.format("T%d%d", random.nextInt(1, 7), random.nextInt(1, 10)));
+        spt1.setName("Theory Room " + spt1.getRoomNumber());
+        spt1.setRoomType(SubjectType.THEORY);
+        spt1.setDayOfWeek(DayOfWeek.SATURDAY);
+        spt1.setTimeSlot(slot);
+
+        // Second class of the week
+        SpaceTime spt2 = new SpaceTime();
+        spt2.setCreatedBy("demo");
+        spt2.setRoomNumber(spt1.getRoomNumber());
+        spt2.setName(spt1.getName());
+        spt2.setRoomType(SubjectType.THEORY);
+        spt2.setDayOfWeek(DayOfWeek.TUESDAY);
+        spt2.setTimeSlot(slot);
+
+        spaceTimeSlots.add(spt1);
+        spaceTimeSlots.add(spt2);
+
+        section.getSpaceTimeSlots().addAll(List.of(spt1, spt2));
+
+        return section;
     }
 }

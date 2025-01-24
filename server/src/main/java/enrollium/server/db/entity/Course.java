@@ -42,10 +42,13 @@ public class Course extends BaseEntity {
     @DecimalMax(value = "4.0", inclusive = true, message = "Grade must not exceed 4.0")
     private Double       grade;
 
-    // TODO: write setter  that checks for section
-
     @PrePersist
     @PreUpdate
+    private void validateCourse() {
+        validateCourseRegistration();
+        validateSectionMatch();
+    }
+
     private void validateCourseRegistration() {
         switch (status) {
             case SELECTED -> {
@@ -71,5 +74,14 @@ public class Course extends BaseEntity {
                 if (grade != null) throw new IllegalArgumentException("Grade must be null when status is DROPPED");
             }
         }
+    }
+
+    private void validateSectionMatch() {
+//        if (section != null) {
+//            if (!section.getSubject().getId().equals(subject.getId()))
+//                throw new IllegalArgumentException("Section's subject must match course's subject");
+//            if (!section.getTrimester().getId().equals(trimester.getId()))
+//                throw new IllegalArgumentException("Section's trimester must match course's trimester");
+//        }
     }
 }
