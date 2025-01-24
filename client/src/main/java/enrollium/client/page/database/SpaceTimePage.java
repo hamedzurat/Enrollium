@@ -17,21 +17,20 @@ import net.datafaker.Faker;
 import java.time.DayOfWeek;
 import java.util.UUID;
 
-
 public class SpaceTimePage extends BasePage {
-    public static final TranslationKey                     NAME              = TranslationKey.SPACE_TIME;
-    private final       TableView<SpaceTimeData>           tableView         = new TableView<>();
-    private final       ObservableList<SpaceTimeData>      spaceTimeDataList = FXCollections.observableArrayList();
-    private final       Faker                              faker             = new Faker();
-    private final       TableColumn<SpaceTimeData, String> idColumn          = new TableColumn<>("ID");
-    private final       TableColumn<SpaceTimeData, String> roomNameColumn    = new TableColumn<>("Room Name");
-    private final       TableColumn<SpaceTimeData, String> roomNumberColumn  = new TableColumn<>("Room Number");
-    private final       TableColumn<SpaceTimeData, String> dayOfWeekColumn   = new TableColumn<>("Day of Week");
-    private final       TableColumn<SpaceTimeData, String> timeSlotColumn    = new TableColumn<>("Time Slot");
-    private             TextField                          roomNameField;
-    private             TextField                          roomNumberField;
-    private             ComboBox<String>                   dayOfWeekDropdown;
-    private             TextField                          timeSlotField;
+    public static final TranslationKey NAME = TranslationKey.SPACE_TIME;
+    private final TableView<SpaceTimeData> tableView = new TableView<>();
+    private final ObservableList<SpaceTimeData> spaceTimeDataList = FXCollections.observableArrayList();
+    private final Faker faker = new Faker();
+    private final TableColumn<SpaceTimeData, String> idColumn = new TableColumn<>("ID");
+    private final TableColumn<SpaceTimeData, String> roomNameColumn = new TableColumn<>("Room Name");
+    private final TableColumn<SpaceTimeData, String> roomNumberColumn = new TableColumn<>("Room Number");
+    private final TableColumn<SpaceTimeData, String> dayOfWeekColumn = new TableColumn<>("Day of Week");
+    private final TableColumn<SpaceTimeData, String> timeSlotColumn = new TableColumn<>("Time Slot");
+    private TextField roomNameField;
+    private TextField roomNumberField;
+    private ComboBox<String> dayOfWeekDropdown;
+    private TextField timeSlotField;
 
     public SpaceTimePage() {
         super();
@@ -93,36 +92,33 @@ public class SpaceTimePage extends BasePage {
             return row;
         });
 
-        DatabaseUiUtils.styleCourseTableView(tableView);
-        spaceTimeDataList.addListener((InvalidationListener) change -> DatabaseUiUtils.adjustTableHeight(tableView));
-
         VBox container = new VBox(10, tableView);
         container.setPadding(new Insets(10));
         return container;
     }
 
     private VBox createSpaceTimeForm() {
-        roomNameField     = new TextField();
-        roomNumberField   = new TextField();
+        roomNameField = new TextField();
+        roomNumberField = new TextField();
         dayOfWeekDropdown = new ComboBox<>(FXCollections.observableArrayList(
                 DayOfWeek.MONDAY.name(), DayOfWeek.TUESDAY.name(), DayOfWeek.WEDNESDAY.name(),
                 DayOfWeek.THURSDAY.name(), DayOfWeek.FRIDAY.name(), DayOfWeek.SATURDAY.name(), DayOfWeek.SUNDAY.name()
         ));
-        timeSlotField     = new TextField();
+        timeSlotField = new TextField();
 
         Button createBtn = new Button("Create");
         Button updateBtn = new Button("Update");
         Button deleteBtn = new Button("Delete");
-
-        HBox actions = new HBox(10, createBtn, updateBtn, deleteBtn);
-        actions.setAlignment(Pos.CENTER);
-        VBox form = new VBox(10, new Label("Room Name:"), roomNameField, new Label("Room Number:"), roomNumberField,
-                new Label("Day of Week:"), dayOfWeekDropdown, new Label("Time Slot (1-6):"), timeSlotField, actions);
-        form.setPadding(new Insets(10));
+        Button fillDemoBtn = new Button("Fill for Demo");
 
         createBtn.setOnAction(e -> {
-            spaceTimeDataList.add(new SpaceTimeData(UUID.randomUUID()
-                                                        .toString(), roomNameField.getText(), roomNumberField.getText(), dayOfWeekDropdown.getValue(), timeSlotField.getText()));
+            spaceTimeDataList.add(new SpaceTimeData(
+                    UUID.randomUUID().toString(),
+                    roomNameField.getText(),
+                    roomNumberField.getText(),
+                    dayOfWeekDropdown.getValue(),
+                    timeSlotField.getText()
+            ));
         });
 
         updateBtn.setOnAction(e -> {
@@ -143,6 +139,20 @@ public class SpaceTimePage extends BasePage {
             }
         });
 
+        fillDemoBtn.setOnAction(e -> loadMockData());
+
+        HBox actions = new HBox(10, createBtn, updateBtn, deleteBtn, fillDemoBtn);
+        actions.setAlignment(Pos.CENTER);
+
+        VBox form = new VBox(10,
+                new Label("Room Name:"), roomNameField,
+                new Label("Room Number:"), roomNumberField,
+                new Label("Day of Week:"), dayOfWeekDropdown,
+                new Label("Time Slot (1-6):"), timeSlotField,
+                actions
+        );
+
+        form.setPadding(new Insets(10));
         return form;
     }
 
