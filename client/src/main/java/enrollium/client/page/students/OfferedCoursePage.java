@@ -2,125 +2,107 @@ package enrollium.client.page.students;
 
 import atlantafx.base.controls.Card;
 import atlantafx.base.controls.CustomTextField;
+import atlantafx.base.controls.Message;
 import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
+import com.fasterxml.jackson.databind.JsonNode;
 import enrollium.client.Resources;
 import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.memory.Volatile;
+import enrollium.rpc.client.ClientRPC;
+import enrollium.rpc.core.JsonUtils;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextFlow;
 import org.kordamp.ikonli.feather.Feather;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
+import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.Map;
+
 
 public class OfferedCoursePage extends BasePage {
-    public static final TranslationKey NAME = TranslationKey.OfferedCoursePage;
-    private static final String IMAGE_PATH = "images/courses/";
-    private static final Random RANDOM = new Random();
-
-    private final FlowPane courseContainer;
-    private final List<OfferedCourseData> offeredCourses;
+    public static final  TranslationKey                 NAME           = TranslationKey.OfferedCoursePage;
+    private static final String                         IMAGE_PATH     = "images/courses/";
+    private final        FlowPane                       courseContainer;
+    private final        Map<String, JsonNode>          subjectsMap    = new HashMap<>();
+    private final        Map<String, OfferedCourseData> courseDataMap  = new LinkedHashMap<>();
+    private final        Map<String, String>            courseStatuses = new HashMap<>();
+    private final        Volatile                       memory         = Volatile.getInstance();
+    private              Message                        statusMessage;
 
     public OfferedCoursePage() {
         super();
+        addPageHeader();
 
-        // Add the page header with the name
-        addPageHeader(); // This adds a header to the page
-
-// Set the title of the main header directly (if applicable)
-        setHeaderTitle("Offered Course"); // Set the desired title
-
-
-        // Toolbar setup for filtering, type filtering, and searching
         ComboBox<String> typeFilter = new ComboBox<>(FXCollections.observableArrayList("Theory + Lab", "Lab", "Theory"));
         typeFilter.setPromptText("Type");
-        typeFilter.getSelectionModel().selectFirst(); // Default is "Theory + Lab"
+        typeFilter.getSelectionModel().selectFirst();
 
-        ComboBox<String> trimesterFilter = new ComboBox<>(FXCollections.observableArrayList("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12","GED"));
-        trimesterFilter.setValue("All"); // Set default value to "All"
+        ComboBox<String> trimesterFilter = new ComboBox<>(FXCollections.observableArrayList("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "GED", "Special", "Elective"));
+        trimesterFilter.setValue("All");
         trimesterFilter.setPromptText("Trimester");
-        trimesterFilter.getSelectionModel().selectFirst(); // Default is "All"
+        trimesterFilter.getSelectionModel().selectFirst();
 
-        // Inside the OfferedCoursePage constructor or initialization method
         CustomTextField searchField = new CustomTextField();
         searchField.setPromptText("Search courses...");
-        searchField.setLeft(new FontIcon(Material2MZ.SEARCH)); // Add the search icon
-        searchField.getStyleClass().add("search-box");
+        searchField.setLeft(new FontIcon(Material2MZ.SEARCH));
 
-        // Create the Reset Button
         Button resetButton = new Button("Reset", new FontIcon(Feather.REFRESH_CCW));
-
-// Apply Atlantafx DANGER style
-        resetButton.getStyleClass().add(Styles.DANGER);
-        resetButton.hoverProperty().addListener((obs, oldVal, isHovered) -> {
-            // Reset any changes in appearance on hover
-            resetButton.setStyle(""); // Removes any additional styles applied by hover
-            resetButton.getStyleClass().add(Styles.DANGER); // Reapplies the DANGER style
-        });
-// Ensure the button is always visible
-//        resetButton.setManaged(true);
-        resetButton.setVisible(true);
-
-// Button Action: Resets filters and search field
+        resetButton.getStyleClass().addAll(Styles.DANGER);
+        resetButton.setMnemonicParsing(true);
         resetButton.setOnAction(e -> {
-            typeFilter.getSelectionModel().selectFirst(); // Reset type filter
-            trimesterFilter.getSelectionModel().selectFirst(); // Reset trimester filter
-            searchField.clear(); // Clear the search field
-            reloadCourses(); // Reload all courses
+            typeFilter.getSelectionModel().selectFirst();
+            trimesterFilter.getSelectionModel().selectFirst();
+            searchField.clear();
+            loadCourses();
+            displayCourses();
         });
 
-// Ensure the button is always visible and added to the UI
-        ToolBar toolbar = new ToolBar(
-                new Label("Trimester: "),
-                trimesterFilter,
-                new Label("Type: "),
-                typeFilter,
-                new Separator(Orientation.VERTICAL),
-                searchField,
-                resetButton
-        );
+        ToolBar toolbar = new ToolBar(new Label("Trimester: "), trimesterFilter, new Label("Type: "), typeFilter, new Separator(Orientation.VERTICAL), searchField, resetButton);
 
-        // Course container setup
+        statusMessage = new Message("Loading", "Loading course data...", new FontIcon(Material2OutlinedAL.CLOUD_DOWNLOAD));
+        statusMessage.getStyleClass().add(Styles.ACCENT);
+
         courseContainer = new FlowPane(30, 20);
         courseContainer.setAlignment(Pos.CENTER);
         courseContainer.setPrefWrapLength(700);
-        courseContainer.setPadding(new Insets(40, 0, 0, 0)); // 20px top padding
+        courseContainer.setPadding(new Insets(40, 0, 0, 0));
 
-        // Scroll pane for courses
         ScrollPane scrollPane = new ScrollPane(courseContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setPannable(true);
 
-        VBox container = new VBox(50); // Use VBox with spacing of 10 between children
-        container.getChildren().addAll(toolbar, scrollPane);
-        container.setPadding(new Insets(40)); // Add padding around the entire layout
-        // Layout
+        VBox container = new VBox(10);
+        container.getChildren().addAll(statusMessage, toolbar);
+
         BorderPane rootPane = new BorderPane();
-        rootPane.setTop(toolbar);
+        rootPane.setTop(container);
         rootPane.setCenter(scrollPane);
 
-        // Add to scene
         addNode(rootPane);
+        initializeOfferedCourses();
+        loadCourses();
 
-        // Initialize courses and display
-        offeredCourses = initializeOfferedCourses();
-        reloadCourses();
-
-        // Add filter and search behavior
         trimesterFilter.valueProperty()
                        .addListener((obs, oldVal, newVal) -> applyFilters(typeFilter.getValue(), newVal, searchField.getText()));
         typeFilter.valueProperty()
@@ -129,10 +111,8 @@ public class OfferedCoursePage extends BasePage {
                    .addListener((obs, oldVal, newVal) -> applyFilters(typeFilter.getValue(), trimesterFilter.getValue(), newVal));
     }
 
-    private void setHeaderTitle(String offeredCourse) {}
-
-    private List<OfferedCourseData> initializeOfferedCourses() {
-        return List.of(
+    private void initializeOfferedCourses() {
+        List<OfferedCourseData> courses = List.of( //
                 OfferedCourseData.builder()
                                  .imgFile("zach-graves-wtpTL_SzmhM-unsplash.jpg")
                                  .trimester(1)
@@ -1355,151 +1335,277 @@ public class OfferedCoursePage extends BasePage {
                                  .prerequisite("")
                                  .build() //
         );
-    }
 
-    private void applyFilters(String type, String trimester, String searchText) {
-        courseContainer.getChildren().clear();
-
-        List<OfferedCourseData> filteredCourses = offeredCourses.stream()
-                                                                .filter(course -> {
-                                                                    if ("GED".equalsIgnoreCase(trimester)) {
-                                                                        // Filter only GED courses
-                                                                        return course.getType().equalsIgnoreCase("GED");
-                                                                    }
-                                                                    // Filter for other trimesters
-                                                                    return "All".equals(trimester) || String.valueOf(course.getTrimester()).equals(trimester);
-                                                                })
-                                                                .filter(course -> "Theory + Lab".equals(type) || course.getType().equalsIgnoreCase(type))
-                                                                .filter(course -> searchText.isEmpty() || course.getTitleEn().toLowerCase().contains(searchText.toLowerCase()))
-                                                                .collect(Collectors.toList());
-
-        filteredCourses.forEach(course -> courseContainer.getChildren().add(createCourseCard(course)));
-
-        if (filteredCourses.isEmpty()) {
-            courseContainer.getChildren().add(new Label("No courses available for the selected filters."));
+        for (OfferedCourseData course : courses) {
+            courseDataMap.put(course.getCourseCode(), course);
         }
     }
 
+    private void loadCourses() {
+        String userId = (String) memory.get("auth_user_id");
+        if (userId == null) {
+            showError("User not logged in");
+            return;
+        }
 
-    private void reloadCourses() {
-        courseContainer.getChildren().clear();
-        offeredCourses.forEach(course -> courseContainer.getChildren().add(createCourseCard(course)));
+        showLoading("Loading course data...");
+
+        // Load both subjects and user's courses
+        Single.zip(ClientRPC.getInstance()
+                            .call("Subject.getAll", JsonUtils.createObject()
+                                                             .put("limit", 1000)
+                                                             .put("offset", 0)), ClientRPC.getInstance()
+                                                                                          .call("Course.getByStudent", JsonUtils.createObject()
+                                                                                                                                .put("studentId", userId)
+                                                                                                                                .put("limit", 1000)
+                                                                                                                                .put("offset", 0)), (subjectsResponse, coursesResponse) -> {
+            // Process and store course data
+            JsonNode subjects = subjectsResponse.getParams().get("items");
+            JsonNode courses  = coursesResponse.getParams().get("items");
+
+            subjectsMap.clear();
+            courseStatuses.clear();
+
+            // Store all subjects
+            for (JsonNode subject : subjects) {
+                subjectsMap.put(subject.get("codeName").asText(), subject);
+            }
+
+            // Store all course statuses
+            for (JsonNode course : courses) {
+                String subjectId = course.get("subjectId").asText();
+                courseStatuses.put(subjectId, course.get("status").asText());
+            }
+
+            return true;
+        }).subscribeOn(Schedulers.io()).subscribe(success -> Platform.runLater(() -> {
+            showSuccess("Course data loaded successfully");
+            displayCourses();
+        }), error -> {
+            Platform.runLater(() -> {
+                showError("Failed to load courses: " + error.getMessage());
+                // Retry after 5 seconds
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(5000);
+                        Platform.runLater(this::loadCourses);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }).start();
+            });
+        });
     }
 
-    private Card createCourseCard(OfferedCourseData course) {
+//    private void displayCourses() {
+//        courseContainer.getChildren().clear();
+//
+//        // Only show courses that exist in both hardcoded data and DB
+//        for (String courseCode : courseDataMap.keySet()) {
+//            if (subjectsMap.containsKey(courseCode)) {
+//                OfferedCourseData courseData  = courseDataMap.get(courseCode);
+//                JsonNode          subjectData = subjectsMap.get(courseCode);
+//                courseContainer.getChildren().add(createCourseCard(courseData, subjectData));
+//            }
+//        }
+//    }
+
+    // Show all hardcoded courses
+    private void displayCourses() {
+        courseContainer.getChildren().clear();
+
+        for (OfferedCourseData courseData : courseDataMap.values()) {
+            JsonNode subjectData = subjectsMap.get(courseData.getCourseCode());
+            courseContainer.getChildren().add(createCourseCard(courseData, subjectData));
+        }
+    }
+
+    private Card createCourseCard(OfferedCourseData courseData, JsonNode subjectData) {
         var card = new Card();
         card.getStyleClass().add(Styles.ELEVATED_1);
         card.setMinWidth(350);
         card.setMaxWidth(500);
 
-        // Add course image (adjusted to match card size)
-        var courseImage = new ImageView(new Image(Resources.getResourceAsStream(IMAGE_PATH + course.getImgFile())));
-        courseImage.setFitWidth(card.getMaxWidth()); // Set width to match card size
-        courseImage.setFitHeight(350); // Adjust height proportionally
-        courseImage.setPreserveRatio(false); // Disable aspect ratio to fill card size
+        // Load course image from hardcoded data
+        var courseImage = new ImageView(new Image(Resources.getResourceAsStream(IMAGE_PATH + courseData.getImgFile())));
+        courseImage.setFitHeight(300);
+        courseImage.setPreserveRatio(true);
         courseImage.setSmooth(true);
+        courseImage.setClip(new Rectangle(500, 300));
+
+        // Center crop image
+        Image  img        = courseImage.getImage();
+        double cropWidth  = 500;
+        double cropHeight = 300;
+        if (img.getWidth() > cropWidth || img.getHeight() > cropHeight) {
+            double x = (img.getWidth() - cropWidth) / 2;
+            double y = (img.getHeight() - cropHeight) / 2;
+            courseImage.setViewport(new Rectangle2D(x, y, cropWidth, cropHeight));
+        }
+
         card.setSubHeader(courseImage);
 
-        // Add header
-        var header = new Tile(course.getTitleEn(), String.format("%s (%s) - %d Credits",
-                course.getCourseCode(), course.getType(), course.getCredits()));
+        // Add header using hardcoded data for rich content
+        String subHeaderText = String.format("%s (%s) - %d Credits", courseData.getCourseCode(), courseData.getType(), courseData.getCredits());
+        var    header        = new Tile(courseData.getTitleEn(), subHeaderText);
         card.setHeader(header);
 
-        // Add description
-        var descriptionLabel = new Label(course.getDescriptionEn());
-        descriptionLabel.setWrapText(true); // Ensure text wraps properly
-        descriptionLabel.setMaxWidth(450); // Restrict width for consistent layout
-        descriptionLabel.setStyle("-fx-padding: 10; -fx-font-size: 14px;"); // Padding and font size
-        TextFlow description = new TextFlow(descriptionLabel);
-        description.setStyle("-fx-padding: 10;"); // Add padding to the description area
+        // Add description from hardcoded data
+        TextFlow description = createFormattedText(courseData.getDescriptionEn(), true);
+        description.setMaxWidth(470);
+        description.setPrefHeight(Region.USE_COMPUTED_SIZE);
         card.setBody(description);
 
-        // Add footer
+        // Add footer with status and action button using DB data
         HBox footer = new HBox(15);
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        // Status indicator
-        Circle statusCircle = new Circle(8, Color.web(randomColor()));
-        Label statusLabel = new Label(randomStatus());
+        String currentStatus;
+        if (subjectData != null) currentStatus = courseStatuses.getOrDefault(subjectData.get("id")
+                                                                                        .asText(), "UNREGISTERED");
+        else currentStatus = "UNREGISTERED";
+        StatusInfo statusInfo = getStatusInfo(currentStatus);
+
+        Circle statusCircle = new Circle(8, statusInfo.color());
+        Label  statusLabel  = new Label(currentStatus);
         footer.getChildren().addAll(statusCircle, statusLabel);
 
-        // Action button
-        Button actionButton = new Button(determineActionButtonText(statusLabel.getText()));
-        actionButton.setPrefWidth(120);
-        footer.getChildren().add(actionButton);
+        // Only show action button for students
+        String userType = (String) memory.get("auth_user_type");
+        if ("STUDENT".equals(userType)) {
+            Button actionButton = new Button(statusInfo.buttonText());
+            actionButton.setPrefWidth(120);
+            footer.getChildren().add(actionButton);
 
-        card.setFooter(footer);
-        actionButton.setOnAction(e -> handleActionButtonClick(course, statusLabel, actionButton));
+            // Handle action button clicks using DB data
+            actionButton.setOnAction(e -> handleCourseAction(subjectData != null
+                                                             ? subjectData.get("id").asText()
+                                                             : null, currentStatus, statusCircle, statusLabel, actionButton));
+            card.setFooter(footer);
+        }
 
         return card;
     }
 
-    private void handleActionButtonClick(OfferedCourseData course, Label statusLabel, Button actionButton) {
-        String currentStatus = statusLabel.getText();
+    private void handleCourseAction(String subjectId, String currentStatus, Circle statusCircle, Label statusLabel, Button actionButton) {
+        showLoading("Updating course status...");
 
-        switch (currentStatus) {
-            case "SELECTED" -> {
-                // Change status to "UNSELECTED"
-                statusLabel.setText("UNSELECTED");
-                actionButton.setText("Select");
-                System.out.printf("Course %s unselected.%n", course.getTitleEn());
-            }
-            case "REGISTERED" -> {
-                // Change status to "WITHDRAWN"
-                statusLabel.setText("WITHDRAWN");
-                actionButton.setText("Register");
-                System.out.printf("Course %s withdrawn from registration.%n", course.getTitleEn());
-            }
-            case "COMPLETED" -> {
-                // Change status to "RETAKE"
-                statusLabel.setText("RETAKE");
-                actionButton.setText("Retake");
-                System.out.printf("Course %s marked for retake.%n", course.getTitleEn());
-            }
-            case "DROPPED" -> {
-                // Change status to "RETAKE"
-                statusLabel.setText("RETAKE");
-                actionButton.setText("Retake");
-                System.out.printf("Course %s dropped and marked for retake.%n", course.getTitleEn());
-            }
-            default -> {
-                // Default behavior for "Select"
-                statusLabel.setText("SELECTED");
-                actionButton.setText("Unselect");
-                System.out.printf("Course %s selected.%n", course.getTitleEn());
-            }
-        }
+        String newStatus = switch (currentStatus) {
+            case "UNREGISTERED" -> "SELECTED";
+            case "SELECTED" -> "REGISTERED";
+            case "REGISTERED" -> "DROPPED";
+            case "COMPLETED", "DROPPED" -> "SELECTED"; // Retake
+            default -> throw new IllegalStateException("Unexpected status: " + currentStatus);
+        };
+
+        JsonNode params = JsonUtils.createObject().put("courseId", subjectId).put("status", newStatus);
+
+        ClientRPC.getInstance()
+                 .call("Course.updateStatus", params)
+                 .subscribeOn(Schedulers.io())
+                 .subscribe(response -> Platform.runLater(() -> {
+                     showSuccess("Course status updated successfully");
+                     updateUIElements(statusCircle, statusLabel, actionButton, newStatus);
+                     courseStatuses.put(subjectId, newStatus); // Update local status cache
+                 }), error -> Platform.runLater(() -> {
+                     showError(error.getMessage());
+                     // Retry logic for certain errors
+                     if (error.getMessage().contains("Failed to connect") || error.getMessage().contains("timeout")) {
+                         new Thread(() -> {
+                             try {
+                                 Thread.sleep(5000);
+                                 Platform.runLater(() -> handleCourseAction(subjectId, currentStatus, statusCircle, statusLabel, actionButton));
+                             } catch (InterruptedException e) {
+                                 Thread.currentThread().interrupt();
+                             }
+                         }).start();
+                     }
+                 }));
     }
 
-    private String determineActionButtonText(String status) {
+    private StatusInfo getStatusInfo(String status) {
         return switch (status) {
-            case "SELECTED" -> "Unselect";
-            case "REGISTERED" -> "Withdraw";
-            case "COMPLETED" -> "Retake";
-            case "DROPPED" -> "Retake";
-            default -> "Select";
+            case "SELECTED" -> new StatusInfo(Color.web("#3357FF"), "Register");
+            case "REGISTERED" -> new StatusInfo(Color.web("#33FF57"), "Withdraw");
+            case "COMPLETED" -> new StatusInfo(Color.web("#8833FF"), "Retake");
+            case "DROPPED" -> new StatusInfo(Color.web("#FF5733"), "Retake");
+            default -> new StatusInfo(Color.web("#808080"), "Select");
         };
     }
 
-
-    private Button createActionButton(String status) {
-        Button button = new Button(switch (status) {
-            case "REGISTERED" -> "Withdraw";
-            case "DROPPED" -> "Retake";
-            default -> "Select";
-        });
-        button.setPrefWidth(120);
-        return button;
+    private void updateUIElements(Circle statusCircle, Label statusLabel, Button actionButton, String newStatus) {
+        StatusInfo statusInfo = getStatusInfo(newStatus);
+        statusCircle.setFill(statusInfo.color());
+        statusLabel.setText(newStatus);
+        actionButton.setText(statusInfo.buttonText());
     }
 
-    private String randomStatus() {
-        String[] statuses = {"SELECTED", "REGISTERED", "COMPLETED", "DROPPED"};
-        return statuses[RANDOM.nextInt(statuses.length)];
+    private void applyFilters(String type, String trimester, String searchText) {
+        courseContainer.getChildren().clear();
+
+        for (String courseCode : courseDataMap.keySet()) {
+            OfferedCourseData courseData  = courseDataMap.get(courseCode);
+            JsonNode          subjectData = subjectsMap.get(courseCode);  // Might be null, that's OK
+
+            boolean typeMatch = "Theory + Lab".equals(type) || courseData.getType().equalsIgnoreCase(type);
+
+            boolean trimesterMatch = switch (trimester) {
+                case "All" -> true;
+                case "GED" -> courseData.getTrimester() == 101;
+                case "Special" -> courseData.getTrimester() == 102;
+                case "Elective" -> courseData.getTrimester() == 103;
+                default -> {
+                    try {
+                        int requestedTrimester = Integer.parseInt(trimester);
+                        yield courseData.getTrimester() == requestedTrimester;
+                    } catch (NumberFormatException e) {
+                        yield false;
+                    }
+                }
+            };
+
+            boolean searchMatch = searchText.isEmpty() || courseData.getTitleEn()
+                                                                    .toLowerCase()
+                                                                    .contains(searchText.toLowerCase()) || courseData.getCourseCode()
+                                                                                                                     .toLowerCase()
+                                                                                                                     .contains(searchText.toLowerCase());
+
+            if (typeMatch && trimesterMatch && searchMatch) {
+                courseContainer.getChildren().add(createCourseCard(courseData, subjectData));
+            }
+        }
+
+        if (courseContainer.getChildren().isEmpty()) {
+            Message noResults = new Message("Info", "No courses found matching the filters", new FontIcon(Material2OutlinedAL.INFO));
+            noResults.getStyleClass().add(Styles.WARNING);
+            courseContainer.getChildren().add(noResults);
+        }
+
+        replaceStatusMessage(new Message("Filter", "Total: " + courseDataMap.size() + ". Displayed: " + courseContainer.getChildren()
+                                                                                                                       .size(), new FontIcon(Material2OutlinedAL.FILTER_ALT)), Styles.SUCCESS);
     }
 
-    private String randomColor() {
-        String[] colors = {"#FF5733", "#33FF57", "#3357FF", "#FF33A1"};
-        return colors[RANDOM.nextInt(colors.length)];
+    private void showLoading(String message) {
+        Message newMessage = new Message("Loading", message, new FontIcon(Material2OutlinedAL.CLOUD_DOWNLOAD));
+        replaceStatusMessage(newMessage, Styles.ACCENT);
+    }
+
+    private void showError(String message) {
+        Message newMessage = new Message("Error", message, new FontIcon(Material2OutlinedAL.ERROR_OUTLINE));
+        replaceStatusMessage(newMessage, Styles.DANGER);
+    }
+
+    private void showSuccess(String message) {
+        Message newMessage = new Message("Success", message, new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
+        replaceStatusMessage(newMessage, Styles.SUCCESS);
+    }
+
+    private void replaceStatusMessage(Message newMessage, String style) {
+        VBox parent = (VBox) statusMessage.getParent();
+        int  index  = parent.getChildren().indexOf(statusMessage);
+        newMessage.getStyleClass().add(style);
+        parent.getChildren().set(index, newMessage);
+        statusMessage = newMessage;
     }
 
     @Override
@@ -1511,4 +1617,6 @@ public class OfferedCoursePage extends BasePage {
     public TranslationKey getName() {
         return NAME;
     }
+
+    private record StatusInfo(Color color, String buttonText) {}
 }
