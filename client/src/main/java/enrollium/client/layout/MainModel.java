@@ -47,7 +47,7 @@ public class MainModel {
                 ServerStats.class, SendNotification.class, RegistrationStatus.class, WithdrawRequests.class,
 
                 // DB
-                CoursePage.class, FacultyPage.class, NotificationPage.class, PrerequisitePage.class, SectionPage.class, SpaceTimePage.class, StudentPage.class, SubjectPage.class, UserPage.class, TrimesterPage.class //
+                CoursePage.class, FacultyPage.class, NotificationPage.class, PrerequisitePage.class, SectionPage.class, SpaceTimePage.class, StudentPage.class, SubjectPage.class, TrimesterPage.class //
         );
 
         // Populate map using reflection
@@ -105,7 +105,6 @@ public class MainModel {
                 NAV_TREE.get(SpaceTimePage.class), //
                 NAV_TREE.get(StudentPage.class), //
                 NAV_TREE.get(SubjectPage.class), //
-                NAV_TREE.get(UserPage.class), //
                 NAV_TREE.get(TrimesterPage.class) //
         );
         db.setExpanded(false);
