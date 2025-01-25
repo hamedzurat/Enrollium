@@ -349,7 +349,7 @@ public class DB {
                     record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
                     record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
 
-                    System.out.println("Creating objects");
+                    System.out.println("\n\nCreating objects:");
 
                     Faculty demoAdmin = new Faculty();
                     demoAdmin.setEmail("admin@uiu.ac.bd");
@@ -1225,6 +1225,8 @@ public class DB {
                     System.out.print("\n");
 
                     exec(session -> {
+                        session.persist(demoStudent);
+
                         log.info("Persisting Admins...");
                         admins.forEach(session::persist);
 

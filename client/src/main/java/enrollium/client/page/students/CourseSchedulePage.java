@@ -155,8 +155,7 @@ public class CourseSchedulePage extends BasePage {
     private void handleSectionClick(JsonNode sectionData, JsonNode courseData) {
         boolean isRegistered = sectionData.get("isRegistered").asBoolean();
         String  action       = isRegistered ? "deregister from" : "register for";
-        String  message      = String.format("Attempting to %s section %s", action, sectionData.get("sectionCode")
-                                                                                               .asText());
+        String message = String.format("Attempting to %s section %s", action, sectionData.get("sectionCode").asText());
 
         showNotification(message, NotificationType.INFO);
 
@@ -195,12 +194,14 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.setMinHeight(Region.USE_COMPUTED_SIZE);
         timetableGrid.setMaxHeight(Double.MAX_VALUE);
 
+        timetableGrid.setStyle("-fx-grid-lines-visible: true; -fx-border-color: black;");
+
         // Configure row constraints
         // Header rows
         for (int i = 0; i < 2; i++) {
             RowConstraints headerRC = new RowConstraints();
-            headerRC.setMinHeight(30);
-            headerRC.setPrefHeight(30);
+            headerRC.setMinHeight(60);
+            headerRC.setPrefHeight(60);
             headerRC.setVgrow(Priority.NEVER);
             timetableGrid.getRowConstraints().add(headerRC);
         }
@@ -223,6 +224,14 @@ public class CourseSchedulePage extends BasePage {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setMinViewportWidth(800);
         scrollPane.setMinWidth(800);
+
+        timetableGrid.requestLayout();
+        timetableGrid.autosize();
+
+        timetableGrid.applyCss();
+        timetableGrid.requestLayout();
+
+        setupColumnConstraints();
 
         return scrollPane;
     }
@@ -276,6 +285,8 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.getColumnConstraints().add(cc);
 
         currentCol++;
+
+        setupColumnConstraints();
     }
 
     private void addTheoryDay(String day, JsonNode subject) {
@@ -301,12 +312,32 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.getColumnConstraints().add(cc);
 
         currentCol++;
+
+        setupColumnConstraints();
     }
 
     private void addSubjectColumn(String subject, int col) {
         Label subjectHeader = new Label(subject);
         styleSubjectHeader(subjectHeader);
+        subjectHeader.setWrapText(true);
+        subjectHeader.setPrefHeight(100);
         timetableGrid.add(subjectHeader, col, 1);
+    }
+
+    private void setupColumnConstraints() {
+        timetableGrid.getColumnConstraints().clear(); // Clear existing constraints
+
+        // Set constraints for all current columns in the grid
+        int totalColumns = timetableGrid.getColumnCount();
+
+        for (int i = 0; i < totalColumns; i++) {
+            ColumnConstraints colConstraints = new ColumnConstraints();
+            colConstraints.setHgrow(Priority.ALWAYS);  // Allow equal growth for all columns
+            colConstraints.setFillWidth(true);         // Fill available width
+            colConstraints.setMinWidth(150);           // Set minimum width to avoid shrinking
+            colConstraints.setPrefWidth(150);          // Set preferred width for better appearance
+            timetableGrid.getColumnConstraints().add(colConstraints);
+        }
     }
 
     private void addSection(JsonNode section, JsonNode subject, int col) {
