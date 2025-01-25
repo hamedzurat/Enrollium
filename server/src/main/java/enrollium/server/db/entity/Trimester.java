@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 
 @Entity
@@ -121,5 +122,18 @@ public class Trimester extends BaseEntity {
                     throw new IllegalArgumentException("ONGOING/COMPLETED status requires section registration end date");
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Trimester trimester = (Trimester) o;
+        return Objects.equals(code, trimester.code) && Objects.equals(year, trimester.year) && season == trimester.season && status == trimester.status;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(code, year, season, status);
     }
 }

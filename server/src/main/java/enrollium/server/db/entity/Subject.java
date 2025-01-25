@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -38,4 +39,17 @@ public class Subject extends BaseEntity {
     //
     @OneToMany(mappedBy = "subject")
     private Set<Prerequisite> prerequisites = new HashSet<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Subject subject = (Subject) o;
+        return Objects.equals(codeName, subject.codeName) && Objects.equals(name, subject.name) && Objects.equals(credits, subject.credits) && type == subject.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(codeName, name, credits, type);
+    }
 }

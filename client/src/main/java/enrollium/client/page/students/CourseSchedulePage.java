@@ -1,9 +1,18 @@
 package enrollium.client.page.students;
 
+import atlantafx.base.controls.Message;
 import atlantafx.base.theme.Styles;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import enrollium.client.page.BasePage;
 import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.memory.Volatile;
+import enrollium.rpc.client.ClientRPC;
+import enrollium.rpc.core.JsonUtils;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,46 +21,164 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 public class CourseSchedulePage extends BasePage {
-    public static final  TranslationKey        NAME                     = TranslationKey.SectionSelection;
-    private static final String[]              THEORY_TIMESLOTS         = {"8:30\n -\n9:50", "9:51\n -\n11:10", "11:11\n  -\n12:30", "12:31\n  -\n13:50", "13:51\n  -\n15:10", "15:11\n  -\n16:30"};
-    private static final String[]              LAB_TIMESLOTS            = {"8:30\n -\n11:10", "11:11\n -\n13:50", "13:51\n -\n16:30"};
-    private static final Map<Integer, Integer> LAB_TO_THEORY_SLOTS      = Map.of(0, 0,  // First lab slot starts at first theory slot
+    public static final  TranslationKey        NAME                = TranslationKey.SectionSelection;
+    private static final String[]              THEORY_TIMESLOTS    = {"8:30\n -\n9:50", "9:51\n -\n11:10", "11:11\n  -\n12:30", "12:31\n  -\n13:50", "13:51\n  -\n15:10", "15:11\n  -\n16:30"};
+    private static final String[]              LAB_TIMESLOTS       = {"8:30\n -\n11:10", "11:11\n -\n13:50", "13:51\n -\n16:30"};
+    private static final Map<Integer, Integer> LAB_TO_THEORY_SLOTS = Map.of(0, 0,  // First lab slot starts at first theory slot
             1, 2,  // Second lab slot starts at third theory slot
             2, 4   // Third lab slot starts at fifth theory slot
     );
-    private static final int                   MIN_SECTIONS_PER_SLOT    = 1; // Minimum sections per timeslot
-    private static final int                   MAX_ADDITIONAL_SECTIONS  = 5; // Additional random sections
-    private static final int                   MIN_TIMESLOTS            = 3; // Minimum timeslots to fill
-    private static final int                   MAX_ADDITIONAL_TIMESLOTS = 3; // Additional random timeslots
-    private final        List<String>          LAB_SUBJECTS             = Arrays.asList("AOOP-LAB", "Phy-LAB", "DLD lab");
-    private final        List<String>          THEORY_SUBJECTS          = Arrays.asList("Phy", "Vec", "Circ", "DLD");
-    private final        GridPane              timetableGrid            = new GridPane();
-    private final        Map<String, Color>    subjectColors            = new HashMap<>();
-    private              int                   currentCol               = 1;
+    private final        GridPane              timetableGrid       = new GridPane();
+    private final        Map<String, Color>    subjectColors       = new HashMap<>();
+    private final        CompositeDisposable   disposables         = new CompositeDisposable();
+    private              Message               statusMessage;
+    private              JsonNode              currentScheduleData;
+    private              int                   currentCol          = 1;
 
     public CourseSchedulePage() {
         addPageHeader();
+        setupStatusMessage();
         addNode(setupTimetable());
-        generateMockData();
+        startDataLoading();
 
+        // Layout updates when scene is ready
         this.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 Platform.runLater(() -> {
                     timetableGrid.requestLayout();
                     timetableGrid.applyCss();
                 });
+            } else {
+                // Cleanup when scene is removed
+                disposables.dispose();
+            }
+        });
+    }
+
+    private void setupStatusMessage() {
+        statusMessage = new Message("Loading", "Fetching schedule data...", new FontIcon(Material2OutlinedAL.CLOUD_DOWNLOAD));
+        statusMessage.getStyleClass().add(Styles.ACCENT);
+        addNode(statusMessage);
+    }
+
+    private void startDataLoading() {
+        String userId = (String) Volatile.getInstance().get("auth_user_id");
+        if (userId == null) {
+            showError("User not authenticated");
+            return;
+        }
+
+        // Initial load
+        loadScheduleData();
+
+        // Setup periodic refresh
+        disposables.add(Observable.interval(8, TimeUnit.SECONDS)
+                                  .observeOn(Schedulers.io())
+                                  .subscribe(tick -> loadScheduleData(), error -> Platform.runLater(() -> showError("Auto-refresh failed: " + error.getMessage()))));
+    }
+
+    private void loadScheduleData() {
+        String userId = (String) Volatile.getInstance().get("auth_user_id");
+
+        ClientRPC.getInstance()
+                 .call("Course.getSchedule", JsonUtils.createObject().put("userId", userId))
+                 .subscribeOn(Schedulers.io())
+                 .subscribe(response -> {
+                     JsonNode params = response.getParams();
+                     if (params.has("error")) {
+                         Platform.runLater(() -> showError(params.get("error").asText()));
+                         return;
+                     }
+
+                     // Check if data actually changed before updating
+                     if (!params.equals(currentScheduleData)) {
+                         currentScheduleData = params;
+                         Platform.runLater(() -> updateScheduleDisplay(params));
+                     }
+                 }, error -> Platform.runLater(() -> showError("Failed to load schedule: " + error.getMessage())));
+    }
+
+    private void updateScheduleDisplay(JsonNode scheduleData) {
+        timetableGrid.getChildren().clear();
+        currentCol = 1;
+        subjectColors.clear();
+
+        setupTimeColumn();
+
+        // Check if there are any subjects
+        JsonNode subjectsNode = scheduleData.get("subjects");
+        if (subjectsNode == null || subjectsNode.isEmpty()) {
+            showSuccess("No courses found for section selection");
+            return;
+        }
+
+        // Group subjects by type
+        Map<String, List<JsonNode>> subjectsByType = new HashMap<>();
+        subjectsNode.forEach(subject -> {
+            String type = subject.get("subjectType").asText();
+            subjectsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(subject);
+        });
+
+        // Add day columns for each type
+        subjectsNode.forEach(subject -> {
+            String   type     = subject.get("subjectType").asText();
+            JsonNode daysNode = subject.get("days");
+            if (daysNode != null && !daysNode.isEmpty()) {
+                if (type.equals("LAB")) {
+                    daysNode.forEach(day -> addLabDay(day.get("day").asText(), subject));
+                } else {
+                    daysNode.forEach(day -> {
+                        String dayText = day.get("day").asText();
+                        if (dayText.contains("+")) {
+                            addTheoryDay(dayText, subject);
+                        }
+                    });
+                }
             }
         });
 
-        Platform.runLater(() -> {
-            timetableGrid.requestLayout();
-            timetableGrid.applyCss();
-        });
+        showSuccess("Schedule loaded successfully");
+        timetableGrid.requestLayout();
+    }
+
+    private void handleSectionClick(JsonNode sectionData, JsonNode courseData) {
+        boolean isRegistered = sectionData.get("isRegistered").asBoolean();
+        String  action       = isRegistered ? "deregister from" : "register for";
+        String  message      = String.format("Attempting to %s section %s", action, sectionData.get("sectionCode")
+                                                                                               .asText());
+
+        showNotification(message, NotificationType.INFO);
+
+        ObjectNode requestParams = JsonUtils.createObject().put("courseId", courseData.get("courseId").asText());
+
+        if (!isRegistered) {
+            requestParams.put("sectionId", sectionData.get("sectionId").asText());
+        }
+
+        ClientRPC.getInstance()
+                 .call("Course.updateRegistration", requestParams)
+                 .subscribeOn(Schedulers.io())
+                 .subscribe(response -> {
+                     if (response.getParams().get("success").asBoolean()) {
+                         Platform.runLater(() -> {
+                             loadScheduleData(); // Refresh data
+                             showNotification("Section update successful", NotificationType.SUCCESS);
+                         });
+                     } else {
+                         Platform.runLater(() -> showNotification("Failed to update section", NotificationType.WARNING));
+                     }
+                 }, error -> Platform.runLater(() -> showNotification("Error: " + error.getMessage(), NotificationType.WARNING)));
     }
 
     private ScrollPane setupTimetable() {
@@ -87,9 +214,6 @@ public class CourseSchedulePage extends BasePage {
             rc.setVgrow(Priority.ALWAYS);
             timetableGrid.getRowConstraints().add(rc);
         }
-
-        setupTimeColumn();
-        addDayColumns();
 
         ScrollPane scrollPane = new ScrollPane(timetableGrid);
         scrollPane.setFitToHeight(true);
@@ -129,53 +253,54 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.getColumnConstraints().add(timeCC);
     }
 
-    private void addDayColumns() {
-        addLabDay("Sat");
-        addTheoryDay("Sat+Thu");
-        addLabDay("Sun");
-        addTheoryDay("Sun+Wed");
-        addLabDay("Tue");
-        addLabDay("Wed");
-    }
-
-    private void addLabDay(String day) {
+    private void addLabDay(String day, JsonNode subject) {
         Label dayHeader = new Label(day);
         styleHeader(dayHeader, Styles.BG_ACCENT_SUBTLE);
-        int dayStartCol = currentCol;
-        timetableGrid.add(dayHeader, currentCol, 0, LAB_SUBJECTS.size(), 1);
 
-        for (String subject : LAB_SUBJECTS) {
-            addSubjectColumn(subject, currentCol++);
+        timetableGrid.add(dayHeader, currentCol, 0, 1, 1);
+        addSubjectColumn(subject.get("subjectName").asText(), currentCol);
+
+        // Add sections from the data
+        JsonNode dayData = subject.get("days").elements().next(); // Get first day data
+        if (dayData.has("sections")) {
+            for (JsonNode section : dayData.get("sections")) {
+                addSection(section, subject, currentCol);
+            }
         }
 
-        for (int i = dayStartCol; i < currentCol; i++) {
-            ColumnConstraints cc = new ColumnConstraints();
-            cc.setMinWidth(100);
-            cc.setPrefWidth(100);
-            cc.setMaxWidth(150);
-            cc.setHgrow(Priority.NEVER);
-            timetableGrid.getColumnConstraints().add(cc);
-        }
+        ColumnConstraints cc = new ColumnConstraints();
+        cc.setMinWidth(100);
+        cc.setPrefWidth(100);
+        cc.setMaxWidth(150);
+        cc.setHgrow(Priority.NEVER);
+        timetableGrid.getColumnConstraints().add(cc);
+
+        currentCol++;
     }
 
-    private void addTheoryDay(String day) {
+    private void addTheoryDay(String day, JsonNode subject) {
         Label dayHeader = new Label(day);
         styleHeader(dayHeader, Styles.BG_DANGER_SUBTLE);
-        int dayStartCol = currentCol;
-        timetableGrid.add(dayHeader, currentCol, 0, THEORY_SUBJECTS.size(), 1);
 
-        for (String subject : THEORY_SUBJECTS) {
-            addSubjectColumn(subject, currentCol++);
+        timetableGrid.add(dayHeader, currentCol, 0, 1, 1);
+        addSubjectColumn(subject.get("subjectName").asText(), currentCol);
+
+        // Add sections from the data
+        JsonNode dayData = subject.get("days").elements().next();
+        if (dayData.has("sections")) {
+            for (JsonNode section : dayData.get("sections")) {
+                addSection(section, subject, currentCol);
+            }
         }
 
-        for (int i = dayStartCol; i < currentCol; i++) {
-            ColumnConstraints cc = new ColumnConstraints();
-            cc.setMinWidth(100);
-            cc.setPrefWidth(100);
-            cc.setMaxWidth(150);
-            cc.setHgrow(Priority.NEVER);
-            timetableGrid.getColumnConstraints().add(cc);
-        }
+        ColumnConstraints cc = new ColumnConstraints();
+        cc.setMinWidth(100);
+        cc.setPrefWidth(100);
+        cc.setMaxWidth(150);
+        cc.setHgrow(Priority.NEVER);
+        timetableGrid.getColumnConstraints().add(cc);
+
+        currentCol++;
     }
 
     private void addSubjectColumn(String subject, int col) {
@@ -184,34 +309,49 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.add(subjectHeader, col, 1);
     }
 
-    private void addSection(Section section, int col) {
-        int    rowIndex;
-        int    rowSpan;
-        String timeSlot;
+    private void addSection(JsonNode section, JsonNode subject, int col) {
+        boolean isLab    = subject.get("subjectType").asText().equals("LAB");
+        int     timeSlot = section.get("timeSlot").asInt() - 1; // Convert 1-based to 0-based index
 
-        if (LAB_SUBJECTS.contains(section.subject)) {
-            rowIndex = LAB_TO_THEORY_SLOTS.get(section.timeslotIndex) + 2;
+        int rowIndex;
+        int rowSpan;
+
+        if (isLab) {
+            rowIndex = LAB_TO_THEORY_SLOTS.get(timeSlot) + 2;
             rowSpan  = 2;
-            timeSlot = LAB_TIMESLOTS[section.timeslotIndex];
         } else {
-            rowIndex = section.timeslotIndex + 2;
+            rowIndex = timeSlot + 2;
             rowSpan  = 1;
-            timeSlot = THEORY_TIMESLOTS[section.timeslotIndex];
         }
 
         VBox container = getOrCreateCellContainer(col, rowIndex, rowSpan);
 
-        Label sectionLabel = new Label(section.code);
-        sectionLabel.setStyle("-fx-background-color: " + toRgbaString(getSubjectColor(section.subject)) + ";" + "-fx-padding: 5;" + "-fx-background-radius: 3;");
+        // Create section label with capacity
+        String sectionText = String.format("%s (%d/%d)", section.get("sectionCode")
+                                                                .asText(), section.get("currentCapacity")
+                                                                                  .asInt(), section.get("maxCapacity")
+                                                                                                   .asInt());
+
+        Label sectionLabel = new Label(sectionText);
+        Color color        = getSubjectColor(subject.get("subjectName").asText());
+
+        // Highlight if registered
+        if (section.get("isRegistered").asBoolean()) {
+            color = color.deriveColor(0, 1.2, 1, 0.7); // Make it more visible
+            sectionLabel.getStyleClass().add(Styles.TEXT_BOLD);
+        }
+
+        sectionLabel.setStyle("-fx-background-color: " + toRgbaString(color) + ";" + "-fx-padding: 5;" + "-fx-background-radius: 3;");
         sectionLabel.setMaxWidth(Double.MAX_VALUE);
         sectionLabel.setAlignment(Pos.CENTER);
 
-        sectionLabel.setOnMouseClicked(e -> {
-            String info = String.format("Section %s | Subject: %s | Time: %s | Day: %s", section.code, section.subject, timeSlot, section.weekday);
-            showNotification(info, NotificationType.INFO);
-        });
+        // Click handler
+        sectionLabel.setOnMouseClicked(e -> handleSectionClick(section, subject));
 
         container.getChildren().add(sectionLabel);
+
+        // Update row heights after adding section
+        Platform.runLater(() -> updateRowHeight(rowIndex));
     }
 
     private VBox getOrCreateCellContainer(int col, int row, int rowSpan) {
@@ -233,84 +373,23 @@ public class CourseSchedulePage extends BasePage {
         return container;
     }
 
-    private void generateMockData() {
-        initializeSubjectColors();
+    private void updateRowHeight(int row) {
+        // Track maximum height needed for the row
+        double maxHeight = 50; // Minimum height
 
-        int subjectCol = 1;
-        for (String day : Arrays.asList("Sat", "Sat+Thu", "Sun", "Sun+Wed", "Tue", "Wed")) {
-            List<String> subjects = day.contains("+") ? THEORY_SUBJECTS : LAB_SUBJECTS;
-            for (String subject : subjects) {
-                generateMockSections(subject, day, subjectCol);
-                subjectCol++;
+        // Find all VBoxes in this row
+        for (Node node : timetableGrid.getChildren()) {
+            if (node instanceof VBox vbox && GridPane.getRowIndex(node) == row) {
+                double height = vbox.getChildren().size() * 30 + 20; // 30 per section + padding
+                maxHeight = Math.max(maxHeight, height);
             }
         }
 
-        // Update row heights after all sections are added
-        Platform.runLater(() -> {
-            updateAllRowHeights();
-            timetableGrid.requestLayout();
-        });
-    }
-
-    private void updateAllRowHeights() {
-        // Track maximum height needed for each row
-        Map<Integer, Double> rowHeights = new HashMap<>();
-
-        // Get all VBox containers in the grid
-        timetableGrid.getChildren().stream().filter(node -> node instanceof VBox).forEach(node -> {
-            Integer row = GridPane.getRowIndex(node);
-            if (row != null && row >= 2) {  // Skip header rows
-                VBox vbox = (VBox) node;
-                // Calculate total height needed for this container
-                double height = vbox.getChildren().size() * 30 + 20;  // 30 per section + padding
-                // Update max height for this row if needed
-                rowHeights.merge(row, height, Math::max);
-            }
-        });
-
-        // Apply the maximum heights to row constraints
-        rowHeights.forEach((row, height) -> {
-            double finalHeight = Math.max(height, 50);  // Ensure minimum height of 50
-            if (row < timetableGrid.getRowConstraints().size()) {
-                RowConstraints rc = timetableGrid.getRowConstraints().get(row);
-                rc.setMinHeight(finalHeight);
-                rc.setPrefHeight(finalHeight);
-            }
-        });
-    }
-
-    private void generateMockSections(String subject, String day, int col) {
-        List<Integer> timeslots = new ArrayList<>();
-        int           maxSlots  = LAB_SUBJECTS.contains(subject) ? LAB_TIMESLOTS.length : THEORY_TIMESLOTS.length;
-
-        // Generate more timeslots with minimum guarantee
-        int numTimeslots = MIN_TIMESLOTS + RANDOM.nextInt(MAX_ADDITIONAL_TIMESLOTS + 1);
-        numTimeslots = Math.min(numTimeslots, maxSlots); // Don't exceed available slots
-
-        while (timeslots.size() < numTimeslots) {
-            int slot = RANDOM.nextInt(maxSlots);
-            if (!timeslots.contains(slot)) timeslots.add(slot);
-        }
-
-        for (int timeslot : timeslots) {
-            // Generate more sections with minimum guarantee
-            int numSections = MIN_SECTIONS_PER_SLOT + RANDOM.nextInt(MAX_ADDITIONAL_SECTIONS + 1);
-
-            for (int i = 0; i < numSections; i++) {
-                // Use multiple letters for section codes to handle more sections
-                String  sectionCode = String.valueOf((char) ('A' + (i / 26))) + (char) ('A' + (i % 26));
-                Section section     = new Section(sectionCode, subject, timeslot, day);
-                addSection(section, col);
-            }
-        }
-    }
-
-    private void initializeSubjectColors() {
-        for (String subject : LAB_SUBJECTS) {
-            subjectColors.put(subject, generateRandomPastelColor());
-        }
-        for (String subject : THEORY_SUBJECTS) {
-            subjectColors.put(subject, generateRandomPastelColor());
+        // Update row constraint
+        if (row < timetableGrid.getRowConstraints().size()) {
+            RowConstraints rc = timetableGrid.getRowConstraints().get(row);
+            rc.setMinHeight(maxHeight);
+            rc.setPrefHeight(maxHeight);
         }
     }
 
@@ -331,12 +410,35 @@ public class CourseSchedulePage extends BasePage {
     }
 
     private Color generateRandomPastelColor() {
-        double hue = RANDOM.nextDouble() * 360;
+        double hue = Math.random() * 360;
         return Color.hsb(hue, 0.3, 0.9, 0.5);
     }
 
     private String toRgbaString(Color color) {
         return String.format("rgba(%d, %d, %d, %.2f)", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255), color.getOpacity());
+    }
+
+    private void showError(String message) {
+        Message newMessage = new Message("Error", message, new FontIcon(Material2OutlinedAL.ERROR_OUTLINE));
+        newMessage.getStyleClass().add(Styles.DANGER);
+        replaceStatusMessage(newMessage);
+    }
+
+    private void showSuccess(String message) {
+        Message newMessage = new Message("Success", message, new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
+        newMessage.getStyleClass().add(Styles.SUCCESS);
+        replaceStatusMessage(newMessage);
+    }
+
+    private void replaceStatusMessage(Message newMessage) {
+        if (statusMessage != null) {
+            VBox parent = (VBox) statusMessage.getParent();
+            if (parent != null) {
+                int index = parent.getChildren().indexOf(statusMessage);
+                parent.getChildren().set(index, newMessage);
+            }
+        }
+        statusMessage = newMessage;
     }
 
     @Override
@@ -347,19 +449,5 @@ public class CourseSchedulePage extends BasePage {
     @Override
     public TranslationKey getName() {
         return NAME;
-    }
-
-    private static class Section {
-        String code;
-        String subject;
-        int    timeslotIndex;
-        String weekday;
-
-        Section(String code, String subject, int timeslotIndex, String weekday) {
-            this.code          = code;
-            this.subject       = subject;
-            this.timeslotIndex = timeslotIndex;
-            this.weekday       = weekday;
-        }
     }
 }

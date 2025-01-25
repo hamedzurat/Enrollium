@@ -344,17 +344,10 @@ public class DB {
                     record SubjectInfo(String code, String name, int credits) {}
                     record PrerequisiteChain(String subjectCode, String prerequisiteCode) {}
                     record RoomInfo(String roomNumber, String name) {}
-                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status,
-                                         LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd,
-                                         LocalDateTime sectionRegistrationStart,
-                                         LocalDateTime sectionRegistrationEnd) {}
-                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope,
-                                            Trimester trimester, Section section, User targetUser, String title,
-                                            String content) {}
-                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section,
-                                      CourseStatus status, Double grade) {}
-                    record SectionInfo(String section, Subject subject, Trimester trimester,
-                                       Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
+                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status, LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd, LocalDateTime sectionRegistrationStart, LocalDateTime sectionRegistrationEnd) {}
+                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope, Trimester trimester, Section section, User targetUser, String title, String content) {}
+                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
+                    record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
 
                     System.out.println("Creating objects");
 
@@ -374,7 +367,6 @@ public class DB {
                     demoStudent.setUniversityId(111111111);
                     demoStudent.setType(UserType.STUDENT);
                     demoStudent.setInfo("demo$tudentP4ss");
-                    students.add(demoStudent);
 
                     System.out.print("..");
 
@@ -500,7 +492,7 @@ public class DB {
                             ));
 
                     AtomicInteger uniId = new AtomicInteger(112331000);
-                    for (int i = 0; i < 20; i++) {
+                    for (int i = 0; i < 10; i++) {
                         int    universityId = uniId.addAndGet(random.nextInt(1, 10));
                         String firstName    = faker.name().firstName();
                         String lastName     = faker.name().lastName();
@@ -1126,9 +1118,18 @@ public class DB {
                         notifications.add(notification);
                     }
 
+//                    for (int i = 0; i < sections.size(); i++)
+//                        System.out.println(i + " - " + sections.get(i)
+//                                                               .getTrimester()
+//                                                               .getYear() + " - " + sections.get(i)
+//                                                                                            .getTrimester()
+//                                                                                            .getSeason() + " - " + sections.get(i)
+//                                                                                                                           .getSubject()
+//                                                                                                                           .getName());
+
                     List<CourseInfo> courseInfos = List.of(
                             // Completed Courses
-                            new CourseInfo(students.get(0), theorySubjects.get(0), trimesters.get(5), sections.get(710), CourseStatus.COMPLETED, 3.67), //
+                            new CourseInfo(students.get(0), theorySubjects.get(0), trimesters.get(5), findSection(sections, trimesters.get(5), theorySubjects.get(0)), CourseStatus.COMPLETED, 3.67), //
                             new CourseInfo(students.get(1), theorySubjects.get(0), trimesters.get(5), sections.get(710), CourseStatus.COMPLETED, 3.0), //
                             new CourseInfo(students.get(0), theorySubjects.get(1), trimesters.get(5), sections.get(720), CourseStatus.COMPLETED, 3.0), //
                             new CourseInfo(students.get(1), theorySubjects.get(1), trimesters.get(5), sections.get(718), CourseStatus.COMPLETED, 4.0), //
@@ -1153,7 +1154,7 @@ public class DB {
                             new CourseInfo(students.get(3), theorySubjects.get(1), trimesters.get(6), sections.get(865), CourseStatus.COMPLETED, 3.67), //
                             new CourseInfo(students.get(3), theorySubjects.get(2), trimesters.get(6), sections.get(875), CourseStatus.COMPLETED, 3.0), //
                             new CourseInfo(students.get(3), theorySubjects.get(4), trimesters.get(7), sections.get(1024), CourseStatus.COMPLETED, 3.0), //
-                            new CourseInfo(students.get(3), theorySubjects.get(5), trimesters.get(7), sections.get(1034), CourseStatus.COMPLETED, 3.33), //n
+                            new CourseInfo(students.get(3), theorySubjects.get(5), trimesters.get(7), sections.get(1034), CourseStatus.COMPLETED, 3.33), //
                             new CourseInfo(demoStudent, theorySubjects.get(0), trimesters.get(6), sections.get(858), CourseStatus.COMPLETED, 3.33), //
                             new CourseInfo(demoStudent, theorySubjects.get(2), trimesters.get(6), sections.get(870), CourseStatus.COMPLETED, 3.0), //
                             new CourseInfo(demoStudent, theorySubjects.get(4), trimesters.get(7), sections.get(1027), CourseStatus.COMPLETED, 3.33), //
@@ -1211,7 +1212,9 @@ public class DB {
                         course.setStudent(courseInfo.student);
                         course.setSubject(courseInfo.subject);
                         course.setTrimester(courseInfo.trimester);
-                        course.setSection(courseInfo.section);
+                        course.setSection(courseInfo.section == null
+                                          ? null
+                                          : findSection(sections, courseInfo.trimester, courseInfo.subject));
                         course.setStatus(courseInfo.status);
                         course.setGrade(courseInfo.grade);
 
@@ -1265,5 +1268,14 @@ public class DB {
                 return Completable.error(e);
             }
         }).subscribeOn(Schedulers.io());
+    }
+
+    public static Section findSection(List<Section> sections, Trimester trimester, Subject subject) {
+        for (Section section : sections) {
+            if (section.getTrimester().equals(trimester) && section.getSubject().equals(subject)) {
+                return section;
+            }
+        }
+        return null;
     }
 }

@@ -2259,6 +2259,205 @@ public class Main {
                 return Single.error(new RuntimeException("Invalid pagination parameters: " + e.getMessage()));
             }
         }));
+
+        // ---
+        // ---
+        // ---
+        // ---
+        // ---
+        // ---
+
+        server.registerMethod("Course.getSchedule", (params, _) -> Single.defer(() -> {
+            try {
+                String userId = JsonUtils.getString(params, "userId");
+
+                return Single.fromCallable(() -> {
+                    try (var session = DB.getSessionFactory().openSession()) {
+                        var transaction = session.beginTransaction();
+
+                        try {
+                            // 1. Get active trimester
+                            var trimester = session.createQuery("FROM Trimester t WHERE t.status = :status", Trimester.class)
+                                                   .setParameter("status", TrimesterStatus.SECTION_SELECTION)
+                                                   .setMaxResults(1)
+                                                   .uniqueResult();
+
+                            if (trimester == null) {
+                                return JsonUtils.createObject()
+                                                .put("error", "No active section selection period found");
+                            }
+
+                            // 2. Get student's courses with subjects
+                            var courses = session.createQuery("SELECT DISTINCT c FROM Course c " + "JOIN FETCH c.subject sub " + "LEFT JOIN FETCH c.section sec " + "WHERE c.student.id = :userId " + "AND c.trimester.id = :trimesterId " + "AND (c.status = :status1 OR c.status = :status2)", Course.class)
+                                                 .setParameter("userId", UUID.fromString(userId))
+                                                 .setParameter("trimesterId", trimester.getId())
+                                                 .setParameter("status1", CourseStatus.SELECTED)
+                                                 .setParameter("status2", CourseStatus.REGISTERED)
+                                                 .getResultList();
+
+                            if (courses.isEmpty()) {
+                                return JsonUtils.createObject().put("error", "No courses found for section selection");
+                            }
+
+                            // Get unique subject IDs
+                            Set<UUID> subjectIds = courses.stream()
+                                                          .map(c -> c.getSubject().getId())
+                                                          .collect(Collectors.toSet());
+
+                            // 3. Get all sections for these subjects with space-times
+                            var sections = session.createQuery("SELECT DISTINCT s FROM Section s " + "JOIN FETCH s.subject sub " + "JOIN FETCH s.spaceTimeSlots sts " + "LEFT JOIN FETCH s.registrations r " + "WHERE s.trimester.id = :trimesterId " + "AND s.subject.id IN (:subjectIds)", Section.class)
+                                                  .setParameter("trimesterId", trimester.getId())
+                                                  .setParameter("subjectIds", subjectIds)
+                                                  .getResultList();
+
+                            // Build response while session is still open
+                            ObjectNode response = JsonUtils.createObject();
+                            response.put("trimesterId", trimester.getId().toString())
+                                    .put("trimesterCode", trimester.getCode());
+
+                            ArrayNode subjectsArray = JsonUtils.createArray();
+
+                            // Group sections by subject
+                            Map<UUID, List<Section>> sectionsBySubject = sections.stream()
+                                                                                 .collect(Collectors.groupingBy(s -> s.getSubject()
+                                                                                                                      .getId()));
+
+                            // Group student's courses by subject for registration status check
+                            Map<UUID, Course> coursesBySubject = courses.stream()
+                                                                        .collect(Collectors.toMap(c -> c.getSubject()
+                                                                                                        .getId(), c -> c));
+
+                            // Build subject groups
+                            for (Course course : courses) {
+                                Subject subject = course.getSubject();
+                                List<Section> subjectSections = sectionsBySubject.getOrDefault(subject.getId(), new ArrayList<>());
+
+                                ObjectNode subjectNode = JsonUtils.createObject()
+                                                                  .put("subjectId", subject.getId().toString())
+                                                                  .put("subjectName", subject.getName())
+                                                                  .put("courseId", course.getId().toString())
+                                                                  .put("subjectType", subject.getType().toString());
+
+                                // Group sections by day
+                                Map<String, List<Section>> sectionsByDay = groupSectionsByDay(subjectSections);
+                                ArrayNode                  daysArray     = JsonUtils.createArray();
+
+                                for (Map.Entry<String, List<Section>> entry : sectionsByDay.entrySet()) {
+                                    ObjectNode dayNode = JsonUtils.createObject().put("day", entry.getKey());
+                                    ArrayNode sectionsArray = JsonUtils.createArray();
+
+                                    for (Section section : entry.getValue()) {
+                                        boolean isRegistered = course.getStatus() == CourseStatus.REGISTERED && course.getSection() != null && course.getSection()
+                                                                                                                                                     .getId()
+                                                                                                                                                     .equals(section.getId());
+
+                                        ObjectNode sectionNode = JsonUtils.createObject()
+                                                                          .put("sectionId", section.getId().toString())
+                                                                          .put("sectionCode", section.getSection())
+                                                                          .put("currentCapacity", section.getCurrentCapacity())
+                                                                          .put("maxCapacity", section.getMaxCapacity())
+                                                                          .put("timeSlot", getFirstTimeSlot(section))
+                                                                          .put("isRegistered", isRegistered);
+
+                                        sectionsArray.add(sectionNode);
+                                    }
+                                    dayNode.set("sections", sectionsArray);
+                                    daysArray.add(dayNode);
+                                }
+
+                                subjectNode.set("days", daysArray);
+                                subjectsArray.add(subjectNode);
+                            }
+
+                            response.set("subjects", subjectsArray);
+
+                            transaction.commit();
+                            return response;
+                        } catch (Exception e) {
+                            transaction.rollback();
+                            throw e;
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to fetch schedule: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Course.updateRegistration", (params, _) -> Single.defer(() -> {
+            try {
+                String courseId  = JsonUtils.getString(params, "courseId");
+                String sectionId = JsonUtils.getStringOptional(params, "sectionId").orElse(null);
+
+                return Single.fromCallable(() -> {
+                    try (var session = DB.getSessionFactory().openSession()) {
+                        var transaction = session.beginTransaction();
+
+                        try {
+                            // Load course with existing section if any
+                            var course = session.createQuery("SELECT c FROM Course c " + "LEFT JOIN FETCH c.section s " + "JOIN FETCH c.trimester t " + "WHERE c.id = :courseId", Course.class)
+                                                .setParameter("courseId", UUID.fromString(courseId))
+                                                .uniqueResult();
+
+                            if (course == null) {
+                                throw new IllegalArgumentException("Course not found");
+                            }
+
+                            // Verify trimester is in SECTION_SELECTION
+                            if (course.getTrimester().getStatus() != TrimesterStatus.SECTION_SELECTION) {
+                                throw new IllegalStateException("Section selection is not active");
+                            }
+
+                            if (sectionId != null) {
+                                // Load new section with space-times
+                                var section = session.createQuery("SELECT s FROM Section s " + "JOIN FETCH s.spaceTimeSlots " + "WHERE s.id = :sectionId", Section.class)
+                                                     .setParameter("sectionId", UUID.fromString(sectionId))
+                                                     .uniqueResult();
+
+                                if (section == null) {
+                                    throw new IllegalArgumentException("Section not found");
+                                }
+
+                                // Check capacity
+                                if (section.getCurrentCapacity() >= section.getMaxCapacity()) {
+                                    throw new IllegalStateException("Section is full");
+                                }
+
+                                course.setStatus(CourseStatus.REGISTERED);
+                                course.setSection(section);
+                            } else {
+                                course.setStatus(CourseStatus.SELECTED);
+                                course.setSection(null);
+                            }
+
+                            session.merge(course);
+                            transaction.commit();
+
+                            ObjectNode response = JsonUtils.createObject()
+                                                           .put("success", true)
+                                                           .put("courseId", course.getId().toString())
+                                                           .put("status", course.getStatus().toString());
+
+                            if (course.getSection() != null) {
+                                response.put("sectionId", course.getSection().getId().toString());
+                            }
+
+                            return response;
+                        } catch (Exception e) {
+                            transaction.rollback();
+                            throw e;
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Registration update failed: " + e.getMessage()));
+            }
+        }));
+    }
+
+    // Helper method to get first time slot
+    private static int getFirstTimeSlot(Section section) {
+        return section.getSpaceTimeSlots().stream().findFirst().map(SpaceTime::getTimeSlot).orElse(1);
     }
 
     // Helper method to build trimester JSON
@@ -2317,5 +2516,34 @@ public class Main {
 
         return notificationObj;
     }
-}
 
+    // Helper to group sections by day, combining Sat/Thu and Sun/Wed
+    private static Map<String, List<Section>> groupSectionsByDay(List<Section> sections) {
+        Map<String, List<Section>> grouped = new HashMap<>();
+
+        for (Section section : sections) {
+            for (SpaceTime slot : section.getSpaceTimeSlots()) {
+                String day = slot.getDayOfWeek().toString();
+
+                // Combine specific days
+                if (day.equals("SATURDAY") || day.equals("THURSDAY")) {
+                    day = "Sat+Thu";
+                } else if (day.equals("SUNDAY") || day.equals("WEDNESDAY")) {
+                    day = "Sun+Wed";
+                } else {
+                    // Keep single days as is but capitalize first letter only
+                    day = day.charAt(0) + day.substring(1).toLowerCase();
+                }
+
+                grouped.computeIfAbsent(day, k -> new ArrayList<>()).add(section);
+            }
+        }
+
+        return grouped;
+    }
+
+    // Helper to get the time slot index for a section (assumes first slot is the main one)
+    private static int getTimeSlotIndex(Section section) {
+        return section.getSpaceTimeSlots().stream().findFirst().map(SpaceTime::getTimeSlot).orElse(1);
+    }
+}
