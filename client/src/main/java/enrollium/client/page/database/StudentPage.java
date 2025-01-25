@@ -21,7 +21,6 @@ import javafx.scene.layout.VBox;
 
 import java.util.Random;
 
-
 public class StudentPage extends BasePage {
     public static final TranslationKey NAME = TranslationKey.STUDENT;
 
@@ -138,7 +137,7 @@ public class StudentPage extends BasePage {
                     Platform.runLater(() -> {
                         studentDataList.clear();
                         for (JsonNode item : items) {
-                            String id = item.hasNonNull("id") ? item.get("id").asText() : generateRandomId();
+                            String id = item.hasNonNull("id") ? item.get("id").asText() : java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
                             String universityId = item.hasNonNull("universityId") ? item.get("universityId").asText() : generateUniversityId();
                             String name = item.hasNonNull("name") ? item.get("name").asText() : "N/A";
                             String email = item.hasNonNull("email") ? item.get("email").asText() : generateEmail(name);
@@ -174,11 +173,6 @@ public class StudentPage extends BasePage {
 
         return firstNamePart + secondNamePart + trimester + randomNum + "@bscse.uiu.ac.bd"; // Concatenate components
     }
-
-    private String generateRandomId() {
-        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
-    }
-
 
     private void createStudent() {
         if (universityIdField.getText().isEmpty() || nameField.getText().isEmpty() || emailField.getText().isEmpty()) {
