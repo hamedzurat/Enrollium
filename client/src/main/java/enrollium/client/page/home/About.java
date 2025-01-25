@@ -80,7 +80,7 @@ public class About extends BasePage {
      */
     private VBox createDescription() {
         VBox descriptionBox = new VBox();
-        descriptionBox.setSpacing(20); // Adjusted spacing between lines
+        descriptionBox.setSpacing(30); // Adjusted spacing between lines
         descriptionBox.setAlignment(Pos.CENTER);
 
         TextFlow descriptionText = new TextFlow();
@@ -156,9 +156,9 @@ public class About extends BasePage {
         teamBox.getChildren().add(teamHeader);
 
         List<TeamMember> teamMembers = Arrays.asList(
-                new TeamMember("Alice Johnson", "Product Manager", "alice.johnson@example.com", "https://github.com/alicejohnson", "https://linkedin.com/in/alicejohnson"),
-                new TeamMember("Bob Smith", "Lead Developer", "bob.smith@example.com", "https://github.com/bsmith", "https://linkedin.com/in/bsmith"),
-                new TeamMember("Charlie Lee", "UI/UX Designer", "charlie.lee@example.com", "https://github.com/charlielee", "https://linkedin.com/in/charlielee")
+                new TeamMember("Hamed Zurat", "Backend Developer", "hamed.zurat@gmail.com", "https://github.com/hamedzurat", "https://linkedin.com/in/hamedzurat"),
+                new TeamMember("Adham Zarif", "UI Designer", "adham.zarif@gmail.com", "https://github.com/adhamzarif", "https://linkedin.com/in/adhamzarif"),
+                new TeamMember("Saber Hasan", "Backend Developer", "saber.hasan@gmail.com", "https://github.com/saberhasan", "https://linkedin.com/in/saberhasan")
         );
 
         for (TeamMember member : teamMembers) {
