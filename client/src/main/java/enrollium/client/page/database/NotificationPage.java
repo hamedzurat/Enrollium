@@ -1,7 +1,9 @@
 package enrollium.client.page.database;
 
 import enrollium.client.page.BasePage;
+import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -10,6 +12,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import net.datafaker.Faker;
 
@@ -17,13 +20,23 @@ import java.util.UUID;
 
 public class NotificationPage extends BasePage {
     public static final TranslationKey NAME = TranslationKey.NOTIFICATION;
+
+    // Table components
     private final TableView<NotificationData> tableView = new TableView<>();
     private final ObservableList<NotificationData> notificationDataList = FXCollections.observableArrayList();
+    private final TableColumn<NotificationData, String> idColumn = new TableColumn<>("ID");
+    private final TableColumn<NotificationData, String> titleColumn = new TableColumn<>("Title");
+    private final TableColumn<NotificationData, String> contentColumn = new TableColumn<>("Content");
+    private final TableColumn<NotificationData, String> categoryColumn = new TableColumn<>("Category");
+    private final TableColumn<NotificationData, String> scopeColumn = new TableColumn<>("Scope");
     private final Faker faker = new Faker();
+
+    // Form components
     private TextField titleField;
     private TextArea contentArea;
     private ComboBox<String> categoryDropdown;
     private ComboBox<String> scopeDropdown;
+    private Label selectedIdLabel;
 
     public NotificationPage() {
         super();
@@ -40,52 +53,73 @@ public class NotificationPage extends BasePage {
     }
 
     private VBox createNotificationTable() {
-        // Define table columns
-        TableColumn<NotificationData, String> idColumn = new TableColumn<>("ID");
-        TableColumn<NotificationData, String> titleColumn = new TableColumn<>("Title");
-        TableColumn<NotificationData, String> contentColumn = new TableColumn<>("Content");
-        TableColumn<NotificationData, String> categoryColumn = new TableColumn<>("Category");
-        TableColumn<NotificationData, String> scopeColumn = new TableColumn<>("Scope");
-
-        // Bind columns to NotificationData properties
+        // Setup columns
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
         titleColumn.setCellValueFactory(data -> data.getValue().titleProperty());
         contentColumn.setCellValueFactory(data -> data.getValue().contentProperty());
         categoryColumn.setCellValueFactory(data -> data.getValue().categoryProperty());
         scopeColumn.setCellValueFactory(data -> data.getValue().scopeProperty());
 
-        // Add columns to the table
-        tableView.getColumns().addAll(idColumn, titleColumn, contentColumn, categoryColumn, scopeColumn);
-        tableView.setItems(notificationDataList);
-
-        // Handle row clicks to populate the form
-        tableView.setRowFactory(tv -> {
-            TableRow<NotificationData> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!row.isEmpty()) {
-                    NotificationData rowData = row.getItem();
-                    titleField.setText(rowData.getTitle());
-                    contentArea.setText(rowData.getContent());
-                    categoryDropdown.setValue(rowData.getCategory());
-                    scopeDropdown.setValue(rowData.getScope());
+        // Configure ID column for copy-to-clipboard functionality
+        idColumn.setCellFactory(col -> {
+            TableCell<NotificationData, String> cell = new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? null : item);
+                }
+            };
+            cell.setOnMouseClicked(event -> {
+                if (!cell.isEmpty()) {
+                    String itemId = cell.getItem();
+                    Clipboard clipboard = Clipboard.getSystemClipboard();
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(itemId);
+                    clipboard.setContent(content);
+                    showNotification("Copied ID: " + itemId, NotificationType.INFO);
                 }
             });
-            return row;
+            return cell;
         });
 
+        // Configure table
+        tableView.setItems(notificationDataList);
+        tableView.getColumns().addAll(idColumn, titleColumn, contentColumn, categoryColumn, scopeColumn);
+
+        // Row selection handler
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            if (selected != null) {
+                selectedIdLabel.setText("Selected ID: " + selected.getId());
+                titleField.setText(selected.getTitle());
+                contentArea.setText(selected.getContent());
+                categoryDropdown.setValue(selected.getCategory());
+                scopeDropdown.setValue(selected.getScope());
+            }
+        });
+
+        // Apply styling if necessary
+        DatabaseUiUtils.styleCourseTableView(tableView);
+
         VBox container = new VBox(10, tableView);
+        VBox.setVgrow(tableView, Priority.ALWAYS);
         container.setPadding(new Insets(10));
         return container;
     }
 
     private VBox createNotificationForm() {
         // Initialize form fields
+        selectedIdLabel = new Label("No selection");
+        Button clearSelectionBtn = new Button("Clear Selection");
+        clearSelectionBtn.setOnAction(e -> clearForm());
+
         titleField = new TextField();
         contentArea = new TextArea();
         categoryDropdown = new ComboBox<>(FXCollections.observableArrayList("URGENT", "ACADEMIC", "ADMINISTRATIVE", "GENERAL"));
         scopeDropdown = new ComboBox<>(FXCollections.observableArrayList("GLOBAL", "TRIMESTER", "SECTION", "USER"));
 
-        // Create action buttons using DatabaseUiUtils
+        VBox selectionControls = new VBox(10, selectedIdLabel, clearSelectionBtn);
+
+        // Create action buttons
         VBox actionButtons = DatabaseUiUtils.createActionButtons(
                 // Create Action
                 () -> notificationDataList.add(new NotificationData(
@@ -117,6 +151,7 @@ public class NotificationPage extends BasePage {
         );
 
         VBox form = new VBox(10,
+                selectionControls,
                 new Label("Title:"), titleField,
                 new Label("Content:"), contentArea,
                 new Label("Category:"), categoryDropdown,
@@ -125,6 +160,15 @@ public class NotificationPage extends BasePage {
         );
         form.setPadding(new Insets(10));
         return form;
+    }
+
+    private void clearForm() {
+        tableView.getSelectionModel().clearSelection();
+        selectedIdLabel.setText("No selection");
+        titleField.clear();
+        contentArea.clear();
+        categoryDropdown.setValue(null);
+        scopeDropdown.setValue(null);
     }
 
     private void loadMockData() {

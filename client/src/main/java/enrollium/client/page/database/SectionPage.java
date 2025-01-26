@@ -2,23 +2,32 @@ package enrollium.client.page.database;
 
 import enrollium.client.page.BasePage;
 import enrollium.design.system.i18n.TranslationKey;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
-import net.datafaker.Faker;
 import javafx.geometry.Insets;
-
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import lombok.Data;
+import net.datafaker.Faker;
 
 import java.util.UUID;
 
 public class SectionPage extends BasePage {
     public static final TranslationKey NAME = TranslationKey.SECTION;
+
+    // Table components
     private final TableView<SectionData> tableView = new TableView<>();
     private final ObservableList<SectionData> sectionDataList = FXCollections.observableArrayList();
     private final Faker faker = new Faker();
+
+    // Form components
+    private Label selectedIdLabel;
     private TextField nameField;
     private ComboBox<String> subjectDropdown;
     private ComboBox<String> trimesterDropdown;
@@ -41,6 +50,7 @@ public class SectionPage extends BasePage {
     private VBox createSectionTable() {
         // Define table columns
         TableColumn<SectionData, String> idColumn = new TableColumn<>("ID");
+        TableColumn<SectionData, String> versionColumn = new TableColumn<>("Version");
         TableColumn<SectionData, String> nameColumn = new TableColumn<>("Name");
         TableColumn<SectionData, String> subjectColumn = new TableColumn<>("Subject");
         TableColumn<SectionData, String> trimesterColumn = new TableColumn<>("Trimester");
@@ -48,91 +58,128 @@ public class SectionPage extends BasePage {
 
         // Bind columns to SectionData properties
         idColumn.setCellValueFactory(data -> data.getValue().idProperty());
+        versionColumn.setCellValueFactory(data -> new SimpleStringProperty("1.0")); // Placeholder version value
         nameColumn.setCellValueFactory(data -> data.getValue().nameProperty());
         subjectColumn.setCellValueFactory(data -> data.getValue().subjectProperty());
         trimesterColumn.setCellValueFactory(data -> data.getValue().trimesterProperty());
         capacityColumn.setCellValueFactory(data -> data.getValue().capacityProperty());
 
-        tableView.getColumns().addAll(idColumn, nameColumn, subjectColumn, trimesterColumn, capacityColumn);
-        tableView.setItems(sectionDataList);
-
-        // Row click handling for table
-        tableView.setRowFactory(tv -> {
-            TableRow<SectionData> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!row.isEmpty()) {
-                    SectionData rowData = row.getItem();
-                    nameField.setText(rowData.getName());
-                    subjectDropdown.setValue(rowData.getSubject());
-                    trimesterDropdown.setValue(rowData.getTrimester());
-                    maxCapacityField.setText(rowData.getMaxCapacity());
+        // Add copy to clipboard for ID column
+        idColumn.setCellFactory(col -> {
+            TableCell<SectionData, String> cell = new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? null : item);
+                }
+            };
+            cell.setOnMouseClicked(event -> {
+                if (!cell.isEmpty()) {
+                    javafx.scene.input.Clipboard.getSystemClipboard().setContent(new javafx.scene.input.ClipboardContent() {{
+                        putString(cell.getItem());
+                    }});
+                    showNotification("Copied ID: " + cell.getItem(), "INFO");
                 }
             });
-            return row;
+            return cell;
+        });
+
+        // Configure table to match CoursePage
+        tableView.setItems(sectionDataList);
+        tableView.getColumns().clear();
+        tableView.getColumns().addAll(idColumn, versionColumn, nameColumn, subjectColumn, trimesterColumn, capacityColumn);
+
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        DatabaseUiUtils.styleCourseTableView(tableView);
+
+        // Row selection handler
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            if (selected != null) {
+                selectedIdLabel.setText("Selected ID: " + selected.getId());
+                nameField.setText(selected.getName());
+                subjectDropdown.setValue(selected.getSubject());
+                trimesterDropdown.setValue(selected.getTrimester());
+                maxCapacityField.setText(selected.getMaxCapacity());
+            }
         });
 
         VBox container = new VBox(10, tableView);
-        container.setPadding(new Insets(10));
+        VBox.setVgrow(tableView, Priority.ALWAYS);
         return container;
     }
 
     private VBox createSectionForm() {
-        // Initialize form fields
+        // Initialize form components
+        selectedIdLabel = new Label("No selection");
+        Button clearSelectionBtn = new Button("Clear Selection");
+        clearSelectionBtn.setOnAction(e -> clearForm());
+
+        HBox selectionControls = new HBox(10, selectedIdLabel, clearSelectionBtn);
+        selectionControls.setAlignment(Pos.CENTER_LEFT);
+
         nameField = new TextField();
         subjectDropdown = new ComboBox<>(FXCollections.observableArrayList("Math", "Physics", "Chemistry"));
         trimesterDropdown = new ComboBox<>(FXCollections.observableArrayList("Spring 2024", "Summer 2024", "Fall 2024"));
         maxCapacityField = new TextField();
 
-        // Create action buttons
         VBox form = new VBox(10,
+                selectionControls,
                 new Label("Name:"), nameField,
                 new Label("Subject:"), subjectDropdown,
                 new Label("Trimester:"), trimesterDropdown,
-                new Label("Max Capacity:"), maxCapacityField,
-                DatabaseUiUtils.createActionButtons(
-                        // Create Action
-                        () -> {
-                            sectionDataList.add(new SectionData(
-                                    UUID.randomUUID().toString(),
-                                    nameField.getText(),
-                                    subjectDropdown.getValue(),
-                                    trimesterDropdown.getValue(),
-                                    maxCapacityField.getText()));
-                            clearForm();
-                        },
-                        // Update Action
-                        () -> {
-                            SectionData selected = tableView.getSelectionModel().getSelectedItem();
-                            if (selected != null) {
-                                selected.setName(nameField.getText());
-                                selected.setSubject(subjectDropdown.getValue());
-                                selected.setTrimester(trimesterDropdown.getValue());
-                                selected.setMaxCapacity(maxCapacityField.getText());
-                                tableView.refresh();
-                                clearForm();
-                            }
-                        },
-                        // Delete Action
-                        () -> {
-                            SectionData selected = tableView.getSelectionModel().getSelectedItem();
-                            if (selected != null) {
-                                sectionDataList.remove(selected);
-                                clearForm();
-                            }
-                        },
-                        // Fill for Demo Action
-                        this::loadMockData
-                )
+                new Label("Max Capacity:"), maxCapacityField
         );
-        form.setPadding(new Insets(10));
-        return form;
+
+        VBox actions = DatabaseUiUtils.createActionButtons(
+                this::createSection,
+                this::updateSection,
+                this::deleteSection,
+                this::loadMockData
+        );
+
+        VBox container = new VBox(20, form, actions);
+        container.setPadding(new Insets(20));
+        return container;
     }
 
     private void clearForm() {
+        tableView.getSelectionModel().clearSelection();
+        selectedIdLabel.setText("No selection");
         nameField.clear();
         subjectDropdown.setValue(null);
         trimesterDropdown.setValue(null);
         maxCapacityField.clear();
+    }
+
+    private void createSection() {
+        sectionDataList.add(new SectionData(
+                UUID.randomUUID().toString(),
+                nameField.getText(),
+                subjectDropdown.getValue(),
+                trimesterDropdown.getValue(),
+                maxCapacityField.getText()
+        ));
+        clearForm();
+    }
+
+    private void updateSection() {
+        SectionData selected = tableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            selected.setName(nameField.getText());
+            selected.setSubject(subjectDropdown.getValue());
+            selected.setTrimester(trimesterDropdown.getValue());
+            selected.setMaxCapacity(maxCapacityField.getText());
+            tableView.refresh();
+            clearForm();
+        }
+    }
+
+    private void deleteSection() {
+        SectionData selected = tableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            sectionDataList.remove(selected);
+            clearForm();
+        }
     }
 
     private void loadMockData() {
@@ -143,11 +190,24 @@ public class SectionPage extends BasePage {
                     faker.educator().course(),
                     faker.educator().campus(),
                     "Spring 2024",
-                    String.valueOf(faker.number().numberBetween(20, 100))));
+                    String.valueOf(faker.number().numberBetween(20, 100))
+            ));
         }
     }
 
-    // SectionData class definition
+    private void showNotification(String message, String type) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); // Default to INFO type
+        if ("WARNING".equals(type)) {
+            alert.setAlertType(Alert.AlertType.WARNING);
+        } else if ("DANGER".equals(type)) {
+            alert.setAlertType(Alert.AlertType.ERROR);
+        }
+        alert.setTitle(type);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    @Data
     public static class SectionData {
         private final StringProperty id;
         private final StringProperty name;
@@ -181,10 +241,6 @@ public class SectionPage extends BasePage {
 
         public StringProperty capacityProperty() {
             return maxCapacity;
-        }
-
-        public String getId() {
-            return id.get();
         }
 
         public void setName(String name) {
