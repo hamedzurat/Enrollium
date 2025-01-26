@@ -254,26 +254,29 @@ public class CourseSchedulePage extends BasePage {
     private void processSubjects(List<Subject> subjects) {
         Map<String, List<Subject>> daySubjectsMap = new LinkedHashMap<>();
 
-        // Initialize all days with appropriate subject types
+        // Initialize daySubjectsMap with empty lists for each day in DAY_ORDER
         for (String day : DAY_ORDER) {
-            List<Subject> daySubjects = new ArrayList<>();
+            daySubjectsMap.put(day, new ArrayList<>());
+        }
 
-            if (day.contains("+")) { // Theory day
-                daySubjects.addAll(subjects.stream().filter(s -> s.subjectType.equals("THEORY")).toList());
-            } else { // Lab day
-                daySubjects.addAll(subjects.stream().filter(s -> s.subjectType.equals("LAB")).toList());
+        // Populate daySubjectsMap based on subjects' actual days
+        for (Subject subject : subjects) {
+            for (Day day : subject.days) {
+                String dayKey = day.day;
+                if (DAY_ORDER.contains(dayKey)) {
+                    List<Subject> daySubjects = daySubjectsMap.get(dayKey);
+                    // Check if subject is not already added for this day
+                    if (daySubjects.stream().noneMatch(s -> s.subjectCode.equals(subject.subjectCode))) {
+                        daySubjects.add(subject);
+                    }
+                }
             }
-
-            daySubjectsMap.put(day, daySubjects);
         }
 
         // Add columns for each day in predefined order
-        for (Map.Entry<String, List<Subject>> entry : daySubjectsMap.entrySet()) {
-            String        day         = entry.getKey();
-            List<Subject> daySubjects = entry.getValue();
-
-            // Remove duplicates while maintaining order
-            Set<String> seenSubjects = new HashSet<>();
+        for (String day : DAY_ORDER) {
+            List<Subject> daySubjects  = daySubjectsMap.get(day);
+            Set<String>   seenSubjects = new HashSet<>();
             List<Subject> uniqueSubjects = daySubjects.stream()
                                                       .filter(s -> seenSubjects.add(s.subjectCode))
                                                       .collect(Collectors.toList());
@@ -298,7 +301,7 @@ public class CourseSchedulePage extends BasePage {
         if (!subjects.isEmpty()) {
             for (Subject subject : subjects) {
                 addSubjectColumn(subject.subjectCode, currentCol);
-                processSections(subject, currentCol);
+                processSections(subject, currentCol, day);
                 currentCol++;
             }
         } else {
@@ -322,7 +325,7 @@ public class CourseSchedulePage extends BasePage {
         if (!subjects.isEmpty()) {
             for (Subject subject : subjects) {
                 addSubjectColumn(subject.subjectCode, currentCol);
-                processSections(subject, currentCol);
+                processSections(subject, currentCol, day);
                 currentCol++;
             }
         } else {
@@ -334,10 +337,12 @@ public class CourseSchedulePage extends BasePage {
         addColumnConstraints(dayStartCol, currentCol);
     }
 
-    private void processSections(Subject subject, int col) {
+    private void processSections(Subject subject, int col, String targetDay) {
         for (Day day : subject.days) {
-            for (Section section : day.sections) {
-                addSection(section, col, subject.subjectType, subject);
+            if (day.day.equals(targetDay)) {
+                for (Section section : day.sections) {
+                    addSection(section, col, subject.subjectType, subject);
+                }
             }
         }
     }
@@ -403,7 +408,7 @@ public class CourseSchedulePage extends BasePage {
         label.setStyle("-fx-background-color: " + toRgbaString(getSubjectColor(section.sectionId)) + "; " + "-fx-padding: 5; -fx-background-radius: 3;");
         label.setMaxWidth(Double.MAX_VALUE);
         label.setAlignment(Pos.CENTER);
-        label.setTooltip(new Tooltip("Time: " + timeSlot));
+        label.setTooltip(new Tooltip("Time: " + timeSlot.replace('\n', ' ')));
 
         label.setOnMouseClicked(e -> handleSectionClick(section, course));
         return label;
@@ -412,7 +417,7 @@ public class CourseSchedulePage extends BasePage {
     private void handleSectionClick(Section section, Subject course) {
         ObjectNode params = JsonUtils.createObject()
                                      .put("courseId", course.courseId)
-                                     .put("sectionId", section.sectionId);
+                                     .put("sectionId", section.isRegistered ? null : section.sectionId);
 
         ClientRPC.getInstance()
                  .call("Course.updateRegistration", params)
