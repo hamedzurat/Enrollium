@@ -1,9 +1,15 @@
 package enrollium.client.page.students;
 
 import atlantafx.base.theme.Styles;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import enrollium.client.page.BasePage;
 import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.memory.Volatile;
+import enrollium.rpc.client.ClientRPC;
+import enrollium.rpc.core.JsonUtils;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import javafx.application.Platform;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
@@ -12,6 +18,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -79,80 +86,79 @@ public class CourseSchedulePage extends BasePage {
         };
 
         dataRefreshService.setPeriod(Duration.seconds(8));
-        dataRefreshService.setOnSucceeded(_ -> updateUI(dataRefreshService.getValue()));
+        dataRefreshService.setOnSucceeded(e -> updateUI(dataRefreshService.getValue()));
         dataRefreshService.setOnFailed(e -> showNotification("Failed to fetch data: " + e.getSource()
-                                                                                         .getException(), NotificationType.WARNING));
+                                                                                         .getException()
+                                                                                         .getMessage(), NotificationType.WARNING));
         dataRefreshService.start();
+
+        this.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null && dataRefreshService != null) {
+                dataRefreshService.cancel();
+            }
+        });
     }
 
     private TrimesterData fetchDataFromServer() {
         TrimesterData data = new TrimesterData();
         data.subjects = new ArrayList<>();
-        Random rand = new Random();
 
-        // Generate fixed set of subjects
-        List<Subject> theorySubjects = new ArrayList<>();
-        List<Subject> labSubjects    = new ArrayList<>();
-
-        int numOfTheorySub = rand.nextInt(0, 5);
-        for (int i = 0; i < numOfTheorySub; i++) {
-            Subject subject = new Subject();
-            subject.subjectName = "Theory " + (i + 1);
-            subject.subjectType = "THEORY";
-            subject.days        = new ArrayList<>();
-            theorySubjects.add(subject);
+        String userId = (String) Volatile.getInstance().get("auth_user_id");
+        if (userId == null) {
+            showNotification("User not authenticated", NotificationType.WARNING);
+            return data;
         }
 
-        int numOfLabSub = rand.nextInt(0, 5);
-        for (int i = 0; i < numOfLabSub; i++) {
-            Subject subject = new Subject();
-            subject.subjectName = "Lab " + (i + 1);
-            subject.subjectType = "LAB";
-            subject.days        = new ArrayList<>();
-            labSubjects.add(subject);
-        }
+        try {
+            JsonNode response = ClientRPC.getInstance()
+                                         .call("Course.getSchedule", JsonUtils.createObject().put("userId", userId))
+                                         .blockingGet()
+                                         .getParams();
 
-        // Assign days and sections
-        for (Subject subject : theorySubjects) {
-            // Theory subjects appear in all theory days
-            for (String day : DAY_ORDER.stream().filter(d -> d.contains("+")).toList()) {
-                Day dayEntry = new Day();
-                dayEntry.day      = day;
-                dayEntry.sections = new ArrayList<>();
-
-                // Generate random sections
-                int sectionCount = rand.nextInt(0, 6);
-                for (int k = 0; k < sectionCount; k++) {
-                    Section section = new Section();
-                    section.sectionCode = String.valueOf((char) ('A' + k));
-                    section.timeSlot    = rand.nextInt(6) + 1; // 1-6
-                    dayEntry.sections.add(section);
-                }
-                subject.days.add(dayEntry);
+            if (response.has("error")) {
+                showNotification(response.get("error").asText(), NotificationType.WARNING);
+                return data;
             }
-            data.subjects.add(subject);
-        }
 
-        for (Subject subject : labSubjects) {
-            // Lab subjects appear in all lab days
-            for (String day : DAY_ORDER.stream().filter(d -> !d.contains("+")).toList()) {
-                Day dayEntry = new Day();
-                dayEntry.day      = day;
-                dayEntry.sections = new ArrayList<>();
+            JsonNode subjectsNode = response.get("subjects");
+            if (subjectsNode != null) {
+                for (JsonNode subjectNode : subjectsNode) {
+                    Subject subject = new Subject();
+                    subject.subjectName = subjectNode.get("subjectName").asText();
+                    subject.subjectCode = subjectNode.get("subjectCode").asText();
+                    subject.subjectType = subjectNode.get("subjectType").asText();
+                    subject.courseId    = subjectNode.get("courseId").asText();
+                    subject.days        = new ArrayList<>();
 
-                // Generate random sections
-                int sectionCount = rand.nextInt(0, 6);
-                for (int k = 0; k < sectionCount; k++) {
-                    Section section = new Section();
-                    section.sectionCode = String.valueOf((char) ('A' + k));
-                    section.timeSlot    = rand.nextInt(3) + 1; // 1-3
-                    dayEntry.sections.add(section);
+                    JsonNode daysNode = subjectNode.get("days");
+                    if (daysNode != null) {
+                        for (JsonNode dayNode : daysNode) {
+                            Day day = new Day();
+                            day.day      = dayNode.get("day").asText();
+                            day.sections = new ArrayList<>();
+
+                            JsonNode sectionsNode = dayNode.get("sections");
+                            if (sectionsNode != null) {
+                                for (JsonNode sectionNode : sectionsNode) {
+                                    Section section = new Section();
+                                    section.sectionCode     = sectionNode.get("sectionCode").asText();
+                                    section.timeSlot        = sectionNode.get("timeSlot").asInt();
+                                    section.currentCapacity = sectionNode.get("currentCapacity").asInt();
+                                    section.maxCapacity     = sectionNode.get("maxCapacity").asInt();
+                                    section.sectionId       = sectionNode.get("sectionId").asText();
+                                    section.isRegistered    = sectionNode.get("isRegistered").asBoolean();
+                                    day.sections.add(section);
+                                }
+                            }
+                            subject.days.add(day);
+                        }
+                    }
+                    data.subjects.add(subject);
                 }
-                subject.days.add(dayEntry);
             }
-            data.subjects.add(subject);
+        } catch (Exception e) {
+            showNotification("Error fetching data: " + e.getMessage(), NotificationType.WARNING);
         }
-
         return data;
     }
 
@@ -269,7 +275,7 @@ public class CourseSchedulePage extends BasePage {
             // Remove duplicates while maintaining order
             Set<String> seenSubjects = new HashSet<>();
             List<Subject> uniqueSubjects = daySubjects.stream()
-                                                      .filter(s -> seenSubjects.add(s.subjectName))
+                                                      .filter(s -> seenSubjects.add(s.subjectCode))
                                                       .collect(Collectors.toList());
 
             if (day.contains("+")) {
@@ -291,7 +297,7 @@ public class CourseSchedulePage extends BasePage {
 
         if (!subjects.isEmpty()) {
             for (Subject subject : subjects) {
-                addSubjectColumn(subject.subjectName, currentCol);
+                addSubjectColumn(subject.subjectCode, currentCol);
                 processSections(subject, currentCol);
                 currentCol++;
             }
@@ -315,7 +321,7 @@ public class CourseSchedulePage extends BasePage {
 
         if (!subjects.isEmpty()) {
             for (Subject subject : subjects) {
-                addSubjectColumn(subject.subjectName, currentCol);
+                addSubjectColumn(subject.subjectCode, currentCol);
                 processSections(subject, currentCol);
                 currentCol++;
             }
@@ -331,7 +337,7 @@ public class CourseSchedulePage extends BasePage {
     private void processSections(Subject subject, int col) {
         for (Day day : subject.days) {
             for (Section section : day.sections) {
-                addSection(section, col, subject.subjectType);
+                addSection(section, col, subject.subjectType, subject);
             }
         }
     }
@@ -347,8 +353,8 @@ public class CourseSchedulePage extends BasePage {
         }
     }
 
-    private void addSubjectColumn(String subjectName, int col) {
-        Label subjectHeader = new Label(subjectName);
+    private void addSubjectColumn(String subjectCode, int col) {
+        Label subjectHeader = new Label(subjectCode);
         subjectHeader.setWrapText(true);
         subjectHeader.setMinHeight(HEADER_ROW_HEIGHT);
         subjectHeader.setMaxWidth(Double.MAX_VALUE);
@@ -356,7 +362,7 @@ public class CourseSchedulePage extends BasePage {
         timetableGrid.add(subjectHeader, col, 1);
     }
 
-    private void addSection(Section section, int col, String subjectType) {
+    private void addSection(Section section, int col, String subjectType, Subject parentSubject) {
         int timeslotIndex = section.timeSlot - 1; // Convert to 0-based
         if (timeslotIndex < 0) return;
 
@@ -386,19 +392,46 @@ public class CourseSchedulePage extends BasePage {
         }
 
         VBox  container    = getOrCreateCellContainer(col, rowIndex, rowSpan);
-        Label sectionLabel = createSectionLabel(section, timeslots[timeslotIndex]);
+        Label sectionLabel = createSectionLabel(section, timeslots[timeslotIndex], parentSubject);
         container.getChildren().add(sectionLabel);
     }
 
-    private Label createSectionLabel(Section section, String timeSlot) {
-        Label label = new Label(section.sectionCode);
-        label.setStyle("-fx-background-color: " + toRgbaString(getSubjectColor(section.sectionCode)) + "; -fx-padding: 5; -fx-background-radius: 3;");
+    private Label createSectionLabel(Section section, String timeSlot, Subject course) {
+        String capacityText = String.format("%s (%d/%d)", section.sectionCode, section.currentCapacity, section.maxCapacity);
+
+        Label label = new Label(capacityText + (section.isRegistered ? " ★" : ""));
+        label.setStyle("-fx-background-color: " + toRgbaString(getSubjectColor(section.sectionId)) + "; " + "-fx-padding: 5; -fx-background-radius: 3;");
         label.setMaxWidth(Double.MAX_VALUE);
         label.setAlignment(Pos.CENTER);
+        label.setTooltip(new Tooltip("Time: " + timeSlot));
 
-        String info = String.format("Section %s | Time: %s", section.sectionCode, timeSlot);
-        label.setOnMouseClicked(_ -> showNotification(info, NotificationType.INFO));
+        label.setOnMouseClicked(e -> handleSectionClick(section, course));
         return label;
+    }
+
+    private void handleSectionClick(Section section, Subject course) {
+        ObjectNode params = JsonUtils.createObject()
+                                     .put("courseId", course.courseId)
+                                     .put("sectionId", section.sectionId);
+
+        ClientRPC.getInstance()
+                 .call("Course.updateRegistration", params)
+                 .subscribeOn(Schedulers.io())
+                 .subscribe(response -> {
+                     if (response.getParams().has("success") && response.getParams().get("success").asBoolean()) {
+                         Platform.runLater(() -> {
+                             showNotification("Registration updated", NotificationType.SUCCESS);
+                             dataRefreshService.restart();
+                         });
+                     } else {
+                         String errorMsg = response.getParams().has("error")
+                                           ? response.getParams()
+                                                     .get("error")
+                                                     .asText()
+                                           : "Unknown error occurred";
+                         Platform.runLater(() -> showNotification(errorMsg, NotificationType.WARNING));
+                     }
+                 }, error -> Platform.runLater(() -> showNotification("Error: " + error.getMessage(), NotificationType.WARNING)));
     }
 
     private VBox getOrCreateCellContainer(int col, int row, int rowSpan) {
@@ -478,8 +511,10 @@ public class CourseSchedulePage extends BasePage {
 
     private static class Subject {
         String    subjectName;
+        String    subjectCode;
         String    subjectType;
         List<Day> days;
+        String    courseId;
     }
 
 
@@ -490,7 +525,11 @@ public class CourseSchedulePage extends BasePage {
 
 
     private static class Section {
-        String sectionCode;
-        int    timeSlot;
+        String  sectionCode;
+        int     timeSlot;
+        String  sectionId;
+        boolean isRegistered;
+        int     currentCapacity;
+        int     maxCapacity;
     }
 }
