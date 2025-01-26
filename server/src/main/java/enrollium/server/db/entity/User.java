@@ -44,7 +44,7 @@ public abstract class User extends BaseEntity {
         if (plainPassword == null) throw new IllegalArgumentException("Password cannot be null");
         if (plainPassword.length() < 8)
             throw new IllegalArgumentException("Password must be at least 8 characters long");
-        this.password = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
+        this.password = BCrypt.withDefaults().hashToString(4, plainPassword.toCharArray()); // should be bigger cost but...
     }
 
     public boolean verifyPassword(String plainPassword) {

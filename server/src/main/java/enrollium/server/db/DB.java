@@ -344,17 +344,10 @@ public class DB {
                     record SubjectInfo(String code, String name, int credits) {}
                     record PrerequisiteChain(String subjectCode, String prerequisiteCode) {}
                     record RoomInfo(String roomNumber, String name) {}
-                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status,
-                                         LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd,
-                                         LocalDateTime sectionRegistrationStart,
-                                         LocalDateTime sectionRegistrationEnd) {}
-                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope,
-                                            Trimester trimester, Section section, User targetUser, String title,
-                                            String content) {}
-                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section,
-                                      CourseStatus status, Double grade) {}
-                    record SectionInfo(String section, Subject subject, Trimester trimester,
-                                       Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
+                    record TrimesterInfo(Integer year, Season season, TrimesterStatus status, LocalDateTime courseSelectionStart, LocalDateTime courseSelectionEnd, LocalDateTime sectionRegistrationStart, LocalDateTime sectionRegistrationEnd) {}
+                    record NotificationInfo(User sender, NotificationCategory category, NotificationScope scope, Trimester trimester, Section section, User targetUser, String title, String content) {}
+                    record CourseInfo(Student student, Subject subject, Trimester trimester, Section section, CourseStatus status, Double grade) {}
+                    record SectionInfo(String section, Subject subject, Trimester trimester, Set<SpaceTime> spaceTimeSlots, Set<Faculty> teachers) {}
 
                     System.out.println("\n\nCreating objects:");
 
@@ -379,14 +372,12 @@ public class DB {
 
                     List<FacultyInfo> adminInfos = List.of( //
                             new FacultyInfo("Mir Mohammad Monir", "monir@admin.uiu.ac.bd", "MMM"), //
-                            new FacultyInfo("Ms. Farhana Alam", " farhana@admin.uiu.ac.bd", "MFA"), //
-                            new FacultyInfo("Mr. Abdul Kader Mohammad Idris", " kader@admin.uiu.ac.bd", "MAKMI"), //
-                            new FacultyInfo("Ms. Sumaiya Sajeda Haque", " sumaiyahaque@admin.uiu.ac.bd", "SSH"), //
+                            new FacultyInfo("Ms. Farhana Alam", "farhana@admin.uiu.ac.bd", "MFA"), //
+                            new FacultyInfo("Mr. Abdul Kader Mohammad Idris", "kader@admin.uiu.ac.bd", "MAKMI"), //
+                            new FacultyInfo("Ms. Sumaiya Sajeda Haque", "sumaiyahaque@admin.uiu.ac.bd", "SSH"), //
                             new FacultyInfo("Mr. Liton Kumar Saha", "liton@admin.uiu.ac.bd", "LKS"), //
-                            new FacultyInfo("Mr. Md. Atiqur Rahman", " atiq@admin.uiu.ac.bd", "MAR"), //
-                            new FacultyInfo("Mr. Md. Shahadat Hossain", "  shahadat@admin.uiu.ac.bd", "MSH")); //
-
-
+                            new FacultyInfo("Mr. Md. Atiqur Rahman", "atiq@admin.uiu.ac.bd", "MAR"), //
+                            new FacultyInfo("Mr. Md. Shahadat Hossain", "shahadat@admin.uiu.ac.bd", "MMSH")); //
 
                     System.out.print("Admin");
                     for (FacultyInfo adminInfo : adminInfos) {
@@ -736,7 +727,7 @@ public class DB {
                             new RoomInfo("Lab6 421", "Physics Lab 421"), //
                             new RoomInfo("Lab7 422", "Electrical Lab 422"), //
                             new RoomInfo("Lab8 423", "Electrical Lab 423"), //
-                            new RoomInfo("Lab8 423", "Electrical Lab 424"), //
+                            new RoomInfo("Lab8 424", "Electrical Lab 424"), //
                             // Labs on Floor 5
                             new RoomInfo("Lab1 516", "Computer Lab 516"), //
                             new RoomInfo("Lab2 517", "Computer Lab 517"), //
@@ -747,9 +738,10 @@ public class DB {
                             new RoomInfo("Lab6 522", "Physics Lab 522"), //
                             new RoomInfo("Lab7 523", "Electrical Lab 523"), //
                             new RoomInfo("Lab8 524", "Electrical Lab 524"), //
-                            new RoomInfo("Lab8 525", "Electrical Lab 525"), //
+                            new RoomInfo("Lab8 525", "Electrical Lab 525") //
+                    );
 
-                            List<List<SpaceTime>> theoryPairs = new ArrayList<>();
+                    List<List<SpaceTime>> theoryPairs = new ArrayList<>();
                     List<SpaceTime>       labSlots    = new ArrayList<>();
 
                     System.out.print("SpaceTime");
