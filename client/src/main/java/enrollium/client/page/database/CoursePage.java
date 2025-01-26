@@ -1,10 +1,13 @@
 package enrollium.client.page.database;
 
+import atlantafx.base.controls.Message;
+import atlantafx.base.theme.Styles;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import enrollium.client.page.BasePage;
 import enrollium.client.page.NotificationType;
 import enrollium.design.system.i18n.TranslationKey;
+import enrollium.design.system.memory.Volatile;
 import enrollium.rpc.client.ClientRPC;
 import enrollium.rpc.core.JsonUtils;
 import enrollium.server.db.entity.types.CourseStatus;
@@ -18,6 +21,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import lombok.Data;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
 
 public class CoursePage extends BasePage {
@@ -39,6 +44,7 @@ public class CoursePage extends BasePage {
     private final       ObservableList<DropdownItem>          subjectList     = FXCollections.observableArrayList();
     private final       ObservableList<DropdownItem>          trimesterList   = FXCollections.observableArrayList();
     private final       ObservableList<DropdownItem>          sectionList     = FXCollections.observableArrayList();
+    private final       Volatile                              memory          = Volatile.getInstance();
     // Form components
     private             Label                                 selectedIdLabel;
     private             ComboBox<CourseStatus>                statusDropdown;
@@ -47,14 +53,29 @@ public class CoursePage extends BasePage {
     private             ComboBox<DropdownItem>                trimesterDropdown;
     private             ComboBox<DropdownItem>                sectionDropdown;
     private             TextField                             gradeField;
+    private             Message                               statusMessage;
 
     public CoursePage() {
         super();
         addPageHeader();
         addFormattedText(TranslationKey.COURSE_desc);
-        addSection(TranslationKey.COURSE_table, createCourseTable());
-        addSection(TranslationKey.COURSE_form, createCourseForm());
-        loadData();
+
+        String userId   = (String) memory.get("auth_user_id");
+        String userType = (String) memory.get("auth_user_type");
+
+        if (userId == null || userType == null) {
+            Message msg = new Message("Error", "User information not found. Please log first.", new FontIcon(Material2OutlinedAL.ERROR_OUTLINE));
+            msg.getStyleClass().add(Styles.DANGER);
+            addNode(msg);
+        } else if (!userType.equals("ADMIN")) {
+            Message msg = new Message("Error", "Only System Administrator can access this page.", new FontIcon(Material2OutlinedAL.ERROR_OUTLINE));
+            msg.getStyleClass().add(Styles.DANGER);
+            addNode(msg);
+        } else {
+            addSection(TranslationKey.COURSE_table, createCourseTable());
+            addSection(TranslationKey.COURSE_form, createCourseForm());
+            loadData();
+        }
     }
 
     private VBox createCourseTable() {

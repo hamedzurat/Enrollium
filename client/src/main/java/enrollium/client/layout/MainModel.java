@@ -38,10 +38,10 @@ public class MainModel {
 
         List<Class<? extends Page>> pages = List.of(
                 // Home
-                LogIn.class, About.class, UserInfo.class, SignUp.class, ForgotPassword.class,
+                LogIn.class, About.class, UserInfo.class, SignUp.class, ForgotPassword.class, Chat.class,
 
                 // Student
-                OfferedCoursePage.class, CourseSchedulePage.class, TradeSection.class, RequestWithdraw.class, History.class, Routine.class,
+                OfferedCoursePage.class, CourseSchedulePage.class, TradeSection.class, RequestWithdraw.class, History.class, TradeSection.class,
 
                 // Admin
                 ServerStats.class, SendNotification.class, RegistrationStatus.class, WithdrawRequests.class,
@@ -71,13 +71,14 @@ public class MainModel {
                 NAV_TREE.get(LogIn.class), //
                 NAV_TREE.get(UserInfo.class), //
                 NAV_TREE.get(SignUp.class), //
-                NAV_TREE.get(ForgotPassword.class) //
+                NAV_TREE.get(ForgotPassword.class), //
+                NAV_TREE.get(Chat.class) //
         );
         home.setExpanded(true);
 
         var student = NavTree.Item.group(TranslationKey.Student, new FontIcon(Material2OutlinedMZ.PERM_IDENTITY));
         student.getChildren().setAll( //
-                NAV_TREE.get(Routine.class), //
+                NAV_TREE.get(TradeSection.class), //
                 NAV_TREE.get(History.class), //
                 NAV_TREE.get(OfferedCoursePage.class), //
                 NAV_TREE.get(RequestWithdraw.class), //

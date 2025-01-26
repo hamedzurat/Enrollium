@@ -2335,6 +2335,7 @@ public class Main {
                                 ObjectNode subjectNode = JsonUtils.createObject()
                                                                   .put("subjectId", subject.getId().toString())
                                                                   .put("subjectName", subject.getName())
+                                                                  .put("subjectCode", subject.getCodeName())
                                                                   .put("courseId", course.getId().toString())
                                                                   .put("subjectType", subject.getType().toString());
 
@@ -2526,8 +2527,8 @@ public class Main {
                 String day = slot.getDayOfWeek().toString();
 
                 // Combine specific days
-                if (day.equals("SATURDAY") || day.equals("THURSDAY")) {
-                    day = "Sat+Thu";
+                if (day.equals("SATURDAY") || day.equals("TUESDAY")) {
+                    day = "Sat+Tue";
                 } else if (day.equals("SUNDAY") || day.equals("WEDNESDAY")) {
                     day = "Sun+Wed";
                 } else {
@@ -2540,10 +2541,5 @@ public class Main {
         }
 
         return grouped;
-    }
-
-    // Helper to get the time slot index for a section (assumes first slot is the main one)
-    private static int getTimeSlotIndex(Section section) {
-        return section.getSpaceTimeSlots().stream().findFirst().map(SpaceTime::getTimeSlot).orElse(1);
     }
 }
