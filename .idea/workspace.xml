@@ -5,10 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="aafb07c5-0157-4c0f-ab76-3e401cf26e7e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/enrollium/server/db/DB.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/enrollium/server/db/DB.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/example/app/App.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/org/example/app/MessageUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/test/java/org/example/app/MessageUtilsTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-common-conventions.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/groovy/buildlogic.java-common-conventions.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/list/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/list/src/main/java/org/example/list/LinkedList.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/list/src/test/java/org/example/list/LinkedListTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/JoinUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/SplitUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/StringUtils.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +48,16 @@
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="Enrollium" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="Enrollium" type="f1a62948:ProjectNode" />
+                <item name="Enrollium" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="Enrollium" type="f1a62948:ProjectNode" />
+                <item name="build-logic" type="2d1252cf:ModuleNode" />
               </path>
             </expand>
             <select />
@@ -66,32 +89,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Enrollium [:app:run].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium [:client:run].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium [dependencies].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium:app [:app:org.example.app.App.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium:client [:client:enrollium.client.Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium:client [:client:enrollium.client.MainApp.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium:server [:server:Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enrollium:server [:server:enrollium.server.Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.MessageUtilsTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.RUN: Client.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.RUN: Server.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.build-logic [dependencies].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/LENOVO/Documents/GitHub/Enrollium&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.fonts.default&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Enrollium [:app:run].executor": "Run",
+    "Gradle.Enrollium [:client:run].executor": "Run",
+    "Gradle.Enrollium [dependencies].executor": "Run",
+    "Gradle.Enrollium:app [:app:org.example.app.App.main()].executor": "Run",
+    "Gradle.Enrollium:client [:client:enrollium.client.Main.main()].executor": "Run",
+    "Gradle.Enrollium:client [:client:enrollium.client.MainApp.main()].executor": "Run",
+    "Gradle.Enrollium:server [:server:Main.main()].executor": "Run",
+    "Gradle.Enrollium:server [:server:enrollium.server.Main.main()].executor": "Run",
+    "Gradle.MessageUtilsTest.executor": "Run",
+    "Gradle.RUN: Client.executor": "Run",
+    "Gradle.RUN: Server.executor": "Run",
+    "Gradle.build-logic [dependencies].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/hz/files/git/Enrollium/server"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/server" />
@@ -119,10 +137,6 @@
     </configuration>
     <list>
       <item itemvalue="Application.Main" />
-      <item itemvalue="Gradle.BUILD" />
-      <item itemvalue="Gradle.CLEAN" />
-      <item itemvalue="Gradle.TEST: Client" />
-      <item itemvalue="Gradle.TEST: Server" />
       <item itemvalue="Gradle.RUN: Server" />
       <item itemvalue="Gradle.RUN: Client" />
     </list>
