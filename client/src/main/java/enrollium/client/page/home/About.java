@@ -40,8 +40,7 @@ public class About extends BasePage {
 
         VBox content = new VBox();
         content.setSpacing(40);
-        content.setAlignment(Pos.TOP_CENTER);
-        content.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 20px;");
+        content.setAlignment(Pos.TOP_LEFT);
 
         content.getChildren().add(new Separator());
         content.getChildren().add(createDescription());
@@ -74,17 +73,17 @@ public class About extends BasePage {
     }
 
     /**
-     * Creates the description section with centered text.
+     * Creates the description section with left-aligned text.
      *
      * @return VBox containing the description
      */
     private VBox createDescription() {
         VBox descriptionBox = new VBox();
         descriptionBox.setSpacing(30); // Adjusted spacing between lines
-        descriptionBox.setAlignment(Pos.CENTER);
+        descriptionBox.setAlignment(Pos.TOP_LEFT);
 
         TextFlow descriptionText = new TextFlow();
-        descriptionText.setTextAlignment(javafx.scene.text.TextAlignment.CENTER); // Ensure text alignment in the center
+        descriptionText.setTextAlignment(javafx.scene.text.TextAlignment.LEFT); // Ensure text alignment to the left
 
         Text mainText = new Text(
                 "Enrollium is your partner in simplifying academic management. We provide a " +
@@ -111,14 +110,14 @@ public class About extends BasePage {
     }
 
     /**
-     * Creates a benefits section with centered text.
+     * Creates a benefits section with left-aligned text.
      *
      * @return VBox containing the benefits
      */
     private VBox createBenefitsSection() {
         VBox benefitsBox = new VBox();
         benefitsBox.setSpacing(10); // Reduced spacing between lines
-        benefitsBox.setAlignment(Pos.CENTER);
+        benefitsBox.setAlignment(Pos.TOP_LEFT);
 
         Label benefitsHeader = new Label("🌟 Why Enrollium is Your Best Choice");
         benefitsHeader.setStyle("-fx-text-fill: #2b579a; -fx-font-weight: bold; -fx-font-size: 18px;");
