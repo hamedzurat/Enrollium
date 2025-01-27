@@ -16,6 +16,10 @@ import enrollium.server.db.entity.*;
 import enrollium.server.db.entity.types.*;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
+import oshi.SystemInfo;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.GlobalMemory;
+import oshi.hardware.NetworkIF;
 
 import java.security.SecureRandom;
 import java.time.DayOfWeek;
@@ -2739,8 +2743,7 @@ public class Main {
 
                         return SessionManager.getInstance()
                                              .sendRequest(recipientToken, forwardRequest)
-                                             .map(response -> JsonUtils.createObject()
-                                                                       .put("status", "delivered"));
+                                             .map(response -> JsonUtils.createObject().put("status", "delivered"));
                     } else {
                         return Single.error(new IllegalStateException("Recipient is not online."));
                     }
@@ -2748,14 +2751,56 @@ public class Main {
                     return Single.error(new IllegalStateException("Sender not recognized."));
                 }
             } catch (Exception e) {
-                return Single.just(JsonUtils.createObject()
-                                            .put("error", "Invalid parameters: " + e.getMessage()));
+                return Single.just(JsonUtils.createObject().put("error", "Invalid parameters: " + e.getMessage()));
             }
         });
 
         server.registerMethod("receiveMessage", (params, request) -> {
             return Single.just(JsonUtils.createObject().put("status", "received"));
         });
+
+        server.registerMethod("getServerStats", (params, request) -> Single.defer(() -> {
+            try {
+                SystemInfo       systemInfo = new SystemInfo();
+                CentralProcessor processor  = systemInfo.getHardware().getProcessor();
+                GlobalMemory     memory     = systemInfo.getHardware().getMemory();
+                List<NetworkIF>  networkIFs = systemInfo.getHardware().getNetworkIFs();
+
+                // Measure CPU usage
+                long[] prevTicks = processor.getSystemCpuLoadTicks();
+                TimeUnit.SECONDS.sleep(1);
+                double cpuUsage = processor.getSystemCpuLoadBetweenTicks(prevTicks) * 100;
+
+                // Measure RAM usage
+                long totalMemory = memory.getTotal();
+                long usedMemory  = totalMemory - memory.getAvailable();
+                int  ramUsage    = (int) ((usedMemory * 100) / totalMemory);
+
+                int diskUsage = (int) (Math.random() * 100);
+
+                long totalSent     = 0;
+                long totalReceived = 0;
+                for (NetworkIF net : networkIFs) {
+                    net.updateAttributes();
+                    totalSent += net.getBytesSent();
+                    totalReceived += net.getBytesRecv();
+                }
+                int networkUsage = (int) ((totalSent + totalReceived) / 1024); // Convert bytes to KB
+
+                // Prepare response
+                ObjectNode response = JsonUtils.createObject();
+                response.put("cpu", (int) cpuUsage);
+                response.put("ram", ramUsage);
+                response.put("disk", diskUsage);
+                response.put("network", networkUsage);
+
+                log.info("Server stats fetched: {}", response);
+                return Single.just(response);
+            } catch (Exception e) {
+                log.error("Failed to get server stats", e);
+                return Single.error(new RuntimeException("Failed to get server stats: " + e.getMessage()));
+            }
+        }));
     }
 
     // Helper method to get first time slot

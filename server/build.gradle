@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.hibernate.validator)
     implementation(libs.json)
     implementation(libs.datafaker)
+    implementation(libs.oshi)
     implementation(project(":lib"))
     implementation(project(":rpc"))
     implementation(project(":design-system"))
