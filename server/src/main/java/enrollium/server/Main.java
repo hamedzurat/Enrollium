@@ -2346,7 +2346,7 @@ public class Main {
                                                                   .put("subjectType", subject.getType().toString());
 
                                 // Group sections by day
-                                Map<String, List<Section>> sectionsByDay = groupSectionsByDay(subjectSections);
+                                Map<String, List<Section>> sectionsByDay = groupSectionsByDay(subjectSections, subject.getType());
                                 ArrayNode                  daysArray     = JsonUtils.createArray();
 
                                 for (Map.Entry<String, List<Section>> entry : sectionsByDay.entrySet()) {
@@ -2866,21 +2866,27 @@ public class Main {
     }
 
     // Helper to group sections by day, combining Sat/Thu and Sun/Wed
-    private static Map<String, List<Section>> groupSectionsByDay(List<Section> sections) {
+    private static Map<String, List<Section>> groupSectionsByDay(List<Section> sections, SubjectType subjectType) {
         Map<String, List<Section>> grouped = new HashMap<>();
 
         for (Section section : sections) {
             for (SpaceTime slot : section.getSpaceTimeSlots()) {
                 String day = slot.getDayOfWeek().toString();
 
-                // Combine specific days
-                if (day.equals("SATURDAY") || day.equals("TUESDAY")) {
-                    day = "Sat+Tue";
-                } else if (day.equals("SUNDAY") || day.equals("WEDNESDAY")) {
-                    day = "Sun+Wed";
+                // Convert to proper case (e.g., "Saturday")
+                day = day.charAt(0) + day.substring(1).toLowerCase();
+
+                // Process day based on subject type
+                if (subjectType == SubjectType.THEORY) {
+                    // Combine days for theory
+                    if (day.equals("Saturday") || day.equals("Tuesday")) {
+                        day = "Sat+Tue";
+                    } else if (day.equals("Sunday") || day.equals("Wednesday")) {
+                        day = "Sun+Wed";
+                    }
                 } else {
-                    // Keep single days as is but capitalize first letter only
-                    day = day.charAt(0) + day.substring(1).toLowerCase();
+                    // Short format for lab (first 3 letters capitalized)
+                    day = day.substring(0, 3); // "Sat", "Sun", etc.
                 }
 
                 grouped.computeIfAbsent(day, k -> new ArrayList<>()).add(section);

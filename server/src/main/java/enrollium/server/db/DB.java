@@ -1360,49 +1360,49 @@ public class DB {
                             new CourseInfo(students.get(0), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(0), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(0), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(0),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(0), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(0), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(1), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(1), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(1), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(1),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(1), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(1), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(2), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(2), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(2), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(2),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(2), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(2), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(3), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(3), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(3), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(3),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(3), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(3), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(4), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(4), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(4), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(4),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(4), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(4), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(5), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(5), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(5), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(5),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(5), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(5), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(6), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(6), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(6), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(6),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(6), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(6), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             new CourseInfo(students.get(7), theorySubjects.get(9), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(7), theorySubjects.get(10), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(7), theorySubjects.get(11), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
-                            new CourseInfo(students.get(7),labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
+                            new CourseInfo(students.get(7), labSubjects.get(6), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
                             new CourseInfo(students.get(7), labSubjects.get(7), trimesters.get(9), sections.get(0), CourseStatus.REGISTERED, null), //
 
                             // Selected Courses
