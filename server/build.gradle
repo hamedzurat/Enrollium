@@ -25,7 +25,7 @@ dependencies {
     implementation(libs.datafaker)
     implementation(project(":lib"))
     implementation(project(":rpc"))
-//    implementation(project(":design-system"))
+    implementation(project(":design-system"))
     //
     testImplementation(libs.junit)
     testImplementation(libs.rxjava)

@@ -3,6 +3,7 @@ package enrollium.server;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import enrollium.design.system.memory.Volatile;
 import enrollium.lib.banner.Issue;
 import enrollium.lib.version.Version;
 import enrollium.rpc.core.JsonUtils;
@@ -2329,7 +2330,7 @@ public class Main {
 
                             // Build subject groups
                             for (Course course : courses) {
-                                Subject subject = course.getSubject();
+                                Subject       subject         = course.getSubject();
                                 List<Section> subjectSections = sectionsBySubject.getOrDefault(subject.getId(), new ArrayList<>());
 
                                 ObjectNode subjectNode = JsonUtils.createObject()
@@ -2344,8 +2345,8 @@ public class Main {
                                 ArrayNode                  daysArray     = JsonUtils.createArray();
 
                                 for (Map.Entry<String, List<Section>> entry : sectionsByDay.entrySet()) {
-                                    ObjectNode dayNode = JsonUtils.createObject().put("day", entry.getKey());
-                                    ArrayNode sectionsArray = JsonUtils.createArray();
+                                    ObjectNode dayNode       = JsonUtils.createObject().put("day", entry.getKey());
+                                    ArrayNode  sectionsArray = JsonUtils.createArray();
 
                                     for (Section section : entry.getValue()) {
                                         boolean isRegistered = course.getStatus() == CourseStatus.REGISTERED && course.getSection() != null && course.getSection()
@@ -2452,6 +2453,252 @@ public class Main {
                 });
             } catch (Exception e) {
                 return Single.error(new RuntimeException("Registration update failed: " + e.getMessage()));
+            }
+        }));
+
+        // ---
+        // ---
+        // ---
+        // ---
+        // ---
+        // ---
+
+        // Add this to Main.java's registerMethods
+// Trade-related RPC methods
+        server.registerMethod("Trade.offerTrade", (params, _) -> Single.defer(() -> {
+            try {
+                String studentId        = JsonUtils.getString(params, "studentId");
+                String sectionId        = JsonUtils.getString(params, "sectionId");
+                String note             = JsonUtils.getString(params, "note");
+                String desiredSectionId = JsonUtils.getStringOptional(params, "desiredSectionId").orElse(null);
+
+                // Get course info from section
+                Section section = DB.findById(Section.class, UUID.fromString(sectionId)).blockingGet();
+
+                Map<String, Object> trade = new HashMap<>();
+                trade.put("id", UUID.randomUUID().toString());
+                trade.put("offeredBy", studentId);
+                trade.put("currentSectionId", sectionId);
+                trade.put("desiredSectionId", desiredSectionId);
+                trade.put("courseId", section.getSubject().getId().toString());
+                trade.put("courseName", section.getSubject().getName());
+                trade.put("currentSectionName", section.getName());
+                trade.put("note", note);
+                trade.put("status", "PENDING");
+                trade.put("createdAt", System.currentTimeMillis());
+
+                // Get trades list from Volatile or create new
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> trades = (List<Map<String, Object>>) Optional.ofNullable(Volatile.getInstance()
+                                                                                                           .get("trades"))
+                                                                                       .orElse(new ArrayList<>());
+
+                // Check if student already has a pending trade for this section
+                boolean hasPendingTrade = trades.stream()
+                                                .anyMatch(t -> t.get("offeredBy")
+                                                                .equals(studentId) && t.get("currentSectionId")
+                                                                                       .equals(sectionId) && t.get("status")
+                                                                                                              .equals("PENDING"));
+
+                if (hasPendingTrade) {
+                    return Single.error(new IllegalStateException("Already have a pending trade for this section"));
+                }
+
+                trades.add(trade);
+                Volatile.getInstance().put("trades", trades);
+
+                return Single.just(JsonUtils.toJson(trade));
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to offer trade: " + e.getMessage()));
+            }
+        }));
+
+        // Update this part in the server-side Trade.listAvailableTrades method:
+        server.registerMethod("Trade.listAvailableTrades", (params, _) -> Single.defer(() -> {
+            try {
+                String studentId = JsonUtils.getString(params, "studentId");
+
+                // Get current trades
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> trades = (List<Map<String, Object>>)
+                        Optional.ofNullable(Volatile.getInstance().get("trades"))
+                                .orElse(new ArrayList<>());
+
+                // If no real trades, add some mock data
+                if (trades.isEmpty()) {
+                    // Add mock trades
+                    Map<String, Object> mockTrade1 = new HashMap<>();
+                    mockTrade1.put("id", UUID.randomUUID().toString());
+                    mockTrade1.put("offeredBy", "mock-user-1");
+                    mockTrade1.put("courseName", "Data Structures");
+                    mockTrade1.put("currentSectionName", "Section A");
+                    mockTrade1.put("note", "Looking for morning sections");
+                    mockTrade1.put("status", "PENDING");
+
+                    Map<String, Object> mockTrade2 = new HashMap<>();
+                    mockTrade2.put("id", UUID.randomUUID().toString());
+                    mockTrade2.put("offeredBy", "mock-user-2");
+                    mockTrade2.put("courseName", "Algorithm Analysis");
+                    mockTrade2.put("currentSectionName", "Section B");
+                    mockTrade2.put("note", "Prefer afternoon slots");
+                    mockTrade2.put("status", "PENDING");
+
+                    Map<String, Object> mockTrade3 = new HashMap<>();
+                    mockTrade3.put("id", UUID.randomUUID().toString());
+                    mockTrade3.put("offeredBy", "mock-user-3");
+                    mockTrade3.put("courseName", "Database Systems");
+                    mockTrade3.put("currentSectionName", "Section C");
+                    mockTrade3.put("note", "Need to switch due to timing conflict");
+                    mockTrade3.put("status", "PENDING");
+
+                    trades.add(mockTrade1);
+                    trades.add(mockTrade2);
+                    trades.add(mockTrade3);
+                }
+
+                // Filter out user's own trades
+                List<Map<String, Object>> availableTrades = trades.stream()
+                                                                  .filter(t -> !t.get("offeredBy").equals(studentId))
+                                                                  .collect(Collectors.toList());
+
+                ObjectNode response = JsonUtils.createObject();
+                ArrayNode items = JsonUtils.createArray();
+                availableTrades.forEach(trade -> items.add(JsonUtils.toJson(trade)));
+                response.set("items", items);
+
+                return Single.just(response);
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to list trades: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Trade.listMyTrades", (params, _) -> Single.defer(() -> {
+            try {
+                String studentId = JsonUtils.getString(params, "studentId");
+
+                // Get current trades
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> trades = (List<Map<String, Object>>) Optional.ofNullable(Volatile.getInstance()
+                                                                                                           .get("trades"))
+                                                                                       .orElse(new ArrayList<>());
+
+                // Filter trades offered by current student
+                List<Map<String, Object>> myTrades = trades.stream()
+                                                           .filter(t -> t.get("offeredBy").equals(studentId))
+                                                           .collect(Collectors.toList());
+
+                ObjectNode response = JsonUtils.createObject();
+                ArrayNode  items    = JsonUtils.createArray();
+                myTrades.forEach(trade -> items.add(JsonUtils.toJson(trade)));
+                response.set("items", items);
+
+                return Single.just(response);
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to list my trades: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Trade.acceptTrade", (params, _) -> Single.defer(() -> {
+            try {
+                String tradeId       = JsonUtils.getString(params, "tradeId");
+                String studentId     = JsonUtils.getString(params, "studentId");
+                String swapSectionId = JsonUtils.getString(params, "swapSectionId");
+
+                // Get current trades
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> trades = (List<Map<String, Object>>) Optional.ofNullable(Volatile.getInstance()
+                                                                                                           .get("trades"))
+                                                                                       .orElse(new ArrayList<>());
+
+                // Find and update the trade
+                Optional<Map<String, Object>> tradeMaybe = trades.stream()
+                                                                 .filter(t -> t.get("id").equals(tradeId))
+                                                                 .findFirst();
+
+                if (!tradeMaybe.isPresent()) {
+                    return Single.error(new IllegalArgumentException("Trade not found"));
+                }
+
+                Map<String, Object> trade = tradeMaybe.get();
+                if (!trade.get("status").equals("PENDING")) {
+                    return Single.error(new IllegalStateException("Trade is no longer pending"));
+                }
+
+                // Update trade status
+                trade.put("status", "ACCEPTED");
+                trade.put("respondedBy", studentId);
+                trade.put("swapSectionId", swapSectionId);
+                trade.put("updatedAt", System.currentTimeMillis());
+
+                // Update in volatile store
+                Volatile.getInstance().put("trades", trades);
+
+                return Single.just(JsonUtils.toJson(trade));
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to accept trade: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Trade.cancelTrade", (params, _) -> Single.defer(() -> {
+            try {
+                String tradeId   = JsonUtils.getString(params, "tradeId");
+                String studentId = JsonUtils.getString(params, "studentId");
+
+                // Get current trades
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> trades = (List<Map<String, Object>>) Optional.ofNullable(Volatile.getInstance()
+                                                                                                           .get("trades"))
+                                                                                       .orElse(new ArrayList<>());
+
+                // Find and update the trade
+                Optional<Map<String, Object>> tradeMaybe = trades.stream()
+                                                                 .filter(t -> t.get("id").equals(tradeId))
+                                                                 .findFirst();
+
+                if (!tradeMaybe.isPresent()) {
+                    return Single.error(new IllegalArgumentException("Trade not found"));
+                }
+
+                Map<String, Object> trade = tradeMaybe.get();
+                if (!trade.get("offeredBy").equals(studentId)) {
+                    return Single.error(new IllegalStateException("Not authorized to cancel this trade"));
+                }
+
+                // Remove trade
+                trades.remove(trade);
+
+                // Update in volatile store
+                Volatile.getInstance().put("trades", trades);
+
+                return Single.just(JsonUtils.createObject().put("success", true));
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to cancel trade: " + e.getMessage()));
+            }
+        }));
+
+        server.registerMethod("Trade.getRegisteredSections", (params, _) -> Single.defer(() -> {
+            try {
+                String studentId = JsonUtils.getString(params, "studentId");
+
+                return DB.read(Course.class, 1000, 0)
+                         .filter(course -> course.getStudent()
+                                                 .getId()
+                                                 .toString()
+                                                 .equals(studentId) && course.getStatus() == CourseStatus.REGISTERED)
+                         .map(course -> JsonUtils.createObject()
+                                                 .put("id", course.getSection().getId().toString())
+                                                 .put("name", course.getSection().getName())
+                                                 .put("courseName", course.getSubject().getName()))
+                         .collect(ArrayList::new, (list, item) -> list.add(item))
+                         .map(list -> {
+                             ObjectNode response = JsonUtils.createObject();
+                             ArrayNode  items    = JsonUtils.createArray();
+                             list.forEach(item -> items.add((JsonNode) item));
+                             response.set("items", items);
+                             return response;
+                         });
+            } catch (Exception e) {
+                return Single.error(new RuntimeException("Failed to get registered sections: " + e.getMessage()));
             }
         }));
     }
