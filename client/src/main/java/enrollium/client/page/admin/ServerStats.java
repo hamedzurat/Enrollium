@@ -22,6 +22,7 @@ public class ServerStats extends BasePage {
     private final       XYChart.Series<Number, Number> diskSeries    = new XYChart.Series<>();
     private final       XYChart.Series<Number, Number> networkSeries = new XYChart.Series<>();
     private             int                            time          = 1;
+    private             Timeline                       timeline;
 
     public ServerStats() {
         super();
@@ -41,6 +42,12 @@ public class ServerStats extends BasePage {
 
         addNode(content);
         fetchServerStats();
+
+        this.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null && timeline != null) {
+                timeline.stop();
+            }
+        });
     }
 
     private LineChart<Number, Number> createChart(String title, XYChart.Series<Number, Number> series) {
@@ -63,36 +70,47 @@ public class ServerStats extends BasePage {
     private void fetchServerStats() {
         ClientRPC client = ClientRPC.getInstance();
 
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-            client.call("getServerStats", null).subscribe(response -> {
-                if (!response.isError()) {
-                    JsonNode params = response.getParams();
+        timeline = new Timeline(new KeyFrame(Duration.seconds(1), _ -> client.call("getServerStats", null)
+                                                                             .subscribe(response -> {
+                                                                                 if (!response.isError()) {
+                                                                                     JsonNode params = response.getParams();
 
-                    int cpuUsage     = params.get("cpu").asInt();
-                    int ramUsage     = params.get("ram").asInt();
-                    int diskUsage    = params.get("disk").asInt();
-                    int networkUsage = params.get("network").asInt();
+                                                                                     int cpuUsage = params.get("cpu")
+                                                                                                          .asInt();
+                                                                                     int ramUsage = params.get("ram")
+                                                                                                          .asInt();
+                                                                                     int diskUsage = params.get("disk")
+                                                                                                           .asInt();
+                                                                                     int networkUsage = params.get("network")
+                                                                                                              .asInt();
 
-                    if (time > 30) {
-                        cpuSeries.getData().removeFirst();
-                        ramSeries.getData().removeFirst();
-                        diskSeries.getData().removeFirst();
-                        networkSeries.getData().removeFirst();
-                    }
+                                                                                     if (time > 30) {
+                                                                                         cpuSeries.getData()
+                                                                                                  .removeFirst();
+                                                                                         ramSeries.getData()
+                                                                                                  .removeFirst();
+                                                                                         diskSeries.getData()
+                                                                                                   .removeFirst();
+                                                                                         networkSeries.getData()
+                                                                                                      .removeFirst();
+                                                                                     }
 
-                    Platform.runLater(() -> {
-                        cpuSeries.getData().add(new XYChart.Data<>(time, cpuUsage));
-                        ramSeries.getData().add(new XYChart.Data<>(time, ramUsage));
-                        diskSeries.getData().add(new XYChart.Data<>(time, diskUsage));
-                        networkSeries.getData().add(new XYChart.Data<>(time, networkUsage));
-                    });
+                                                                                     Platform.runLater(() -> {
+                                                                                         cpuSeries.getData()
+                                                                                                  .add(new XYChart.Data<>(time, cpuUsage));
+                                                                                         ramSeries.getData()
+                                                                                                  .add(new XYChart.Data<>(time, ramUsage));
+                                                                                         diskSeries.getData()
+                                                                                                   .add(new XYChart.Data<>(time, diskUsage));
+                                                                                         networkSeries.getData()
+                                                                                                      .add(new XYChart.Data<>(time, networkUsage));
+                                                                                     });
 
-                    time++;
-                } else {
-                    System.err.println("Error fetching server stats: " + response.getErrorMessage());
-                }
-            });
-        }));
+                                                                                     time++;
+                                                                                 } else {
+                                                                                     System.err.println("Error fetching server stats: " + response.getErrorMessage());
+                                                                                 }
+                                                                             })));
 
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
