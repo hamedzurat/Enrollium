@@ -46,6 +46,7 @@ public enum TranslationKey {
     Student("Student"),
     COURSE_desc("COURSE_desc"),
     HELLO("hello"),
+    Chat("chat")
 
     // ---
 
