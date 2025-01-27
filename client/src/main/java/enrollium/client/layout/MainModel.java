@@ -41,7 +41,7 @@ public class MainModel {
                 LogIn.class, About.class, UserInfo.class, SignUp.class, ForgotPassword.class, Chat.class,
 
                 // Student
-                OfferedCoursePage.class, CourseSchedulePage.class, TradeSection.class, RequestWithdraw.class, History.class, TradeSection.class,
+                OfferedCoursePage.class, CourseSchedulePage.class, TradeSection.class, RequestWithdraw.class, History.class, TradeSection.class, Routine.class,
 
                 // Admin
                 ServerStats.class, SendNotification.class, RegistrationStatus.class, WithdrawRequests.class,
@@ -78,7 +78,7 @@ public class MainModel {
 
         var student = NavTree.Item.group(TranslationKey.Student, new FontIcon(Material2OutlinedMZ.PERM_IDENTITY));
         student.getChildren().setAll( //
-                NAV_TREE.get(TradeSection.class), //
+                NAV_TREE.get(Routine.class), //
                 NAV_TREE.get(History.class), //
                 NAV_TREE.get(OfferedCoursePage.class), //
                 NAV_TREE.get(RequestWithdraw.class), //
