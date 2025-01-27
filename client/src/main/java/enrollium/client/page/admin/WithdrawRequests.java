@@ -132,11 +132,11 @@ public class WithdrawRequests extends BasePage {
      * Loads sample data into the withdrawal requests table.
      */
     private void loadRequestData() {
-        requestData.add(new WithdrawRequest("Alice Johnson", "English–I", "Schedule Conflict", "Pending"));
-        requestData.add(new WithdrawRequest("Bob Smith", "Discrete Mathematics", "Personal Reasons", "Approved"));
-        requestData.add(new WithdrawRequest("Catherine Lee", "Physics", "Course Too Difficult", "Rejected"));
-        requestData.add(new WithdrawRequest("David Miller", "Data Structures", "Health Issues", "Pending"));
-        requestData.add(new WithdrawRequest("Emily Davis", "Object Oriented Programming", "Workload Issues", "Approved"));
+        requestData.add(new WithdrawRequest("Zurat", "English–I", "Schedule Conflict", "Pending"));
+        requestData.add(new WithdrawRequest("Saber", "Discrete Mathematics", "Personal Reasons", "Approved"));
+        requestData.add(new WithdrawRequest("Zarif", "Physics", "Course Too Difficult", "Rejected"));
+        requestData.add(new WithdrawRequest("Shuvo", "Data Structures", "Health Issues", "Pending"));
+        requestData.add(new WithdrawRequest("Siam", "Object Oriented Programming", "Workload Issues", "Approved"));
     }
 
     /**
