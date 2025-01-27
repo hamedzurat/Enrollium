@@ -7,6 +7,7 @@ import enrollium.design.system.memory.Volatile;
 import enrollium.lib.banner.Issue;
 import enrollium.lib.version.Version;
 import enrollium.rpc.core.JsonUtils;
+import enrollium.rpc.core.Request;
 import enrollium.rpc.core.SessionInfo;
 import enrollium.rpc.server.ServerRPC;
 import enrollium.rpc.server.SessionManager;
@@ -2520,9 +2521,9 @@ public class Main {
 
                 // Get current trades
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> trades = (List<Map<String, Object>>)
-                        Optional.ofNullable(Volatile.getInstance().get("trades"))
-                                .orElse(new ArrayList<>());
+                List<Map<String, Object>> trades = (List<Map<String, Object>>) Optional.ofNullable(Volatile.getInstance()
+                                                                                                           .get("trades"))
+                                                                                       .orElse(new ArrayList<>());
 
                 // If no real trades, add some mock data
                 if (trades.isEmpty()) {
@@ -2562,7 +2563,7 @@ public class Main {
                                                                   .collect(Collectors.toList());
 
                 ObjectNode response = JsonUtils.createObject();
-                ArrayNode items = JsonUtils.createArray();
+                ArrayNode  items    = JsonUtils.createArray();
                 availableTrades.forEach(trade -> items.add(JsonUtils.toJson(trade)));
                 response.set("items", items);
 
@@ -2701,6 +2702,60 @@ public class Main {
                 return Single.error(new RuntimeException("Failed to get registered sections: " + e.getMessage()));
             }
         }));
+
+        server.registerMethod("sendMessage", (params, request) -> {
+            try {
+                String recipientEmail = JsonUtils.getString(params, "recipient");
+                String messageContent = JsonUtils.getString(params, "message");
+
+                String senderToken = request.getSessionToken();
+
+                // Find sender's email based on session token
+                Optional<SessionInfo> senderSession = SessionManager.getInstance().getSession(senderToken);
+
+                if (senderSession.isPresent()) {
+                    String senderEmail = DB.read(User.class, 1, 0)
+                                           .filter(user -> user.getId()
+                                                               .toString()
+                                                               .equals(senderSession.get().getUserId()))
+                                           .firstElement()
+                                           .map(User::getEmail)
+                                           .blockingGet();
+
+                    // Find recipient's session token by email
+                    Optional<SessionInfo> recipientSession = SessionManager.getInstance()
+                                                                           .getActiveSessions()
+                                                                           .stream()
+                                                                           .filter(session -> session.getUserId()
+                                                                                                     .equals(recipientEmail))
+                                                                           .findFirst();
+
+                    if (recipientSession.isPresent()) {
+                        String recipientToken = recipientSession.get().getSessionToken();
+
+                        Request forwardRequest = Request.create(request.getId(), "receiveMessage", JsonUtils.createObject()
+                                                                                                            .put("sender", senderEmail)  // Send sender's email instead of session token
+                                                                                                            .put("message", messageContent), recipientToken);
+
+                        return SessionManager.getInstance()
+                                             .sendRequest(recipientToken, forwardRequest)
+                                             .map(response -> JsonUtils.createObject()
+                                                                       .put("status", "delivered"));
+                    } else {
+                        return Single.error(new IllegalStateException("Recipient is not online."));
+                    }
+                } else {
+                    return Single.error(new IllegalStateException("Sender not recognized."));
+                }
+            } catch (Exception e) {
+                return Single.just(JsonUtils.createObject()
+                                            .put("error", "Invalid parameters: " + e.getMessage()));
+            }
+        });
+
+        server.registerMethod("receiveMessage", (params, request) -> {
+            return Single.just(JsonUtils.createObject().put("status", "received"));
+        });
     }
 
     // Helper method to get first time slot
