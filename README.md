@@ -78,56 +78,150 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 
 ---
 
-### **3.N Database System**
+### **3.1 Database System**
 
 **Implementation Status**: ✅ Complete
 
 **Demo**:
-![DB Admin Interface](path/to/db_ui.png)
+![DB Schema Overview](path/to/er_diagram.png)
+*(Key tables: `users`, `courses`, `subjects`, `sections`, `trimesters`, `notifications`)*
+
+---
 
 #### **What It Does**
 
-- Central data hub for [User Profiles/Transactions/etc.]
-- ACID-compliant transaction handling
+- Single source of truth.
+- Enforces ACID-compliant transactions for all critical operations.
+- Supports complex relationships (e.g., prerequisites, trimester phases, section-teacher assignments).
+- Generates demo data.
+
+---
 
 #### **Schema Design**
 
-![ER Diagram](path/to/er_diagram.png)
-*(Key tables marked with red borders)*
+##### **Core Tables**
+| Table                  | Description                                                                 | Relationships & Constraints                                                                                                                                                                                                 |
+|------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`users`**            | Base user entity (login, name, password).                                   | - Inherited by `students`/`faculty` via `user_id` (joined-table). <br> - `email` (UNIQUE, NOT NULL).                                                                                                                        |
+| **`students`**         | Student-specific data (e.g., university ID).                               | - `user_id` (PK, FK to `users.id`) <br> - `university_id` (UNIQUE, NOT NULL).                                                                                                                                               |
+| **`faculty`**          | Faculty members (e.g., shortcode).                                         | - `user_id` (PK, FK to `users.id`) <br> - `shortcode` (UNIQUE, NOT NULL).                                                                                                                                                   |
+| **`subjects`**         | Academic courses (e.g., credits, type).                                    | - `code_name` (UNIQUE, NOT NULL) <br> - `credits` (1–5) <br> - `type` (THEORY/LAB).                                                                                                                                         |
+| **`trimesters`**       | Academic periods (e.g., status, dates).                                    | - `code` (UNIQUE, format `YY[1|2|3]`) <br> - `status` enforces phase logic (e.g., `COURSE_SELECTION` requires valid dates).                                                                                                 |
+| **`sections`**         | Class sections (e.g., capacity, time slots).                               | - `trimester_id` (FK to `trimesters.id`) <br> - `subject_id` (FK to `subjects.id`) <br> - `max_capacity` (≥1) <br> - `space_time_slots` (NOT EMPTY).                                                                        |
+| **`courses`**          | Student enrollments (e.g., status, grade).                                 | - Unique constraint: `(student_id, subject_id, trimester_id, section_id)` <br> - `grade` (0.0–4.0) <br> - `status` validates `section`/`grade` compatibility.                                                              |
+| **`prerequisites`**    | Subject dependencies (e.g., "CSE3521 requires CSE1116").                   | - `subject_id` (FK to `subjects.id`) <br> - `prerequisite_id` (FK to `subjects.id`) <br> - No cycles (code-enforced).                                                                                                       |
+| **`space_time`**       | Physical/time slots for sections.                                          | - Unique constraint: `(room_number, day_of_week, timeslot)` <br> - `time_slot` validated by `room_type`.                                                                                                                   |
+| **`notifications`**    | System announcements (e.g., scope, category).                              | - `scope` determines `trimester`/`section`/`target_user` validity (e.g., `SECTION` requires non-null `section_id`).                                                                                                        |
 
-**Notable Relationships**:
+##### **Join Tables**
+| Table                  | Purpose                                      | Structure                                                                                   |
+|------------------------|----------------------------------------------|---------------------------------------------------------------------------------------------|
+| **`faculty_subjects`** | Faculty’s teachable subjects.               | `faculty_id` (FK to `faculty.user_id`), `subject_id` (FK to `subjects.id`).                 |
+| **`section_space_times`** | Assigns time slots to sections.         | `section_id` (FK to `sections.id`), `space_time_id` (FK to `space_time.id`).                |
+| **`section_faculty`**  | Assigns teachers to sections.               | `section_id` (FK to `sections.id`), `faculty_id` (FK to `faculty.user_id`).                 |
 
-```markdown
-- `Users` → `Orders` (1:M via `user_id`)
-- `Products` ↔ `Suppliers` (M:M via `product_supplier_map`)
+---
+
+The `DB` class provides reactive CRUD operations via Hibernate and RxJava. Below are common use cases:
+
+#### **1. Saving an Entity**
+
+```java
+// Create a new student
+Student student = new Student();
+student.setName("John Doe");
+student.setEmail("john@uiu.ac.bd");
+student.setPassword("securePass123");
+student.setUniversityId(112233445);
+
+// Persist to DB
+DB.save(student)
+  .subscribe(
+      savedStudent -> System.out.println("Saved: " + savedStudent.getId()),
+      error -> System.err.println("Error: " + error.getMessage())
+  );
 ```
 
-#### **How It Works**
+#### **2. Querying Entities**
 
-```markdown
-- **CRUD Operations**: Example SQL snippet from `UserDAO.java`:
-  ```java
-  public void createUser(User u) {
-    String sql = "INSERT INTO users (id, name) VALUES (?, ?)";
-    // PreparedStatement usage...
-  }
-  ```
-
-- **Indexing**: `orders.created_at` index for faster reporting
-
+```java
+// Fetch first 10 courses, sorted by creation date
+DB.read(Course.class, "createdAt", true, 10, 0)
+  .filter(course -> course.getStatus() == CourseStatus.REGISTERED)
+  .subscribe(
+      course -> System.out.println("Course: " + course.getSubject().getName()),
+      error -> System.err.println("Error: " + error.getMessage())
+  );
 ```
 
-#### **Why It Exists**
-- "Single source of truth for multi-module system"
-- "Enables audit trails via transaction logging"
+#### **3. Updating an Entity**
 
-#### **Future Improvements**
-```markdown
-- **Scalability**: "Sharding for >1M records"
-- **Security**: "Column-level encryption for PII"
+```java
+// Update a student's email
+DB.findById(Student.class, studentId)
+  .subscribe(student -> {
+      student.setEmail("new.email@uiu.ac.bd");
+      DB.update(student).subscribe(
+          updated -> System.out.println("Updated!"),
+          error -> System.err.println("Update failed: " + error.getMessage())
+      );
+  });
+```
+
+#### **4. Deleting an Entity**
+
+```java
+// Delete a notification by ID
+DB.delete(Notification.class, notificationId)
+  .subscribe(
+      () -> System.out.println("Deleted successfully"),
+      error -> System.err.println("Deletion failed: " + error.getMessage())
+  );
+```
+
+#### **5. Complex Queries**
+
+```java
+// Count registered courses for a student
+DB.count(Course.class)
+  .map(total -> "Total courses: " + total)
+  .subscribe(System.out::println);
+
+// Check if a section is full
+DB.findById(Section.class, sectionId)
+  .map(section -> section.getCurrentCapacity() >= section.getMaxCapacity())
+  .subscribe(isFull -> System.out.println("Section full? " + isFull));
+```
+
+#### **6. Resetting the Database**
+
+```java
+// Wipe and re-seed with demo data
+DB.resetAndSeed()
+  .subscribe(
+      () -> System.out.println("Database reset complete"),
+      error -> System.err.println("Reset failed: " + error.getMessage())
+  );
+```
+
+#### **7. Transactional Operations**
+
+For custom transactions (e.g., batch updates):
+```java
+DB.exec(session -> {
+    // Manual Hibernate operations
+    session.createMutationQuery("UPDATE Course SET grade = 4.0 WHERE status = 'COMPLETED'").executeUpdate();
+    return null;
+}, "Batch Grade Update").subscribe();
 ```
 
 ---
+
+#### **Future Improvements**
+
+- Cache frequently accessed entities like `subjects` and `trimesters`.
+- Implement database-level triggers for cross-table validations (e.g., section capacity checks).
+
 
 ### **3.Y Bidirectional RPC**
 
