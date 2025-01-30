@@ -1,13 +1,11 @@
-# **Project Review: [Project Name]**
+# **ENROLIUM**
 
-## **1. Executive Summary**
+## **1. Summary**
 
-- **Purpose**: 2-3 sentences about project goals
-- **Key Components**:
-    - JavaFX frontend architecture
-    - Database system overview
-    - Bidirectional RPC implementation
-- **Development Timeline**: Highlight major milestones
+ENROLIUM was born out of the frustration students faced during chaotic course enrollment periods, where outdated systems often left learners scrambling for sections or stuck with incompatible schedules.
+This project reimagines enrollment as a collaborative, transparent process rather than a zero-sum race. At its core, ENROLIUM ensures fairness through randomized lotteries during high-demand registration windows while empowering students with tools like *real-time trade matching*—a graph-based system that lets users swap sections like puzzle pieces until everyone’s schedule clicks into place.
+Beyond individual needs, it acknowledges the reality of group learning: students can team up to coordinate schedules, though the system deliberately limits group advantages to prevent monopolization.
+The clean JavaFX interface hides sophisticated backend mechanics—atomic seat reservations, session-aware RPC calls, and ACID-compliant transactions—behind a deliberately minimalist design, prioritizing reliability over flashy visuals.
 
 ---
 
