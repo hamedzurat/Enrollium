@@ -20,7 +20,7 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 |---------------|---------------|----------------------------------|
 | Frontend      | JavaFX 17     | User interface rendering         |
 | Communication | gRPC/gSocket  | Bidirectional RPC implementation |
-| Database      | PostgreSQL 15 | Data persistence                 |
+| Database      | PostgreSQL 16.6 | Data persistence                 |
 
 ## **3. Feature Documentation**
 
@@ -41,21 +41,14 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 - User-facing impact (e.g., "Reduces checkout time by 40%")
 
 #### **How It Works**
-
-```markdown
 1. **Workflow**:
     - Step 1: User triggers [Action] in `MainUI.java`
     - Step 2: RPC call via `RpcService.sendRequest()`
     - Step 3: Database transaction in `InventoryDAO.updateStock()`
 
-2. **Key Classes**:
-    - `FeatureController.java`: Handles UI logic
-    - `DataProcessor.java`: Business logic
-
 3. **Patterns/Concepts**:
     - Observer pattern for UI updates
     - Connection pooling for DB access
-```
 
 #### **Why It Exists**
 
@@ -73,8 +66,6 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 **Implementation Status**: ✅ Complete
 
 **Demo**:
-![DB Schema Overview](path/to/er_diagram.png)
-*(Key tables: `users`, `courses`, `subjects`, `sections`, `trimesters`, `notifications`)*
 
 #### **What It Does**
 
@@ -130,33 +121,30 @@ DB.save(student)
 
 ```java
 // Fetch first 10 courses, sorted by creation date
-DB.read(Course.class, "createdAt", true, 10, 0)
-  .filter(course -> course.getStatus() == CourseStatus.REGISTERED)
-  .subscribe(
-      course -> System.out.println("Course: " + course.getSubject().getName()),
-      error -> System.err.println("Error: " + error.getMessage())
-  );
+DB.read(Student.class, limit, offset)
+    .timeout(20, TimeUnit.SECONDS)
+    .collect(ArrayList::new, (list, item) -> list.add(item))
+    .onErrorResumeNext(error -> new RuntimeException("Failed to fetch student list: " + error.getMessage()));
 ```
 
 #### **3. Updating an Entity**
 
 ```java
 // Update a student's email
-DB.findById(Student.class, studentId)
-  .subscribe(student -> {
-      student.setEmail("new.email@uiu.ac.bd");
-      DB.update(student).subscribe(
-          updated -> System.out.println("Updated!"),
-          error -> System.err.println("Update failed: " + error.getMessage())
-      );
-  });
+DB.findById(Student.class, UUID.fromString(id))
+ .toSingle()
+ .flatMap(student -> {
+     student.setName(name);
+     return DB.update(student);
+ })
+ .onErrorResumeNext(error -> new RuntimeException("Failed to update student: " + error.getMessage()));
 ```
 
 #### **4. Deleting an Entity**
 
 ```java
 // Delete a notification by ID
-DB.delete(Notification.class, notificationId)
+DB.delete(Student.class, UUID.fromString(id))
   .subscribe(
       () -> System.out.println("Deleted successfully"),
       error -> System.err.println("Deletion failed: " + error.getMessage())
@@ -207,8 +195,6 @@ DB.exec(session -> {
 ### **3.2 Bidirectional RPC System**
 
 **Implementation Status**: 🟡 Complete
-**Demo**: ![RPC Flow](https://via.placeholder.com/800x400.png?text=Client+↔+Server+Message+Exchange)
-
 
 #### **What It Does**
 
@@ -225,12 +211,6 @@ DB.exec(session -> {
    - Type hierarchy: `Message` → `Request`/`Response`
    - Session binding via `sessionToken` field
 
-2. **Key Classes**:
-   - `RPCConnection`: Manages socket I/O and message queues
-   - `ClientRPC`: Client-side connection manager
-   - `ServerRPC`: Server-side request router
-   - `SessionManager`: Tracks active sessions
-
 3. **Sequence**:
    1. Client establishes TCP connection
    2. Authentication handshake via `auth` method
@@ -241,45 +221,132 @@ DB.exec(session -> {
 **Code Snippet**:
 ```java
 // Client-side
-client.call("getSchedule", JsonUtils.createObject())
-      .timeout(3, TimeUnit.SECONDS)
-      .subscribe(response -> {
-          if(response.isError()) handleError();
-          else updateUI(response.getParams());
-      });
-
+ObjectNode authParams  = JsonUtils.createObject().put("email", email).put("password", password);
+Request    authRequest = Request.create(messageIdCounter.getAndIncrement(), "auth", authParams, null);
+Response authResponse = ClientRPC.getInstance().sendRequest(authRequest).timeout(5, TimeUnit.SECONDS).blockingGet();
+```
+```java
 // Server handler registration
-server.registerMethod("getSchedule", (params, req) ->
-    DB.read(Schedule.class, req.getSessionToken())
-      .map(JsonUtils::toJson)
-);
+server.registerMethod("auth", (params, request) -> {
+    try {
+        // Validate request parameters
+        if (params == null) return Single.error(new IllegalArgumentException("Missing auth parameters"));
+
+        String email    = JsonUtils.getString(params, "email");
+        String password = JsonUtils.getString(params, "password");
+
+        if (!(email != null && password != null && !email.trim().isEmpty() && !password.trim().isEmpty()))
+            return Single.error(new IllegalArgumentException("Invalid credentials"));
+
+        int size = Math.toIntExact(DB.count(User.class).blockingGet());
+
+        return DB.read(User.class, size, 0)
+                 .filter(user -> email.equals(user.getEmail()))
+                 .firstElement()
+                 .toSingle()
+                 .flatMap(user -> {
+                     if (!user.verifyPassword(password)) {
+                         return Single.error(new IllegalArgumentException("Invalid password"));
+                     }
+
+                     // Create session
+                     String UUID = user.getId().toString();
+                     SessionInfo session = SessionManager.getInstance().createSession(UUID, request.getConnection().getSocket(), server);
+
+                     // Return success response
+                     JsonNode response = JsonUtils.createObject()
+                                                  .put("sessionToken", session.getSessionToken())
+                                                  .put("uuid", UUID)
+                                                  .put("userType", user.getType().toString());
+
+                     return Single.just(response);
+                 })
+                 .onErrorResumeNext(error -> {
+                     if (error instanceof NoSuchElementException) return Single.error(new IllegalArgumentException("User not found"));
+                     return Single.error(error);
+                 });
+    } catch (Exception e) {
+        return Single.error(e);
+    }
+});
 ```
 
 **Message Structure**:
+- Request
 ```json
-// Request
 {
-  "id": 123,
-  "type": "req",
-  "method": "swapSection",
-  "sessionToken": "a1b2c3",
-  "params": {"from": "CSE_A", "to": "CSE_B"}
+    "id": 1,
+    "timestamp": 1738415230282,
+    "version": "r145.63cc2b3",
+    "type": "req",
+    "method": "auth",
+    "params": {
+        "email": "demo.student@uiu.ac.bd",
+        "password": "WrongPass"
+    },
+    "sessionToken": null,
+    "connection": null
 }
-
-// Success Response
+```
+- Success Response
+```json
 {
-  "id": 123,
-  "type": "res",
-  "method": "success",
-  "params": {"newSection": "CSE_B"}
+    "id": 1,
+    "timestamp": 1738415232717,
+    "version": "r145.63cc2b3",
+    "type": "res",
+    "method": "success",
+    "params": {
+        "sessionToken": "9361147112443298276352683881617408806308841024330508058726967887",
+        "uuid": "af0f9edf-73c3-47cc-85c7-851e1ea99f36",
+        "userType": "STUDENT"
+    },
+    "error": false,
+    "errorMessage": null
 }
-
-// Error Response
+```
+- Error Response
+```json
 {
-  "id": 123,
-  "type": "res",
-  "method": "error",
-  "params": {"message": "Section full"}
+    "id": 1,
+    "timestamp": 1738415230525,
+    "version": "r145.63cc2b3",
+    "type": "res",
+    "method": "error",
+    "params": {
+        "message": "Invalid password"
+    },
+    "error": true,
+    "errorMessage": "Invalid password"
+}
+```
+- Heartbeat
+```json
+{
+    "id": 8,
+    "timestamp": 1738415442684,
+    "version": "r145.63cc2b3",
+    "type": "req",
+    "method": "health",
+    "params": null,
+    "sessionToken": "9361147112443298276352683881617408806308841024330508058726967887",
+    "connection": null
+}
+```
+```json
+{
+    "id": 8,
+    "timestamp": 1738415442686,
+    "version": "r145.63cc2b3",
+    "type": "res",
+    "method": "success",
+    "params": {
+        "serverVersion": "r145.63cc2b3",
+        "status": "ok",
+        "serverTime": 1738415442686
+    },
+    "error": false,
+    "errorMessage": null
 }
 ```
 
@@ -302,53 +369,65 @@ server.registerMethod("getSchedule", (params, req) ->
 
 **Implementation Status**: ✅ Complete
 
-#### **Session Lifecycle**
-```java
-// Creation
-SessionInfo session = new SessionInfo(
-    "token123", "user456", connection
-);
+#### **What It Does**
+- Maintains authenticated user sessions with time-to-live (TTL) tracking
+- Binds network connections to user identities for stateful communication
+- Automatically cleans up expired/inactive sessions to free resources
 
-// Validation
-if(sessionManager.validateSession(token)) {
-    // Update last activity
-    sessionManager.updateHeartbeat(token);
-}
-
-// Cleanup (every 1min)
-sessions.removeIf(session ->
-    session.isExpired() ||
-    !session.isActive()
-);
-```
+#### **How It Works**
+1. **Session Creation**:
+    - Generates unique 64-character token via `SecureRandom` on successful authentication
+    - Stores session metadata (user ID, connection, timestamps) in `ConcurrentHashMap`
+2. **Validation**:
+    - Checks `isActive()` flag and `expirationTime` on every authenticated request
+    - Updates `lastHeartbeat` timestamp on valid operations
+3. **Cleanup**:
+    - Scheduled thread scans sessions every 1 minute
+    - Removes sessions exceeding 24-hour TTL or 30-second heartbeat timeout
 
 #### **Session Storage**
 ```json
 {
-  "sessionToken": "a1b2c3",
-  "userId": "std_789",
-  "tags": ["premium", "cse_department"],
-  "createdAt": 1712345678,
-  "lastHeartbeat": 1712349000
+    "9361147112443298276352683881617408806308841024330508058726967887" : {
+        "sessionToken" : "9361147112443298276352683881617408806308841024330508058726967887",
+        "userId" : "af0f9edf-73c3-47cc-85c7-851e1ea99f36",
+        "tags" : [ ],
+        "createdAt" : 1738415232717,
+        "lastHeartbeat" : 1738415262686,
+        "expirationTime" : 1738501662686,
+        "active" : true,
+        "expired" : false,
+        "ip" : "127.0.0.1"
+    }
 }
 ```
 
 ### **3.4 Rate Limiting**
 
-**Implementation**:
-```java
-// Server-side check
-if(rateLimiter.isRequestDenied(ip)) {
-    socket.close();
-    return;
+Demo: ![rate-limited.png](readame-assets/rate-limited.png)
+
+#### **What It Does**
+- Enforces request quotas to prevent system overload
+- Applies different limits for unauthenticated (IP-based) and authenticated (session-based) traffic
+- Protects against DDoS and brute-force attacks
+
+#### **How It Works**
+1. **Counting Mechanism**:
+    - Uses `ConcurrentHashMap` to track request counts per IP/session
+    - Merges counts atomically using `Integer::sum`
+2. **Limit Enforcement**:
+    - Denies requests exceeding 32/minute for IPs (pre-auth)
+    - Allows 512/minute for authenticated sessions
+3. **Periodic Reset**:
+    - Scheduled task clears all counters every 60 seconds
+
+#### **Storage**:
+```json
+{
+        "9361147112443298276352683881617408806308841024330508058726967887" : 1,
+        "127.0.0.1" : 4
 }
 ```
-
-**Rules**:
-- 32 requests/minute per IP (pre-auth)
-- 512 requests/minute per session (post-auth)
-- Global 10k RPS server limit
-
 
 ### **3.5 System Logging Infrastructure**
 
@@ -365,28 +444,50 @@ if(rateLimiter.isRequestDenied(ip)) {
    - `Issue.print(logger)` called during application bootstrap
 
 2. **Data Collection**:
-   - System Properties: `getSystemProperties()` via `System.getProperties()`
-   - Environment Variables: `getEnvironmentVariables()` via `System.getenv()`
-   - Hardware Metrics: `getHardwareInfo()` using `OperatingSystemMXBean`
+   - System Properties via `System.getProperties()`
+   - Environment Variables via `System.getenv()`
+   - Hardware Metrics using `OperatingSystemMXBean`
 
 3. **Formatting**:
    - Section headers with indented key-value pairs
    - Memory values auto-converted to GB
 
-**Key Classes**:
-- `Issue.java`: Core logging logic
-- SLF4J Logger: Output channel
-
 **Example Output**:
-```
+```txt
 JAVA SYSTEM PROPERTIES:
-java.version: 17.0.9
-user.timezone: UTC
+    file.encoding: UTF-8
+    java.class.version: 67.0
+    java.home: /usr/lib/jvm/java-23-openjdk
+    ...
+
 ENVIRONMENT VARIABLES:
-PATH: /usr/local/bin...
+    BROWSER: firefox
+    EDITOR: micro
+    LANG: en_US.UTF-8
+    LANGUAGE: en_US:en:C
+    LC_ADDRESS: C.utf8
+    LC_COLLATE: C.utf8
+    LC_CTYPE: en_US.UTF-8
+    LC_IDENTIFICATION:
+    LC_MEASUREMENT: C.utf8
+    LC_MESSAGES: en_US.UTF-8
+    LC_MONETARY: en_US.UTF-8
+    LC_NAME: en_US.UTF-8
+    LC_NUMERIC: en_US.UTF-8
+    LC_PAPER: en_US.UTF-8
+    LC_TELEPHONE: C.utf8
+    LC_TIME: C.utf8
+    ...
+
 HARDWARE INFORMATION:
-OS Architecture: aarch64
-Total Physical Memory: 16 GB
+    OS Name: Linux
+    OS Version: 6.12.10-zen1-1-zen
+    OS Architecture: amd64
+    Available Processors (Cores): 8
+    Total Physical Memory: 23 GB
+    Free Physical Memory: 8 GB
+    Total Swap Space: 11 GB
+    Free Swap Space: 6 GB
 ```
 
 #### **Why It Exists**
@@ -404,16 +505,13 @@ Total Physical Memory: 16 GB
 
 #### **What It Does**
 - Generates version strings from Git history
-- Formats as `r<commit_count>.<short_hash>` (e.g., `r142.abc1234`)
-- Automates build reproducibility
+- Formats as `r<commit_count>.<short_hash>` (e.g., `r145.63cc2b3`)
+- Automatically generates new one at build
 
 #### **Implementation**
 
 ```java
-// Loads from generated version.properties
-public static String getVersion() {
-    return VERSION;  // Populated from Gradle-built properties
-}
+String v = Version.getVersion();
 ```
 
 #### **Workflow**
@@ -433,10 +531,10 @@ public static String getVersion() {
 
 **Implementation Status**: 🟡 Partial (90%)
 
-**Demo**: ![Language Switch](https://via.placeholder.com/400x200.png?text=EN→BN+Transition)
+**Demo**: ![i18n.mp4](readame-assets/i18n.mp4)
 
 #### **What It Does**
-- Supports 2 languages (English, Bengali)
+- Can support more languages by editing an enum
 - Centralized translation management
 - Hot-reload language without restart
 
@@ -451,20 +549,10 @@ public static String getVersion() {
 3. **Reactive Updates**:
    - `SettingsManager` notifies `I18nManager` of language changes
 
-
-**Key Classes**:
-- `I18nManager.java`: Singleton translation coordinator
-- `Language.java`: Enum with locale metadata
-- `TranslationKey.java`: 35+ UI element identifiers
-
 **Usage**:
 ```java
 String greeting = I18nManager.instance.get(TranslationKey.HELLO);
 ```
-
-#### **Why It Exists**
-- Critical for Bangladesh's bilingual user base
-- Foundation for future regional expansions
 
 #### **Future Improvements**
 - Add right-to-left (RTL) layout support
@@ -483,7 +571,8 @@ String greeting = I18nManager.instance.get(TranslationKey.HELLO);
 ```java
 // Store current user
 Volatile.getInstance().put("currentUser", user);
-
+```
+```java
 // Retrieve chat history
 List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 ```
@@ -492,12 +581,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - ConcurrentHashMap backend for scalability
 - Audit logging on write/delete operations
 - Singleton access via double-checked locking
-
-#### **Design Rationale**
-| Aspect        | Choice                  | Reason                          |
-|---------------|-------------------------|---------------------------------|
-| Concurrency   | ConcurrentHashMap       | Lock-striping for performance  |
-| Serialization | None (In-memory only)   | Ephemeral data purpose          |
 
 #### **Future Improvements**
 - TTL-based auto-expiry for entries
@@ -508,7 +591,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 **Implementation Status**: ✅ Complete
 
-**Demo**: ![Settings File](https://via.placeholder.com/600x150.png?text=settings.json+with+dark_mode%2C+language%2C+font)
+**Demo**: ![settings.json.png](readame-assets/settings.json.png)
 
 #### **What It Does**
 - Maintains 9+ user preferences across sessions
@@ -516,19 +599,14 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Type-safe validation with reactive updates
 
 #### **Data Flow**
-```mermaid
-graph LR
-    UI[Settings UI] --> |RxJava Stream| SM[SettingsManager]
-    SM --> |JSON| File[(settings.json)]
-    File --> |On Launch| SM
-    SM --> |Observables| UI
-```
+
+![settings.png](readame-assets/settings.png)
 
 **Key Features**:
 - Cross-platform config paths:
-    - Windows: `%APPDATA%\enrollium`
-    - Linux: `~/.config/enrollium`
-    - macOS: `~/Library/Application Support/enrollium`
+    - Windows: `%APPDATA%\enrollium\settings.json`
+    - Linux: `~/.config/enrollium/settings.json`
+    - macOS: `~/Library/Application Support/enrollium/settings.json`
 - Versioned schema migrations
 - Debounced autosave (1-second delay)
 
