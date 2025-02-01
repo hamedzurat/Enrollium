@@ -7,8 +7,6 @@ This project reimagines enrollment as a collaborative, transparent process rathe
 Beyond individual needs, it acknowledges the reality of group learning: students can team up to coordinate schedules, though the system deliberately limits group advantages to prevent monopolization.
 The clean JavaFX interface hides sophisticated backend mechanics—atomic seat reservations, session-aware RPC calls, and ACID-compliant transactions—behind a deliberately minimalist design, prioritizing reliability over flashy visuals.
 
----
-
 ## **2. System Overview**
 
 ### **2.1 Architecture Diagram**
@@ -24,13 +22,9 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 | Communication | gRPC/gSocket  | Bidirectional RPC implementation |
 | Database      | PostgreSQL 15 | Data persistence                 |
 
----
-
 ## **3. Feature Documentation**
 
 *Repeat for each feature including the database and RPC system*
-
----
 
 ### **3.X [Feature Name]**
 
@@ -70,13 +64,9 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 
 #### **Future Improvements**
 
-```markdown
 - **Performance**: "Replace ArrayList with HashMap for O(1) lookups"
 - **Functionality**: "Add bulk edit support (partially implemented in `BulkEditBranch`)"
 - **UX**: "Tooltips for form fields shown in [Fig 3.X]"
-```
-
----
 
 ### **3.1 Database System**
 
@@ -86,16 +76,12 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 ![DB Schema Overview](path/to/er_diagram.png)
 *(Key tables: `users`, `courses`, `subjects`, `sections`, `trimesters`, `notifications`)*
 
----
-
 #### **What It Does**
 
 - Single source of truth.
 - Enforces ACID-compliant transactions for all critical operations.
 - Supports complex relationships (e.g., prerequisites, trimester phases, section-teacher assignments).
 - Generates demo data.
-
----
 
 #### **Schema Design**
 
@@ -119,8 +105,6 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 | **`faculty_subjects`** | Faculty’s teachable subjects.               | `faculty_id` (FK to `faculty.user_id`), `subject_id` (FK to `subjects.id`).                 |
 | **`section_space_times`** | Assigns time slots to sections.         | `section_id` (FK to `sections.id`), `space_time_id` (FK to `space_time.id`).                |
 | **`section_faculty`**  | Assigns teachers to sections.               | `section_id` (FK to `sections.id`), `faculty_id` (FK to `faculty.user_id`).                 |
-
----
 
 The `DB` class provides reactive CRUD operations via Hibernate and RxJava. Below are common use cases:
 
@@ -215,49 +199,347 @@ DB.exec(session -> {
 }, "Batch Grade Update").subscribe();
 ```
 
----
-
 #### **Future Improvements**
 
 - Cache frequently accessed entities like `subjects` and `trimesters`.
 - Implement database-level triggers for cross-table validations (e.g., section capacity checks).
 
+### **3.2 Bidirectional RPC System**
 
-### **3.Y Bidirectional RPC**
+**Implementation Status**: 🟡 Complete
+**Demo**: ![RPC Flow](https://via.placeholder.com/800x400.png?text=Client+↔+Server+Message+Exchange)
 
-**Implementation Status**: 🟡 Partial (Auth missing)
-
-**Demo**:
-![RPC Sequence Diagram](path/to/rpc_flow.png)
 
 #### **What It Does**
 
-- Enables real-time server→client notifications
-- Handles 150+ concurrent requests
+- Enables real-time client-server communication with session-aware routing
+- Handles 150+ concurrent requests with automatic retries and timeouts
+- Provides atomic message delivery with JSON serialization
+- Supports server-initiated notifications (e.g., schedule changes)
 
 #### **How It Works**
 
-```markdown
-1. **Protocol**: Protobuf schema in `message.proto`
-2. **Flow**:
-    - Client → Server: `Request.newBuilder().setUserId(...)`
-    - Server → Client: Streaming `Response` via `Observer.onNext()`
-3. **Key Classes**: `RpcClientManager.java`, `MessageDispatcher.java`
+
+1. **Protocol**:
+   - Message framing: 4-byte length header + JSON payload
+   - Type hierarchy: `Message` → `Request`/`Response`
+   - Session binding via `sessionToken` field
+
+2. **Key Classes**:
+   - `RPCConnection`: Manages socket I/O and message queues
+   - `ClientRPC`: Client-side connection manager
+   - `ServerRPC`: Server-side request router
+   - `SessionManager`: Tracks active sessions
+
+3. **Sequence**:
+   1. Client establishes TCP connection
+   2. Authentication handshake via `auth` method
+   3. Subsequent requests use session token
+   4. Server pushes notifications via same channel
+
+
+**Code Snippet**:
+```java
+// Client-side
+client.call("getSchedule", JsonUtils.createObject())
+      .timeout(3, TimeUnit.SECONDS)
+      .subscribe(response -> {
+          if(response.isError()) handleError();
+          else updateUI(response.getParams());
+      });
+
+// Server handler registration
+server.registerMethod("getSchedule", (params, req) ->
+    DB.read(Schedule.class, req.getSessionToken())
+      .map(JsonUtils::toJson)
+);
 ```
 
-#### **Why It Exists**
+**Message Structure**:
+```json
+// Request
+{
+  "id": 123,
+  "type": "req",
+  "method": "swapSection",
+  "sessionToken": "a1b2c3",
+  "params": {"from": "CSE_A", "to": "CSE_B"}
+}
 
-- "Eliminate polling for inventory updates"
-- "Low-latency requirement (<200ms)"
+// Success Response
+{
+  "id": 123,
+  "type": "res",
+  "method": "success",
+  "params": {"newSection": "CSE_B"}
+}
+
+// Error Response
+{
+  "id": 123,
+  "type": "res",
+  "method": "error",
+  "params": {"message": "Section full"}
+}
+```
+
+**Connection Lifecycle**:
+1. Client connects via `ClientRPC.start()`
+2. Auth exchange using credentials
+3. Server creates `SessionInfo` with 24h TTL
+4. Heartbeats reset TTL on each message
+5. Cleanup thread removes expired sessions
 
 #### **Future Improvements**
 
-```markdown
-- **Security**: Add OAuth2 handshake
-- **Recovery**: Implement retry-with-backoff in `RpcRetryHandler`
+- Add encryption in `RPCConnection`
+- Session token rotation
+- Protobuf for serialization
+- Message compression for large payloads
+- Idempotency keys for retries
+
+### **3.3 Session Management**
+
+**Implementation Status**: ✅ Complete
+
+#### **Session Lifecycle**
+```java
+// Creation
+SessionInfo session = new SessionInfo(
+    "token123", "user456", connection
+);
+
+// Validation
+if(sessionManager.validateSession(token)) {
+    // Update last activity
+    sessionManager.updateHeartbeat(token);
+}
+
+// Cleanup (every 1min)
+sessions.removeIf(session ->
+    session.isExpired() ||
+    !session.isActive()
+);
 ```
 
----
+#### **Session Storage**
+```json
+{
+  "sessionToken": "a1b2c3",
+  "userId": "std_789",
+  "tags": ["premium", "cse_department"],
+  "createdAt": 1712345678,
+  "lastHeartbeat": 1712349000
+}
+```
+
+### **3.4 Rate Limiting**
+
+**Implementation**:
+```java
+// Server-side check
+if(rateLimiter.isRequestDenied(ip)) {
+    socket.close();
+    return;
+}
+```
+
+**Rules**:
+- 32 requests/minute per IP (pre-auth)
+- 512 requests/minute per session (post-auth)
+- Global 10k RPS server limit
+
+
+### **3.5 System Logging Infrastructure**
+
+**Implementation Status**: ✅ Complete
+
+#### **What It Does**
+- Captures critical system metadata during startup
+- Logs Java properties, environment variables, and hardware specs
+- Provides runtime diagnostics for troubleshooting
+
+#### **How It Works**
+
+1. **Entry Point**:
+   - `Issue.print(logger)` called during application bootstrap
+
+2. **Data Collection**:
+   - System Properties: `getSystemProperties()` via `System.getProperties()`
+   - Environment Variables: `getEnvironmentVariables()` via `System.getenv()`
+   - Hardware Metrics: `getHardwareInfo()` using `OperatingSystemMXBean`
+
+3. **Formatting**:
+   - Section headers with indented key-value pairs
+   - Memory values auto-converted to GB
+
+**Key Classes**:
+- `Issue.java`: Core logging logic
+- SLF4J Logger: Output channel
+
+**Example Output**:
+```
+JAVA SYSTEM PROPERTIES:
+java.version: 17.0.9
+user.timezone: UTC
+ENVIRONMENT VARIABLES:
+PATH: /usr/local/bin...
+HARDWARE INFORMATION:
+OS Architecture: aarch64
+Total Physical Memory: 16 GB
+```
+
+#### **Why It Exists**
+- Essential for debugging environment-specific issues
+- Provides visibility into resource constraints
+
+#### **Future Improvements**
+- Add disk space monitoring
+- Periodic runtime snapshots
+- Integration with monitoring systems like Prometheus
+
+### **3.6 Semantic Version Generation**
+
+**Implementation Status**: ✅ Complete
+
+#### **What It Does**
+- Generates version strings from Git history
+- Formats as `r<commit_count>.<short_hash>` (e.g., `r142.abc1234`)
+- Automates build reproducibility
+
+#### **Implementation**
+
+```java
+// Loads from generated version.properties
+public static String getVersion() {
+    return VERSION;  // Populated from Gradle-built properties
+}
+```
+
+#### **Workflow**
+1. Build process executes `generateVersion()` Gradle task
+2. Writes version to `src/main/resources/version.properties`
+3. Application loads via static initializer
+
+#### **Why It Exists**
+- Eliminates manual version tracking
+- Links deployments to exact code states
+
+#### **Future Improvements**
+- Nightly build automation
+- Version metadata endpoint in RPC system
+
+### **3.7 Internationalization**
+
+**Implementation Status**: 🟡 Partial (90%)
+
+**Demo**: ![Language Switch](https://via.placeholder.com/400x200.png?text=EN→BN+Transition)
+
+#### **What It Does**
+- Supports 2 languages (English, Bengali)
+- Centralized translation management
+- Hot-reload language without restart
+
+#### **Architecture**
+1. **Resource Bundles**:
+   - `messages_en.properties`: English translations
+   - `messages_bn.properties`: Bengali translations
+
+2. **Validation**:
+   - Startup check for missing keys in all bundles
+
+3. **Reactive Updates**:
+   - `SettingsManager` notifies `I18nManager` of language changes
+
+
+**Key Classes**:
+- `I18nManager.java`: Singleton translation coordinator
+- `Language.java`: Enum with locale metadata
+- `TranslationKey.java`: 35+ UI element identifiers
+
+**Usage**:
+```java
+String greeting = I18nManager.instance.get(TranslationKey.HELLO);
+```
+
+#### **Why It Exists**
+- Critical for Bangladesh's bilingual user base
+- Foundation for future regional expansions
+
+#### **Future Improvements**
+- Add right-to-left (RTL) layout support
+- Dynamic bundle reloading from filesystem
+- Pluralization rules implementation
+
+### **3.8 Global State Management**
+
+**Implementation Status**: ✅ Complete
+
+#### **What It Does**
+- Thread-safe shared memory for cross-component data
+- Stores session tokens, UI states, and temporary workflows
+
+#### **Implementation**
+```java
+// Store current user
+Volatile.getInstance().put("currentUser", user);
+
+// Retrieve chat history
+List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
+```
+
+**Key Features**:
+- ConcurrentHashMap backend for scalability
+- Audit logging on write/delete operations
+- Singleton access via double-checked locking
+
+#### **Design Rationale**
+| Aspect        | Choice                  | Reason                          |
+|---------------|-------------------------|---------------------------------|
+| Concurrency   | ConcurrentHashMap       | Lock-striping for performance  |
+| Serialization | None (In-memory only)   | Ephemeral data purpose          |
+
+#### **Future Improvements**
+- TTL-based auto-expiry for entries
+- Size monitoring and eviction policies
+- Cluster-aware replication for distributed mode
+
+### **3.9 Persistent User Settings**
+
+**Implementation Status**: ✅ Complete
+
+**Demo**: ![Settings File](https://via.placeholder.com/600x150.png?text=settings.json+with+dark_mode%2C+language%2C+font)
+
+#### **What It Does**
+- Maintains 9+ user preferences across sessions
+- OS-appropriate config file storage
+- Type-safe validation with reactive updates
+
+#### **Data Flow**
+```mermaid
+graph LR
+    UI[Settings UI] --> |RxJava Stream| SM[SettingsManager]
+    SM --> |JSON| File[(settings.json)]
+    File --> |On Launch| SM
+    SM --> |Observables| UI
+```
+
+**Key Features**:
+- Cross-platform config paths:
+    - Windows: `%APPDATA%\enrollium`
+    - Linux: `~/.config/enrollium`
+    - macOS: `~/Library/Application Support/enrollium`
+- Versioned schema migrations
+- Debounced autosave (1-second delay)
+
+#### **Why It Exists**
+- Essential for personalized user experience
+- Reduces setup friction across devices
+
+#### **Future Improvements**
+- Cloud sync via RPC system
+- Settings import/export UI
+- Historical version rollback
 
 ## **4. Appendices**
 
