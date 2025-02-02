@@ -570,10 +570,9 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 **Implementation Status**: ✅ Complete
 
 ![settings.json.png](readame-assets/settings.json.png)
-![settings.png](readame-assets/settings.png)
 
 #### **What It Does**
-- Maintains 9+ user preferences across sessions
+- Maintains all user preferences across sessions
 - OS-appropriate config file storage
 - Type-safe validation with reactive updates
 
@@ -763,16 +762,14 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 **Implementation Status**: 🟡 Partial
 
-![db_course_form.png](readame-assets/db_course_form.png)
 ![db_course_table.png](readame-assets/db_course_table.png)
+![db_course_form.png](readame-assets/db_course_form.png)
 
 **Key Features**
-- Tracks course, faculty, and student info.
-- Manages schedules, rooms, and prerequisites.
-- Links with notifications for updates.
-- Keeps everything organized and easy to access.
+- CRUD for all infos in db.
+- Keeps everything organized and easy to access and modify.
 
-**What’s Next**
+**Future Improvements**
 - Add more filters for better search options.
 - Sync changes across the platform instantly.
 - Provide insights into enrollment trends.
@@ -782,6 +779,11 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 ![history.png](readame-assets/history.png)
 
 - This shows a students all the course list.
+
+**Future Improvements**
+- Better UI.
+- Better statistics.
+- Better actions.
 
 ### **Search**
 
@@ -800,11 +802,10 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Secure login with passwords.
 - Reset forgotten passwords via email.
 
-**What’s Next**
+**Future Improvements**
 - Use magic links or one-time codes instead of passwords.
 - Notify users of suspicious activity on their account.
 - Let users log in once to access multiple platforms.
-
 
 ### **Theme Change**
 
@@ -816,8 +817,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Switch between light and dark mode.
 - Choose from pre-designed themes or create your own.
 
-**What’s Next**
+**Future Improvements**
 - Adjust themes based on lighting or user preferences.
 - Let users customize fonts, spacing, and colors.
 - Add fun themes for holidays or special events.
-- Save theme preferences across all devices.
