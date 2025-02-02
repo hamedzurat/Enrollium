@@ -24,42 +24,7 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 
 ## **3. Feature Documentation**
 
-*Repeat for each feature including the database and RPC system*
-
-### **3.X [Feature Name]**
-
-**Implementation Status**:
-✅ Complete / 🟡 Partial (70%) / ❌ Prototype
-
-**Demo**:
-![Feature Demo GIF](path/to/demo.gif)
-*(Or: [Video Link] with timestamps for key actions)*
-
-#### **What It Does**
-
-- Core functionality (e.g., "Real-time inventory updates")
-- User-facing impact (e.g., "Reduces checkout time by 40%")
-
-#### **How It Works**
-1. **Workflow**:
-    - Step 1: User triggers [Action] in `MainUI.java`
-    - Step 2: RPC call via `RpcService.sendRequest()`
-    - Step 3: Database transaction in `InventoryDAO.updateStock()`
-
-3. **Patterns/Concepts**:
-    - Observer pattern for UI updates
-    - Connection pooling for DB access
-
-#### **Why It Exists**
-
-- Business need: "Required for compliance with [Regulation X]"
-- Technical rationale: "Replaces legacy system bottleneck"
-
-#### **Future Improvements**
-
-- **Performance**: "Replace ArrayList with HashMap for O(1) lookups"
-- **Functionality**: "Add bulk edit support (partially implemented in `BulkEditBranch`)"
-- **UX**: "Tooltips for form fields shown in [Fig 3.X]"
+![about.png](readame-assets/about.png)
 
 ### **Database System**
 
@@ -404,7 +369,7 @@ server.registerMethod("auth", (params, request) -> {
 
 ### **Rate Limiting**
 
-Demo: ![rate-limited.png](readame-assets/rate-limited.png)
+![rate-limited.png](readame-assets/rate-limited.png)
 
 #### **What It Does**
 - Enforces request quotas to prevent system overload
@@ -531,7 +496,7 @@ String v = Version.getVersion();
 
 **Implementation Status**: 🟡 Partial (90%)
 
-**Demo**: ![i18n.mp4](readame-assets/i18n.mp4)
+**Demo**:
 
 #### **What It Does**
 - Can support more languages by editing an enum
@@ -591,7 +556,8 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 **Implementation Status**: ✅ Complete
 
-**Demo**: ![settings.json.png](readame-assets/settings.json.png)
+![settings.json.png](readame-assets/settings.json.png)
+![settings.png](readame-assets/settings.png)
 
 #### **What It Does**
 - Maintains 9+ user preferences across sessions
@@ -619,98 +585,173 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Settings import/export UI
 - Historical version rollback
 
-### **Chat**
+### **Chat System**
 
-**Key Features**
-- Real-time messaging for smooth conversations.
-- Saves chat history so you never lose track.
-- Customize notifications, themes, and more.
+**Implementation Status**: Complete
 
+![chat_start.png](readame-assets/chat_start.png)
+![chat_ui.png](readame-assets/chat_ui.png)
 
-**What’s Next**
-- Sync chats across devices with cloud support.
-- Add more fun options like emojis and custom fonts.
-- Let users search through old messages easily.
+#### **What It Does**
 
-### **Offered Courses**
+- **Core Functionality**: Enables real-time chat between users with persistent message history.
+- **User Impact**: Provides a seamless communication experience with intuitive UI, message history, and system notifications.
 
-**Key Features**
-- A searchable list of all available courses.
-- Details like schedules, instructors, and prerequisites.
-- Filter and sort courses to find what you need.
+### **Offered Course Page**
 
+**Implementation Status**: ✅ Complete
 
-**What’s Next**
-- Add more filters like course format or language.
-- Help users track their progress in enrolled courses.
+![offered_courses.png](readame-assets/offered_courses.png)
 
-### **Section Selection**
+#### **What It Does**
 
-**Key Features**
-- Pick course sections based on schedule.
-- See registration status in real-time.
-- Check how many seats are left in a section.
-- Get added to a waitlist if a section is full.
+- Displays a list of offered courses with filtering options (Trimester, Course Type, Search).
+- Allows students to **select, register, withdraw, or retake** courses dynamically.
+- Provides **real-time status updates** on course selection.
 
-**What’s Next**
-- Suggest sections that fit  preferences.
-- Warn you if a section clashes with your schedule.
-- Send reminders for deadlines or waitlist updates.
-- Sync course schedule with your calendar.
+#### **Why It Exists**
 
-### **Trade**
+- **Business Need**: Enhances the course enrollment process for students.
+- **Technical Rationale**: Reduces server load by implementing efficient RPC calls and caching.
 
-**Key Features**
-- List items or services you want to trade.
-- Search and filter to find what you need.
-- Negotiate deals through chat or offers.
-- Rate and review trade partners for trust.
+#### **Future Improvements**
 
-**What’s Next**
-- Add extra security for high-value trades.
-- Show users their past trade history.
+- **Performance**: Optimize filtering logic using indexed lookups.
+- **Functionality**: Implement bulk course selection.
+- **UX**: Improve accessibility by adding keyboard navigation support.
 
-### **Server Status**
+### **Section Selection & Registration Status**
 
-**Key Features**
-- Live updates on server health and uptime.
-- Alerts for maintenance or outages.
-- Track past server performance.
-- Get notifications via email or SMS.
+**Implementation Status**: 🟡 Partial
 
-**What’s Next**
-- Predict server issues before they happen.
-- Let users customize how they get alerts.
-- Track server status across different regions.
-- Show how server issues might affect specific features.
+![section_selection.png](readame-assets/section_selection.png)
+![section_selection_selected.png](readame-assets/section_selection_selected.png)
+![section_selection_stats.png](readame-assets/section_selection_stats.png)
 
-### **Send Notification**
+#### **What It Does**
+- Enables users to manage course sections, including subject, trimester, and capacity.
+- Provides real-time registration status with progress tracking and statistics.
 
-**Key Features**
-- Send alerts via email, SMS, or push notifications.
-- Customize messages based on user actions.
-- Notifications go out instantly when needed.
+#### **Future Improvements**
+- **Performance**: Optimize table refresh logic for large datasets.
+- **Functionality**: Allow bulk section creation and edits.
+- **UX**: Improve notification system and introduce filtering options for section searches.
 
+### **Trade Feature**
 
-**What’s Next**
-- Add images or buttons to make alerts more engaging.
-- Support notifications in multiple languages.
-- Provide detailed reports on notification performance.
+**Implementation Status**: 🟡 Partial
 
-### **Withdraw**
+![trade.png](readame-assets/trade.png)
 
-**Key Features**
+#### **What It Does**
 
-- Supports multiple withdrawal methods.
-- Shows fees and limits upfront.
-- Keeps a record of all past withdrawals.
+- Enables students to **swap course sections** or **offer trades** with others.
+- Provides an **interactive UI** for selecting sections, proposing trades, and accepting offers.
+- Uses a **real-time update mechanism** to ensure trade availability stays current.
 
-**What’s Next**
-- Speed up withdrawal processing times.
-- Support more currencies for global users.
-- Let users set up recurring withdrawals.
+#### **Why It Exists**
+
+- **Business Need**: Allows students to **self-manage section changes**, reducing admin workload.
+- **Technical Rationale**: Replaces a **manual trade request system**, improving efficiency.
+
+#### **Future Improvements**
+
+- **Performance**: Cache frequently accessed trade data to reduce API calls.
+- **Functionality**: Add **bulk trade requests** to facilitate multiple swaps at once.
+- **UX**: Provide **visual indicators** for pending, accepted, or rejected trades.
+
+### **Server Status Monitoring**
+
+**Implementation Status**: 🟡 Completed
+
+![stats.png](readame-assets/stats.png)
+
+#### **What It Does**
+
+- Provides real-time monitoring of server performance metrics.
+- Displays CPU, RAM, Disk, and Network usage via line charts.
+- Fetches and updates server statistics dynamically every second.
+
+**Patterns/Concepts**:
+- Observer pattern for UI updates.
+- Timeline-based periodic data fetching.
+- Asynchronous RPC calls for server communication.
+
+#### **Why It Exists**
+
+- **Business Need**: Ensures real-time monitoring for system administrators to track performance and prevent downtimes.
+- **Technical Rationale**: Replaces manual log-based tracking with a dynamic, interactive dashboard.
+
+#### **Future Improvements**
+
+- **Performance**: Optimize data handling to prevent UI lag when updating charts.
+- **Functionality**: Add historical data visualization beyond the last 30 seconds.
+- **UX**: Implement tooltips and additional analytics for deeper insights into server performance trends.
+
+### **Notification**
+
+**Implementation Status**: ✅ Partial
+
+![noti.png](readame-assets/noti.png)
+
+#### **What It Does**
+
+- Enables sending notifications with customizable title, content, category, and scope.
+- Provides options to create, update, and delete notifications.
+- Supports quick demo content filling for testing purposes.
+
+**Patterns/Concepts**:
+- Observer pattern for UI updates.
+- Form-based input validation.
+- Modular UI components for reusability.
+
+#### **Why It Exists**
+
+- **Business Need**: Facilitates real-time communication with users.
+- **Technical Rationale**: Provides a structured and user-friendly notification system, replacing ad-hoc message handling.
+
+#### **Future Improvements**
+
+- **Performance**: Optimize UI responsiveness for large-scale notification batches.
+- **Functionality**: Add scheduling support for delayed notifications.
+- **UX**: Implement rich-text support for better message formatting.
+
+### **Course Withdrawal**
+
+**Implementation Status**: 🟡 Partial
+
+![withdraw_req.png](readame-assets/withdraw_req.png)
+![withdraw_res.png](readame-assets/withdraw_res.png)
+
+#### **What It Does**
+
+- Provides an interface for students to submit withdrawal requests.
+- Allows administrators to review, approve, or reject requests.
+- Displays real-time updates on the request status.
+
+#### **Patterns/Concepts**
+
+- **Observer Pattern**: Used for updating the UI dynamically when a request is processed.
+- **MVC Architecture**: Separates request handling logic from UI components.
+- **State Management**: Requests can exist in different states: *Pending, Approved, Rejected*.
+
+#### **Why It Exists**
+
+- **Business Need**: Ensures a structured process for students to withdraw from courses.
+- **Technical Rationale**: Replaces manual processing with a digital workflow to improve efficiency.
+
+#### **Future Improvements**
+
+- **Performance**: Optimize UI rendering with lazy loading for large datasets.
+- **Functionality**: Implement batch processing for multiple requests at once.
+- **UX**: Add filtering and sorting options for withdrawal requests.
 
 ### **Comprehensive Database Management**
+
+**Implementation Status**: 🟡 Partial
+
+![db_course_form.png](readame-assets/db_course_form.png)
+![db_course_table.png](readame-assets/db_course_table.png)
 
 **Key Features**
 - Tracks course, faculty, and student info.
@@ -723,42 +764,46 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Sync changes across the platform instantly.
 - Provide insights into enrollment trends.
 
-### **Theme Change**
-
-**Key Features**
-- Switch between light and dark mode.
-- Choose from pre-designed themes or create your own.
-- Auto-switch themes based on time of day.
 
 
-**What’s Next**
-- Adjust themes based on lighting or user preferences.
-- Let users customize fonts, spacing, and colors.
-- Add fun themes for holidays or special events.
-- Save theme preferences across all devices.
+### **History**
+
+![history.png](readame-assets/history.png)
+
+### **Search**
+
+![search.png](readame-assets/search.png)
+
+
 
 ### **Login, User Info, and Forgot Password**
 
+![successful_student_login.png](readame-assets/successful_student_login.png)
+![student_user_info.png](readame-assets/student_user_info.png)
+![teacher_user_info.png](readame-assets/teacher_user_info.png)
+
 **Key Features**
-- Secure login with passwords, MFA, and CAPTCHA.
-- Update your profile info easily.
-- Reset forgotten passwords via email or SMS.
-- Log out of other devices remotely.
+- Secure login with passwords.
+- Reset forgotten passwords via email.
 
 **What’s Next**
 - Use magic links or one-time codes instead of passwords.
 - Notify users of suspicious activity on their account.
 - Let users log in once to access multiple platforms.
 
-### **History**
+
+### **Theme Change**
+
+![theme_dark.png](readame-assets/theme_dark.png)
+![theme_dracula.png](readame-assets/theme_dracula.png)
+![theme_light.png](readame-assets/theme_light.png)
 
 **Key Features**
-- Tracks all your actions with timestamps.
-- Search and filter to find specific entries.
-- Revert to a previous state with one click.
-- Export your history for offline use.
+- Switch between light and dark mode.
+- Choose from pre-designed themes or create your own.
 
 **What’s Next**
-- Show history as a visual timeline or graph.
-- Let teams view shared activity logs.
-- Add encryption to protect sensitive history data.
+- Adjust themes based on lighting or user preferences.
+- Let users customize fonts, spacing, and colors.
+- Add fun themes for holidays or special events.
+- Save theme preferences across all devices.
