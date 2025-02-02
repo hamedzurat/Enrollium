@@ -172,7 +172,7 @@ DB.exec(session -> {
 
 ### **Bidirectional RPC System**
 
-**Implementation Status**: 🟡 Complete
+**Implementation Status**: Complete
 
 #### **What It Does**
 
@@ -507,7 +507,7 @@ String v = Version.getVersion();
 
 ### **Internationalization**
 
-**Implementation Status**: 🟡 Partial (90%)
+**Implementation Status**: Partial (90%)
 
 **Demo**:
 
@@ -634,7 +634,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Section Selection & Registration Status**
 
-**Implementation Status**: 🟡 Partial
+**Implementation Status**: Partial
 
 ![section_selection.png](readame-assets/section_selection.png)
 ![section_selection_selected.png](readame-assets/section_selection_selected.png)
@@ -651,7 +651,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Trade Feature**
 
-**Implementation Status**: 🟡 Partial
+**Implementation Status**: Partial
 
 ![trade.png](readame-assets/trade.png)
 
@@ -674,7 +674,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Server Status Monitoring**
 
-**Implementation Status**: 🟡 Completed
+**Implementation Status**: Complete
 
 ![stats.png](readame-assets/stats.png)
 
@@ -730,7 +730,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Course Withdrawal**
 
-**Implementation Status**: 🟡 Partial
+**Implementation Status**: Partial
 
 ![withdraw_req.png](readame-assets/withdraw_req.png)
 ![withdraw_res.png](readame-assets/withdraw_res.png)
@@ -760,7 +760,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Comprehensive Database Management**
 
-**Implementation Status**: 🟡 Partial
+**Implementation Status**: Partial
 
 ![db_course_table.png](readame-assets/db_course_table.png)
 ![db_course_form.png](readame-assets/db_course_form.png)
@@ -776,6 +776,8 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **History**
 
+**Implementation Status**: Complete
+
 ![history.png](readame-assets/history.png)
 
 - This shows a students all the course list.
@@ -787,12 +789,16 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 
 ### **Search**
 
+**Implementation Status**: Complete
+
 ![search.png](readame-assets/search.png)
 
 - You can easily find the page you want.
 - You can press the `/` button to open the search dialogue.
 
 ### **Login, User Info, and Forgot Password**
+
+**Implementation Status**: Complete
 
 ![successful_student_login.png](readame-assets/successful_student_login.png)
 ![student_user_info.png](readame-assets/student_user_info.png)
@@ -808,6 +814,8 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Let users log in once to access multiple platforms.
 
 ### **Theme Change**
+
+**Implementation Status**: Complete
 
 ![theme_dark.png](readame-assets/theme_dark.png)
 ![theme_dracula.png](readame-assets/theme_dracula.png)
