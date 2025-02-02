@@ -2,25 +2,40 @@
 
 ## **1. Summary**
 
-ENROLIUM was born out of the frustration students faced during chaotic course enrollment periods, where outdated systems often left learners scrambling for sections or stuck with incompatible schedules.
-This project reimagines enrollment as a collaborative, transparent process rather than a zero-sum race. At its core, ENROLIUM ensures fairness through randomized lotteries during high-demand registration windows while empowering students with tools like *real-time trade matching*—a graph-based system that lets users swap sections like puzzle pieces until everyone’s schedule clicks into place.
-Beyond individual needs, it acknowledges the reality of group learning: students can team up to coordinate schedules, though the system deliberately limits group advantages to prevent monopolization.
-The clean JavaFX interface hides sophisticated backend mechanics—atomic seat reservations, session-aware RPC calls, and ACID-compliant transactions—behind a deliberately minimalist design, prioritizing reliability over flashy visuals.
+**ENROLIUM** is a system we built to make section selection smoother and more user-friendly. We worked on both Frontend and Backend, focusing on giving everyone a fair chance during the selection process and making the system easy to use.
+This trimester’s section selection process went way better than in previous terms. Last time, everyone had a tough time with section selection, and most couldn't get their preferred slots, which really frustrated them. From these difficulties, the idea for **ENROLLIUM** was born—a platform designed to simplify and enhance the section selection process for students.
 
 ## **2. System Overview**
 
 ### **2.1 Architecture Diagram**
 
-![High-Level Architecture](path/to/architecture.png)
-*(Annotate components: UI, RPC, DB, etc.)*
+The system consists of both a server and a client that communicate via a custom RPC. To establish a connection, users must provide their email and password. The entire system maintains a single source of truth, which is the database.
 
 ### **2.2 Technology Stack**
 
-| Layer         | Technology    | Purpose                          |
-|---------------|---------------|----------------------------------|
-| Frontend      | JavaFX 17     | User interface rendering         |
-| Communication | gRPC/gSocket  | Bidirectional RPC implementation |
-| Database      | PostgreSQL 16.6 | Data persistence                 |
+| Layer               | Technology                          | Purpose                                     |
+|---------------------|-------------------------------------|---------------------------------------------|
+| Language            | Java 23                             | Core application runtime                    |
+| Build               | Gradle 8.10.2                       | Build automation and dependency management  |
+| Frontend            | JavaFX 23, Atlantafx 2.0.1          | Modern user interface components            |
+|                     | Ikonli 12.3.1                       | Icon library integration                    |
+|                     | CSSFX 11.5.1                        | Dynamic CSS styling management              |
+| UI Utilities        | DataFaker 2.4.2                     | Mock data generation for UI development     |
+| Reactive Programming| RxJava 3.1.9                        | Asynchronous stream processing              |
+| Communication       | Jackson JSON 2.18.2                 | RPC payload serialization/deserialization   |
+| Database            | Hibernate ORM 6.6.3.Final           | Object-relational mapping                   |
+|                     | PostgreSQL JDBC 42.7.4              | Database connectivity                       |
+|                     | HikariCP 6.2.1                      | Connection pooling optimization             |
+| Validation          | Jakarta Validation 3.1.0            | Data validation framework                   |
+|                     | Hibernate Validator 8.0.1.Final     | Constraint enforcement implementation       |
+| Security            | BCrypt 0.10.2                       | Password hashing and verification           |
+| Logging             | Logback 1.4.11                      | Application logging framework               |
+| Testing             | JUnit 5.10.3                        | Unit testing framework                      |
+|                     | AssertJ 3.27.2                      | Fluent test assertions                      |
+| System Monitoring   | OSHI 6.6.6                          | Hardware/OS metrics collection              |
+| Utility             | Commons Text 1.12.0                 | String manipulation utilities               |
+|                     | Lombok 1.18.36                      | Boilerplate code reduction                  |
+|                     | JetBrains Annotations 26.0.1        | Static analysis hints                       |
 
 ## **3. Feature Documentation**
 
@@ -29,8 +44,6 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 ### **Database System**
 
 **Implementation Status**: ✅ Complete
-
-**Demo**:
 
 #### **What It Does**
 
@@ -764,17 +777,18 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Sync changes across the platform instantly.
 - Provide insights into enrollment trends.
 
-
-
 ### **History**
 
 ![history.png](readame-assets/history.png)
+
+- This shows a students all the course list.
 
 ### **Search**
 
 ![search.png](readame-assets/search.png)
 
-
+- You can easily find the page you want.
+- You can press the `/` button to open the search dialogue.
 
 ### **Login, User Info, and Forgot Password**
 
