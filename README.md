@@ -61,7 +61,7 @@ The clean JavaFX interface hides sophisticated backend mechanics—atomic seat r
 - **Functionality**: "Add bulk edit support (partially implemented in `BulkEditBranch`)"
 - **UX**: "Tooltips for form fields shown in [Fig 3.X]"
 
-### **3.1 Database System**
+### **Database System**
 
 **Implementation Status**: ✅ Complete
 
@@ -192,7 +192,7 @@ DB.exec(session -> {
 - Cache frequently accessed entities like `subjects` and `trimesters`.
 - Implement database-level triggers for cross-table validations (e.g., section capacity checks).
 
-### **3.2 Bidirectional RPC System**
+### **Bidirectional RPC System**
 
 **Implementation Status**: 🟡 Complete
 
@@ -365,7 +365,7 @@ server.registerMethod("auth", (params, request) -> {
 - Message compression for large payloads
 - Idempotency keys for retries
 
-### **3.3 Session Management**
+### **Session Management**
 
 **Implementation Status**: ✅ Complete
 
@@ -402,7 +402,7 @@ server.registerMethod("auth", (params, request) -> {
 }
 ```
 
-### **3.4 Rate Limiting**
+### **Rate Limiting**
 
 Demo: ![rate-limited.png](readame-assets/rate-limited.png)
 
@@ -429,7 +429,7 @@ Demo: ![rate-limited.png](readame-assets/rate-limited.png)
 }
 ```
 
-### **3.5 System Logging Infrastructure**
+### **System Logging Infrastructure**
 
 **Implementation Status**: ✅ Complete
 
@@ -499,7 +499,7 @@ HARDWARE INFORMATION:
 - Periodic runtime snapshots
 - Integration with monitoring systems like Prometheus
 
-### **3.6 Semantic Version Generation**
+### **Semantic Version Generation**
 
 **Implementation Status**: ✅ Complete
 
@@ -527,7 +527,7 @@ String v = Version.getVersion();
 - Nightly build automation
 - Version metadata endpoint in RPC system
 
-### **3.7 Internationalization**
+### **Internationalization**
 
 **Implementation Status**: 🟡 Partial (90%)
 
@@ -559,7 +559,7 @@ String greeting = I18nManager.instance.get(TranslationKey.HELLO);
 - Dynamic bundle reloading from filesystem
 - Pluralization rules implementation
 
-### **3.8 Global State Management**
+### **Global State Management**
 
 **Implementation Status**: ✅ Complete
 
@@ -587,7 +587,7 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Size monitoring and eviction policies
 - Cluster-aware replication for distributed mode
 
-### **3.9 Persistent User Settings**
+### **Persistent User Settings**
 
 **Implementation Status**: ✅ Complete
 
@@ -618,6 +618,163 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Cloud sync via RPC system
 - Settings import/export UI
 - Historical version rollback
+
+### **Chat**
+
+**Key Features**
+- Real-time messaging for smooth conversations.
+- Saves chat history so you never lose track.
+- Customize notifications, themes, and more.
+
+
+**What’s Next**
+- Sync chats across devices with cloud support.
+- Add more fun options like emojis and custom fonts.
+- Let users search through old messages easily.
+
+
+
+### **Offered Courses**
+
+**Key Features**
+- A searchable list of all available courses.
+- Details like schedules, instructors, and prerequisites.
+- Filter and sort courses to find what you need.
+
+
+**What’s Next**
+- Add more filters like course format or language.
+- Help users track their progress in enrolled courses.
+
+
+### **Section Selection**
+
+**Key Features**
+- Pick course sections based on schedule.
+- See registration status in real-time.
+- Check how many seats are left in a section.
+- Get added to a waitlist if a section is full.
+
+**What’s Next**
+- Suggest sections that fit  preferences.
+- Warn you if a section clashes with your schedule.
+- Send reminders for deadlines or waitlist updates.
+- Sync course schedule with your calendar.
+
+
+### **Trade**
+
+**Key Features**
+- List items or services you want to trade.
+- Search and filter to find what you need.
+- Negotiate deals through chat or offers.
+- Rate and review trade partners for trust.
+
+**What’s Next**
+- Add extra security for high-value trades.
+- Show users their past trade history.
+
+
+
+### **Server Status**
+
+**Key Features**
+- Live updates on server health and uptime.
+- Alerts for maintenance or outages.
+- Track past server performance.
+- Get notifications via email or SMS.
+
+**What’s Next**
+- Predict server issues before they happen.
+- Let users customize how they get alerts.
+- Track server status across different regions.
+- Show how server issues might affect specific features.
+
+
+### **Send Notification**
+
+**Key Features**
+- Send alerts via email, SMS, or push notifications.
+- Customize messages based on user actions.
+- Notifications go out instantly when needed.
+
+
+**What’s Next**
+- Add images or buttons to make alerts more engaging.
+- Support notifications in multiple languages.
+- Provide detailed reports on notification performance.
+
+
+### **Withdraw**
+
+**Key Features**
+
+- Supports multiple withdrawal methods.
+- Shows fees and limits upfront.
+- Keeps a record of all past withdrawals.
+
+**What’s Next**
+- Speed up withdrawal processing times.
+- Support more currencies for global users.
+- Let users set up recurring withdrawals.
+
+
+### **Comprehensive Database Management**
+
+**Key Features**
+- Tracks course, faculty, and student info.
+- Manages schedules, rooms, and prerequisites.
+- Links with notifications for updates.
+- Keeps everything organized and easy to access.
+
+**What’s Next**
+- Add more filters for better search options.
+- Sync changes across the platform instantly.
+- Provide insights into enrollment trends.
+
+
+### **Theme Change**
+
+**Key Features**
+- Switch between light and dark mode.
+- Choose from pre-designed themes or create your own.
+- Auto-switch themes based on time of day.
+
+
+**What’s Next**
+- Adjust themes based on lighting or user preferences.
+- Let users customize fonts, spacing, and colors.
+- Add fun themes for holidays or special events.
+- Save theme preferences across all devices.
+
+
+
+### **Login, User Info, and Forgot Password**
+
+**Key Features**
+- Secure login with passwords, MFA, and CAPTCHA.
+- Update your profile info easily.
+- Reset forgotten passwords via email or SMS.
+- Log out of other devices remotely.
+
+**What’s Next**
+- Use magic links or one-time codes instead of passwords.
+- Notify users of suspicious activity on their account.
+- Let users log in once to access multiple platforms.
+
+
+### **History**
+
+**Key Features**
+- Tracks all your actions with timestamps.
+- Search and filter to find specific entries.
+- Revert to a previous state with one click.
+- Export your history for offline use.
+
+**What’s Next**
+- Show history as a visual timeline or graph.
+- Let teams view shared activity logs.
+- Add encryption to protect sensitive history data.
 
 ## **4. Appendices**
 
