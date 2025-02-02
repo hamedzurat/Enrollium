@@ -632,8 +632,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Add more fun options like emojis and custom fonts.
 - Let users search through old messages easily.
 
-
-
 ### **Offered Courses**
 
 **Key Features**
@@ -645,7 +643,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 **What’s Next**
 - Add more filters like course format or language.
 - Help users track their progress in enrolled courses.
-
 
 ### **Section Selection**
 
@@ -661,7 +658,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Send reminders for deadlines or waitlist updates.
 - Sync course schedule with your calendar.
 
-
 ### **Trade**
 
 **Key Features**
@@ -673,8 +669,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 **What’s Next**
 - Add extra security for high-value trades.
 - Show users their past trade history.
-
-
 
 ### **Server Status**
 
@@ -690,7 +684,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Track server status across different regions.
 - Show how server issues might affect specific features.
 
-
 ### **Send Notification**
 
 **Key Features**
@@ -703,7 +696,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Add images or buttons to make alerts more engaging.
 - Support notifications in multiple languages.
 - Provide detailed reports on notification performance.
-
 
 ### **Withdraw**
 
@@ -718,7 +710,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Support more currencies for global users.
 - Let users set up recurring withdrawals.
 
-
 ### **Comprehensive Database Management**
 
 **Key Features**
@@ -731,7 +722,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Add more filters for better search options.
 - Sync changes across the platform instantly.
 - Provide insights into enrollment trends.
-
 
 ### **Theme Change**
 
@@ -747,8 +737,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Add fun themes for holidays or special events.
 - Save theme preferences across all devices.
 
-
-
 ### **Login, User Info, and Forgot Password**
 
 **Key Features**
@@ -762,7 +750,6 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Notify users of suspicious activity on their account.
 - Let users log in once to access multiple platforms.
 
-
 ### **History**
 
 **Key Features**
@@ -775,11 +762,3 @@ List<Message> chat = (List<Message>) Volatile.getInstance().get("activeChat");
 - Show history as a visual timeline or graph.
 - Let teams view shared activity logs.
 - Add encryption to protect sensitive history data.
-
-## **4. Appendices**
-
-- **A1**: Full DB schema PDF
-- **A2**: Annotated code snippets for complex features
-- **A3**: RPC message samples (JSON/Protobuf)
-- **A4**: Setup/usage video (15 mins)
-
